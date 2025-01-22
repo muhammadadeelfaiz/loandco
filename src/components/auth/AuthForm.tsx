@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 type AuthMode = "login" | "register";
 
@@ -18,13 +19,50 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: mode === "login" ? "Logged in successfully" : "Registered successfully",
-      description: `Welcome ${email}!`,
-    });
+    
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Logged in successfully",
+          description: `Welcome back!`,
+        });
+        navigate("/");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: role,
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to verify your account.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
   };
 
   return (
