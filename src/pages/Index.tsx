@@ -1,7 +1,7 @@
-import { AuthForm } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   return (
@@ -10,11 +10,19 @@ const Index = () => {
       <nav className="bg-white shadow-sm py-4">
         <div className="container mx-auto px-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-primary">LoCo</h2>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-6">
             <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
             <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
             <Link to="/retailers" className="text-gray-600 hover:text-primary">Retailers</Link>
             <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
+            <div className="flex gap-2">
+              <Link to="/signin">
+                <Button variant="outline">Sign In</Button>
+              </Link>
+              <Link to="/signup">
+                <Button>Sign Up</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -35,12 +43,6 @@ const Index = () => {
               className="pl-10 h-12"
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center justify-center mt-8">
-          <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-            <AuthForm />
           </div>
         </div>
 

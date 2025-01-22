@@ -4,11 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 type AuthMode = "login" | "register";
 
-export const AuthForm = () => {
-  const [mode, setMode] = useState<AuthMode>("login");
+interface AuthFormProps {
+  defaultMode?: AuthMode;
+}
+
+export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
+  const [mode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
@@ -16,7 +21,6 @@ export const AuthForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual authentication
     toast({
       title: mode === "login" ? "Logged in successfully" : "Registered successfully",
       description: `Welcome ${email}!`,
@@ -64,18 +68,17 @@ export const AuthForm = () => {
       )}
 
       <Button type="submit" className="w-full">
-        {mode === "login" ? "Login" : "Register"}
+        {mode === "login" ? "Sign In" : "Sign Up"}
       </Button>
 
       <p className="text-center text-sm">
         {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-        <button
-          type="button"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
+        <Link
+          to={mode === "login" ? "/signup" : "/signin"}
           className="text-primary hover:underline"
         >
-          {mode === "login" ? "Register" : "Login"}
-        </button>
+          {mode === "login" ? "Sign Up" : "Sign In"}
+        </Link>
       </p>
     </form>
   );
