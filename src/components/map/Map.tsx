@@ -32,96 +32,59 @@ const Map = ({
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const initializeMap = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
+      
+      const map = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: location ? [location.lng, location.lat] : [0, 0],
+        zoom: 13
+      });
 
-        mapboxgl.accessToken = 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
-        
-        const newMap = new mapboxgl.Map({
-          container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v11',
-          center: location ? [location.lng, location.lat] : [0, 0],
-          zoom: 13
-        });
-
-        newMap.on('load', () => {
-          setIsLoading(false);
-        });
-
-        newMap.on('error', (e) => {
-          console.error('Mapbox error:', e);
-          setError('Failed to load map. Please try again later.');
-          toast({
-            variant: "destructive",
-            title: "Error loading map",
-            description: "Please check your internet connection and try again."
-          });
-        });
-
-        if (!readonly) {
-          newMap.on('click', (e) => {
-            const { lng, lat } = e.lngLat;
-            
-            if (userMarker.current) {
-              userMarker.current.setLngLat([lng, lat]);
-            } else {
-              userMarker.current = new mapboxgl.Marker({ color: '#3B82F6' })
-                .setLngLat([lng, lat])
-                .addTo(newMap);
-            }
-
-            onLocationChange?.({ lng, lat });
-          });
-        }
-
-        mapInstance.current = newMap;
-      } catch (err) {
-        console.error('Map initialization error:', err);
-        setError('Failed to initialize map. Please try again later.');
+      map.on('load', () => {
         setIsLoading(false);
-        toast({
-          variant: "destructive",
-          title: "Error initializing map",
-          description: err instanceof Error ? err.message : "An unexpected error occurred"
+      });
+
+      if (!readonly) {
+        map.on('click', (e) => {
+          const { lng, lat } = e.lngLat;
+          
+          if (userMarker.current) {
+            userMarker.current.setLngLat([lng, lat]);
+          } else {
+            userMarker.current = new mapboxgl.Marker({ color: '#3B82F6' })
+              .setLngLat([lng, lat])
+              .addTo(map);
+          }
+
+          onLocationChange?.({ lng, lat });
         });
       }
-    };
 
-    initializeMap();
+      mapInstance.current = map;
 
-    return () => {
-      if (userMarker.current) {
-        userMarker.current.remove();
-      }
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-      }
-    };
+      return () => {
+        if (userMarker.current) {
+          userMarker.current.remove();
+        }
+        map.remove();
+      };
+    } catch (error) {
+      console.error('Map initialization error:', error);
+      setIsLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Error initializing map",
+        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      });
+    }
   }, [location?.lat, location?.lng, onLocationChange, readonly, toast]);
-
-  if (error) {
-    return (
-      <div className="relative w-full h-[400px] rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-        <div className="text-center p-4">
-          <p className="text-red-500 mb-2">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="text-blue-500 hover:text-blue-600"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
@@ -144,12 +107,6 @@ const Map = ({
           )}
         </>
       )}
-      <style>{`
-        .marker {
-          background-size: cover;
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 };

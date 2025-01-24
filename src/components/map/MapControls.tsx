@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 interface MapControlsProps {
@@ -6,12 +6,16 @@ interface MapControlsProps {
 }
 
 const MapControls = ({ map }: MapControlsProps) => {
+  const navigationControlRef = useRef<mapboxgl.NavigationControl | null>(null);
+
   useEffect(() => {
-    const navigationControl = new mapboxgl.NavigationControl();
-    map.addControl(navigationControl, 'top-right');
+    navigationControlRef.current = new mapboxgl.NavigationControl();
+    map.addControl(navigationControlRef.current, 'top-right');
     
     return () => {
-      map.removeControl(navigationControl);
+      if (navigationControlRef.current) {
+        map.removeControl(navigationControlRef.current);
+      }
     };
   }, [map]);
 

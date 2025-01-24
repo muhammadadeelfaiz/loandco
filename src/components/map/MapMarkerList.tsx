@@ -18,9 +18,12 @@ const MapMarkerList = ({ map, markers }: MapMarkerListProps) => {
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
 
   useEffect(() => {
+    const currentMarkers = { ...markersRef.current };
+
+    // Add or update markers
     markers.forEach(marker => {
-      if (markersRef.current[marker.id]) {
-        markersRef.current[marker.id].setLngLat([marker.lng, marker.lat]);
+      if (currentMarkers[marker.id]) {
+        currentMarkers[marker.id].setLngLat([marker.lng, marker.lat]);
       } else {
         const popup = new mapboxgl.Popup({ offset: 25 })
           .setHTML(`
@@ -34,12 +37,22 @@ const MapMarkerList = ({ map, markers }: MapMarkerListProps) => {
         el.style.height = '24px';
         el.style.backgroundImage = 'url(https://img.icons8.com/material-outlined/24/000000/marker.png)';
 
-        markersRef.current[marker.id] = new mapboxgl.Marker(el)
+        currentMarkers[marker.id] = new mapboxgl.Marker(el)
           .setLngLat([marker.lng, marker.lat])
           .setPopup(popup)
           .addTo(map);
       }
     });
+
+    // Remove old markers
+    Object.keys(markersRef.current).forEach(id => {
+      if (!markers.find(m => m.id === id)) {
+        markersRef.current[id].remove();
+        delete currentMarkers[id];
+      }
+    });
+
+    markersRef.current = currentMarkers;
 
     return () => {
       Object.values(markersRef.current).forEach(marker => marker.remove());

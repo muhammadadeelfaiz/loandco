@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { createGeoJSONCircle } from '@/utils/mapUtils';
 
@@ -9,6 +9,8 @@ interface MapCircleOverlayProps {
 }
 
 const MapCircleOverlay = ({ map, center, radiusInKm }: MapCircleOverlayProps) => {
+  const sourceRef = useRef<mapboxgl.GeoJSONSource | null>(null);
+
   useEffect(() => {
     const circleData = createGeoJSONCircle(center, radiusInKm);
 
@@ -28,9 +30,10 @@ const MapCircleOverlay = ({ map, center, radiusInKm }: MapCircleOverlayProps) =>
           'fill-outline-color': '#3B82F6'
         }
       });
-    } else {
-      const source = map.getSource('radius') as mapboxgl.GeoJSONSource;
-      source.setData(circleData);
+
+      sourceRef.current = map.getSource('radius') as mapboxgl.GeoJSONSource;
+    } else if (sourceRef.current) {
+      sourceRef.current.setData(circleData);
     }
 
     return () => {
