@@ -29,36 +29,39 @@ const Navigation = ({ user }: NavigationProps) => {
   };
 
   return (
-    <nav className="bg-white shadow-sm py-3 md:py-4">
-      <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-        <Link to="/" className="text-xl md:text-2xl font-bold text-primary">LoCo</Link>
-        <div className="flex flex-wrap items-center gap-4 md:gap-6">
-          <Link to="/" className="text-gray-600 hover:text-primary text-sm md:text-base">Home</Link>
-          {user?.user_metadata?.role === "retailer" && (
-            <Link to="/products" className="text-gray-600 hover:text-primary text-sm md:text-base">Products</Link>
-          )}
-          <Link to="/about" className="text-gray-600 hover:text-primary text-sm md:text-base">About</Link>
-          <div className="flex gap-2 ml-auto">
-            {user ? (
-              <>
-                <Link to="/profile">
-                  <Button variant="outline" size="sm" className="h-8 md:h-9">Profile</Button>
-                </Link>
-                <Button variant="outline" size="sm" onClick={handleSignOut} className="h-8 md:h-9">
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link to="/signin">
-                  <Button variant="outline" size="sm" className="h-8 md:h-9">Sign In</Button>
-                </Link>
-                <Link to="/signup">
-                  <Button size="sm" className="h-8 md:h-9">Sign Up</Button>
-                </Link>
-              </>
-            )}
+    <nav className="bg-white py-4 px-6 border-b">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-8">
+          <Link to="/" className="text-2xl font-bold text-primary">LoCo</Link>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
+            <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {user ? (
+            <>
+              {user?.user_metadata?.role === "retailer" && (
+                <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
+              )}
+              <Link to="/profile">
+                <Button variant="outline" size="sm">Profile</Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/signin">
+                <Button variant="ghost" size="sm">Sign In</Button>
+              </Link>
+              <Link to="/signup">
+                <Button variant="default" size="sm">Sign Up</Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
