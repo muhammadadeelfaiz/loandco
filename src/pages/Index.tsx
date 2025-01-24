@@ -4,11 +4,14 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import LocationPrompt from "@/components/LocationPrompt";
+import { useState } from "react";
 
 const Index = ({ user }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const handleSignOut = async () => {
     try {
@@ -27,9 +30,14 @@ const Index = ({ user }) => {
     }
   };
 
+  const handleLocationReceived = (coords: { lat: number; lng: number }) => {
+    setUserLocation(coords);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      {/* Navigation */}
+      <LocationPrompt onLocationReceived={handleLocationReceived} />
+      
       <nav className="bg-white shadow-sm py-4">
         <div className="container mx-auto px-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-primary">LoCo</h2>
@@ -66,7 +74,6 @@ const Index = ({ user }) => {
       </nav>
 
       <div className="container mx-auto px-4 py-16">
-        {/* Hero Section with Search */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-primary mb-4">
             {userRole === "customer" 
@@ -91,6 +98,12 @@ const Index = ({ user }) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
           </div>
         </div>
+
+        {userLocation && (
+          <div className="mt-4 text-center text-sm text-gray-600">
+            Showing results near you
+          </div>
+        )}
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
           {userRole === "customer" ? (
