@@ -30,7 +30,6 @@ const Map = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
-  const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -43,7 +42,6 @@ const Map = ({
         setIsLoading(true);
         setError(null);
 
-        // Use the token from Supabase secrets
         mapboxgl.accessToken = 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
         
         const newMap = new mapboxgl.Map({
@@ -54,8 +52,32 @@ const Map = ({
         });
 
         newMap.on('load', () => {
-          setMap(newMap);
           setIsLoading(false);
+          
+          if (location) {
+            const circleData = createGeoJSONCircle([location.lng, location.lat], searchRadius);
+            
+            if (!newMap.getSource('radius')) {
+              newMap.addSource('radius', {
+                type: 'geojson',
+                data: circleData
+              });
+              
+              newMap.addLayer({
+                id: 'radius',
+                type: 'fill',
+                source: 'radius',
+                paint: {
+                  'fill-color': '#3B82F6',
+                  'fill-opacity': 0.1,
+                  'fill-outline-color': '#3B82F6'
+                }
+              });
+            } else {
+              const source = newMap.getSource('radius') as mapboxgl.GeoJSONSource;
+              source.setData(circleData);
+            }
+          }
         });
 
         newMap.on('error', (e) => {
@@ -81,6 +103,11 @@ const Map = ({
               userMarker.current = new mapboxgl.Marker({ color: '#3B82F6' })
                 .setLngLat([lng, lat])
                 .addTo(newMap);
+            }
+
+            const source = newMap.getSource('radius') as mapboxgl.GeoJSONSource;
+            if (source) {
+              source.setData(createGeoJSONCircle([lng, lat], searchRadius));
             }
 
             onLocationChange?.({ lng, lat });
@@ -109,10 +136,30 @@ const Map = ({
         mapInstance.current.remove();
       }
     };
-  }, [location?.lat, location?.lng, onLocationChange, readonly, toast]);
+  }, [location?.lat, location?.lng, onLocationChange, readonly, searchRadius, toast]);
 
-  const handleMarkerRemove = (id: string) => {
-    console.log(`Marker ${id} removed`);
+  const createGeoJSONCircle = (center: [number, number], radiusInKm: number) => {
+    const points = 64;
+    const coords: number[][] = [];
+    const distanceX = radiusInKm / (111.320 * Math.cos((center[1] * Math.PI) / 180));
+    const distanceY = radiusInKm / 110.574;
+
+    for (let i = 0; i < points; i++) {
+      const theta = (i / points) * (2 * Math.PI);
+      const x = distanceX * Math.cos(theta);
+      const y = distanceY * Math.sin(theta);
+      coords.push([center[0] + x, center[1] + y]);
+    }
+    coords.push(coords[0]);
+
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [coords]
+      },
+      properties: {}
+    };
   };
 
   if (error) {
@@ -139,19 +186,12 @@ const Map = ({
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       )}
-      {map && location && (
-        <CircleOverlay
-          map={map}
-          center={[location.lng, location.lat]}
-          radiusInKm={searchRadius}
-        />
-      )}
-      {map && markers.map(marker => (
+      {mapInstance.current && markers.map(marker => (
         <MapMarker
           key={marker.id}
-          map={map}
-          onMarkerRemove={handleMarkerRemove}
+          map={mapInstance.current!}
           {...marker}
+          onMarkerRemove={() => {}}
         />
       ))}
       <style>{`
