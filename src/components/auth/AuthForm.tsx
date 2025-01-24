@@ -130,7 +130,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             .eq('username', email)
             .single();
 
-          if (userError) throw new Error("Invalid username or password");
+          if (userError) throw new Error("Invalid username/store name or password");
 
           const { data, error } = await supabase.auth.signInWithPassword({
             email: userData.email,
@@ -335,14 +335,14 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email">{mode === "login" ? "Email or Username" : "Email"}</Label>
+          <Label htmlFor="email">Email or Username/Store Name</Label>
           <Input
             id="email"
-            type={mode === "login" ? "text" : "email"}
+            type="text"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder={mode === "login" ? "Email or username" : "email@example.com"}
+            placeholder="Enter your email or username/store name"
           />
         </div>
         
