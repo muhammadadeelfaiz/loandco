@@ -2,9 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
 import LocationPrompt from "@/components/LocationPrompt";
+import Navigation from "@/components/Navigation";
 import Map from "@/components/Map";
 import { useState } from "react";
 import { useStores } from "@/hooks/useStores";
@@ -19,7 +18,6 @@ const STORE_CATEGORIES = [
 ];
 
 const Index = ({ user }) => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -51,40 +49,7 @@ const Index = ({ user }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
-      
-      <nav className="bg-white shadow-sm py-4">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-primary">LoCo</h2>
-          <div className="flex items-center gap-6">
-            <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
-            {user?.user_metadata?.role === "retailer" && (
-              <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
-            )}
-            <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
-            <div className="flex gap-2">
-              {user ? (
-                <>
-                  <Link to="/profile">
-                    <Button variant="outline">Profile</Button>
-                  </Link>
-                  <Button variant="outline" onClick={handleSignOut}>
-                    Sign Out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Link to="/signin">
-                    <Button variant="outline">Sign In</Button>
-                  </Link>
-                  <Link to="/signup">
-                    <Button>Sign Up</Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation user={user} />
 
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
