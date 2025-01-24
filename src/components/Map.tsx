@@ -27,8 +27,9 @@ const Map = ({
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const radiusSourceRef = useRef<mapboxgl.GeoJSONSource | null>(null);
 
-  const createGeoJSONCircle = (center: [number, number], radiusInKm: number): GeoJSON.Feature<GeoJSON.Polygon> => {
+  const createGeoJSONCircle = (center: [number, number], radiusInKm: number) => {
     const points = 64;
     const coords: number[][] = [];
     const km = radiusInKm;
@@ -47,9 +48,9 @@ const Map = ({
     coords.push(coords[0]); // Close the polygon
 
     return {
-      type: "Feature",
+      type: "Feature" as const,
       geometry: {
-        type: "Polygon",
+        type: "Polygon" as const,
         coordinates: [coords]
       },
       properties: {}
@@ -74,17 +75,14 @@ const Map = ({
 
     if (location) {
       mapInstance.on('load', () => {
-        const radiusSource = {
-          type: 'geojson',
-          data: createGeoJSONCircle([location.lng, location.lat], searchRadius)
-        } as mapboxgl.GeoJSONSource;
-
-        if (mapInstance.getSource('radius')) {
-          (mapInstance.getSource('radius') as mapboxgl.GeoJSONSource).setData(
-            radiusSource.data as GeoJSON.Feature<GeoJSON.Geometry>
-          );
-        } else {
-          mapInstance.addSource('radius', radiusSource);
+        const circleData = createGeoJSONCircle([location.lng, location.lat], searchRadius);
+        
+        if (!mapInstance.getSource('radius')) {
+          mapInstance.addSource('radius', {
+            type: 'geojson',
+            data: circleData
+          });
+          
           mapInstance.addLayer({
             id: 'radius',
             type: 'fill',
@@ -95,6 +93,10 @@ const Map = ({
               'fill-outline-color': '#3B82F6'
             }
           });
+          
+          radiusSourceRef.current = mapInstance.getSource('radius') as mapboxgl.GeoJSONSource;
+        } else if (radiusSourceRef.current) {
+          radiusSourceRef.current.setData(circleData);
         }
       });
     }
@@ -111,10 +113,8 @@ const Map = ({
             .addTo(mapInstance);
         }
 
-        if (mapInstance.getSource('radius')) {
-          (mapInstance.getSource('radius') as mapboxgl.GeoJSONSource).setData(
-            createGeoJSONCircle([lng, lat], searchRadius)
-          );
+        if (radiusSourceRef.current) {
+          radiusSourceRef.current.setData(createGeoJSONCircle([lng, lat], searchRadius));
         }
 
         onLocationChange?.({ lng, lat });
@@ -133,6 +133,7 @@ const Map = ({
   useEffect(() => {
     if (!map.current) return;
 
+    // Clean up removed markers
     Object.entries(markersRef.current).forEach(([id, marker]) => {
       if (!markers.find(m => m.id === id)) {
         marker.remove();
@@ -140,6 +141,7 @@ const Map = ({
       }
     });
 
+    // Update or add markers
     markers.forEach(marker => {
       if (markersRef.current[marker.id]) {
         markersRef.current[marker.id].setLngLat([marker.lng, marker.lat]);
