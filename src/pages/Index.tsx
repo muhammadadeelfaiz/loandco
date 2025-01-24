@@ -36,7 +36,7 @@ const Index = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F6F7]">
+    <div className="min-h-screen bg-gradient-loco">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
       <Navigation user={user} />
 
@@ -56,7 +56,7 @@ const Index = ({ user }) => {
           {[1, 2, 3].map((item) => (
             <Card 
               key={item}
-              className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow cursor-pointer group"
+              className="aspect-[16/9] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
             >
               <img 
                 src={`https://images.unsplash.com/photo-148859052850${item}-98d2b5aba04b`}
@@ -69,7 +69,7 @@ const Index = ({ user }) => {
 
         {/* Popular Categories */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Popular categories</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-white">Popular categories</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
             {CATEGORIES.map((category) => (
               <div 
@@ -77,14 +77,14 @@ const Index = ({ user }) => {
                 className="group cursor-pointer"
                 onClick={() => navigate(`/search?category=${category.name.toLowerCase()}`)}
               >
-                <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-xl transition-all duration-300">
                   <img 
                     src={category.image} 
                     alt={category.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <p className="text-sm text-center text-[#8E9196] group-hover:text-[#6E59A5] transition-colors">
+                <p className="text-sm text-center text-white/80 group-hover:text-white transition-colors">
                   {category.name}
                 </p>
               </div>
@@ -94,14 +94,14 @@ const Index = ({ user }) => {
 
         {/* Best Sellers */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Best sellers</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-white">Best sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((item) => (
               <Card 
                 key={item} 
-                className="aspect-[3/4] bg-white hover:shadow-lg transition-shadow cursor-pointer group"
+                className="aspect-[3/4] bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
               >
-                <div className="p-4 h-full flex items-center justify-center text-[#8E9196] group-hover:text-[#6E59A5] transition-colors">
+                <div className="p-4 h-full flex items-center justify-center text-secondary group-hover:text-accent transition-colors">
                   Coming Soon
                 </div>
               </Card>
@@ -111,23 +111,23 @@ const Index = ({ user }) => {
 
         {/* Top Retailers */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Top retailers in your area</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-white">Top retailers in your area</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
             {stores.slice(0, 7).map((store) => (
               <div 
                 key={store.id} 
                 className="flex flex-col items-center gap-2 cursor-pointer group"
               >
-                <Avatar className="w-20 h-20 border-2 border-white shadow-lg group-hover:shadow-xl transition-shadow bg-[#9b87f5]">
-                  <AvatarFallback className="bg-[#9b87f5] text-white text-xl">
+                <Avatar className="w-20 h-20 border-2 border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xl">
                     {store.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-center line-clamp-2 text-[#1A1F2C] group-hover:text-[#6E59A5] transition-colors">
+                <span className="text-sm font-medium text-center line-clamp-2 text-white/80 group-hover:text-white transition-colors">
                   {store.name}
                 </span>
                 {store.distance && (
-                  <span className="text-xs text-[#8E9196]">
+                  <span className="text-xs text-white/60">
                     {store.distance.toFixed(1)}km away
                   </span>
                 )}
