@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import Navigation from "@/components/Navigation";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      <Navigation user={null} />
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-primary mb-8">About LoCo</h1>
@@ -16,16 +16,13 @@ const About = () => {
                 We believe in strengthening local economies by making it easier for people to discover and 
                 support businesses in their community.
               </p>
-              <Link to="/signup">
-                <Button>Join Our Community</Button>
-              </Link>
             </div>
-            <div className="rounded-lg overflow-hidden shadow-lg">
-              <img 
-                src="/photo-1486312338219-ce68d2c6f44d" 
-                alt="Local Business"
-                className="w-full h-auto"
-              />
+            <div className="bg-blue-100 rounded-lg p-8">
+              <h3 className="text-xl font-semibold mb-4">Our Mission</h3>
+              <p className="text-gray-600">
+                To create a thriving marketplace where local businesses can flourish and customers can easily 
+                discover products and services in their community.
+              </p>
             </div>
           </div>
 
@@ -50,18 +47,6 @@ const About = () => {
                 We prioritize building strong, sustainable local economies through 
                 meaningful connections.
               </p>
-            </div>
-          </div>
-
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-6">Ready to Get Started?</h2>
-            <div className="space-x-4">
-              <Link to="/signup">
-                <Button>Sign Up Now</Button>
-              </Link>
-              <Link to="/signin">
-                <Button variant="outline">Sign In</Button>
-              </Link>
             </div>
           </div>
         </div>

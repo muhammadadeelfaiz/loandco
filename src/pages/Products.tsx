@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import Navigation from "@/components/Navigation";
 
 const Products = () => {
   const [name, setName] = useState("");
@@ -46,12 +47,10 @@ const Products = () => {
         title: "Product added successfully",
       });
 
-      // Reset form
       setName("");
       setPrice("");
       setCategory("");
       
-      // Refresh products list
       refetch();
     } catch (error) {
       toast({
@@ -63,8 +62,9 @@ const Products = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      <Navigation user={{ user_metadata: { role: 'retailer' } }} />
+      <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-primary mb-8">Manage Products</h1>
 
