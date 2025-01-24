@@ -36,7 +36,7 @@ const Index = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F6F7]">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
       <Navigation user={user} />
 
@@ -53,21 +53,21 @@ const Index = ({ user }) => {
 
         {/* Featured Products */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="aspect-[16/9] overflow-hidden">
+          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
             <img 
               src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" 
               alt="Featured Product 1"
               className="w-full h-full object-cover"
             />
           </Card>
-          <Card className="aspect-[16/9] overflow-hidden">
+          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
             <img 
               src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
               alt="Featured Product 2"
               className="w-full h-full object-cover"
             />
           </Card>
-          <Card className="aspect-[16/9] overflow-hidden">
+          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
             <img 
               src="https://images.unsplash.com/photo-1487958449943-2429e8be8625" 
               alt="Featured Product 3"
@@ -78,7 +78,7 @@ const Index = ({ user }) => {
 
         {/* Popular Categories */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Popular categories</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Popular categories</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
             {CATEGORIES.map((category) => (
               <div 
@@ -86,14 +86,14 @@ const Index = ({ user }) => {
                 className="group cursor-pointer"
                 onClick={() => navigate(`/search?category=${category.name.toLowerCase()}`)}
               >
-                <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-white shadow-sm hover:shadow-md transition-shadow">
                   <img 
                     src={category.image} 
                     alt={category.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 </div>
-                <p className="text-sm text-center">{category.name}</p>
+                <p className="text-sm text-center text-[#8E9196]">{category.name}</p>
               </div>
             ))}
           </div>
@@ -101,11 +101,11 @@ const Index = ({ user }) => {
 
         {/* Best Sellers */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6">Best sellers</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Best sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((item) => (
-              <Card key={item} className="aspect-[3/4] bg-white">
-                <div className="p-4 h-full flex items-center justify-center text-gray-400">
+              <Card key={item} className="aspect-[3/4] bg-white hover:shadow-lg transition-shadow">
+                <div className="p-4 h-full flex items-center justify-center text-[#8E9196]">
                   Coming Soon
                 </div>
               </Card>
@@ -115,20 +115,20 @@ const Index = ({ user }) => {
 
         {/* Top Retailers */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Top retailers in your area</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Top retailers in your area</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
             {stores.slice(0, 7).map((store) => (
               <div key={store.id} className="flex flex-col items-center gap-2">
-                <Avatar className="w-20 h-20 border-2 border-white shadow-lg">
+                <Avatar className="w-20 h-20 border-2 border-white shadow-lg hover:shadow-xl transition-shadow">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                     {store.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-center line-clamp-2">
+                <span className="text-sm font-medium text-center line-clamp-2 text-[#1A1F2C]">
                   {store.name}
                 </span>
                 {store.distance && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-[#8E9196]">
                     {store.distance.toFixed(1)}km away
                   </span>
                 )}
