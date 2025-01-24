@@ -3,6 +3,10 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MapContext } from './MapContext';
+import MapControls from './MapControls';
+import CircleOverlay from './CircleOverlay';
+import MapMarkers from './MapMarkers';
 
 interface MapProps {
   location?: { lat: number; lng: number };
@@ -28,34 +32,8 @@ const Map = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
-  const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-
-  // Create GeoJSON circle utility function
-  const createGeoJSONCircle = (center: [number, number], radiusInKm: number) => {
-    const points = 64;
-    const coords: number[][] = [];
-    const distanceX = radiusInKm / (111.320 * Math.cos((center[1] * Math.PI) / 180));
-    const distanceY = radiusInKm / 110.574;
-
-    for (let i = 0; i < points; i++) {
-      const theta = (i / points) * (2 * Math.PI);
-      const x = distanceX * Math.cos(theta);
-      const y = distanceY * Math.sin(theta);
-      coords.push([center[0] + x, center[1] + y]);
-    }
-    coords.push(coords[0]);
-
-    return {
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [coords]
-      },
-      properties: {}
-    };
-  };
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -72,36 +50,7 @@ const Map = ({
 
       map.on('load', () => {
         setIsLoading(false);
-        
-        if (location) {
-          const circleData = createGeoJSONCircle([location.lng, location.lat], searchRadius);
-          
-          if (!map.getSource('radius')) {
-            map.addSource('radius', {
-              type: 'geojson',
-              data: circleData
-            });
-            
-            map.addLayer({
-              id: 'radius',
-              type: 'fill',
-              source: 'radius',
-              paint: {
-                'fill-color': '#3B82F6',
-                'fill-opacity': 0.1,
-                'fill-outline-color': '#3B82F6'
-              }
-            });
-          } else {
-            const source = map.getSource('radius') as mapboxgl.GeoJSONSource;
-            source.setData(circleData);
-          }
-        }
       });
-
-      // Add navigation controls
-      const navigationControl = new mapboxgl.NavigationControl();
-      map.addControl(navigationControl, 'top-right');
 
       if (!readonly) {
         map.on('click', (e) => {
@@ -115,23 +64,16 @@ const Map = ({
               .addTo(map);
           }
 
-          const source = map.getSource('radius') as mapboxgl.GeoJSONSource;
-          if (source) {
-            source.setData(createGeoJSONCircle([lng, lat], searchRadius));
-          }
-
           onLocationChange?.({ lng, lat });
         });
       }
 
       mapInstance.current = map;
 
-      // Cleanup function
       return () => {
         if (userMarker.current) {
           userMarker.current.remove();
         }
-        Object.values(markersRef.current).forEach(marker => marker.remove());
         map.remove();
       };
     } catch (error) {
@@ -143,54 +85,21 @@ const Map = ({
         description: error instanceof Error ? error.message : "An unexpected error occurred"
       });
     }
-  }, [location?.lat, location?.lng, onLocationChange, readonly, searchRadius, toast]);
-
-  // Handle markers
-  useEffect(() => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    // Remove old markers
-    Object.entries(markersRef.current).forEach(([id, marker]) => {
-      if (!markers.find(m => m.id === id)) {
-        marker.remove();
-        delete markersRef.current[id];
-      }
-    });
-
-    // Add or update markers
-    markers.forEach(marker => {
-      if (markersRef.current[marker.id]) {
-        markersRef.current[marker.id].setLngLat([marker.lng, marker.lat]);
-      } else {
-        const popup = new mapboxgl.Popup({ offset: 25 })
-          .setHTML(`
-            <h3 class="font-semibold">${marker.title}</h3>
-            ${marker.description ? `<p>${marker.description}</p>` : ''}
-          `);
-
-        const el = document.createElement('div');
-        el.className = 'marker';
-        el.style.width = '24px';
-        el.style.height = '24px';
-        el.style.backgroundImage = 'url(https://img.icons8.com/material-outlined/24/000000/marker.png)';
-
-        markersRef.current[marker.id] = new mapboxgl.Marker(el)
-          .setLngLat([marker.lng, marker.lat])
-          .setPopup(popup)
-          .addTo(map);
-      }
-    });
-
-    return () => {
-      Object.values(markersRef.current).forEach(marker => marker.remove());
-      markersRef.current = {};
-    };
-  }, [markers]);
+  }, [location?.lat, location?.lng, onLocationChange, readonly, toast]);
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
-      <div ref={mapContainer} className="absolute inset-0" />
+      <MapContext.Provider value={{ map: mapInstance.current }}>
+        <div ref={mapContainer} className="absolute inset-0" />
+        {location && (
+          <CircleOverlay
+            center={[location.lng, location.lat]}
+            radiusInKm={searchRadius}
+          />
+        )}
+        <MapControls />
+        <MapMarkers markers={markers} />
+      </MapContext.Provider>
       {isLoading && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />

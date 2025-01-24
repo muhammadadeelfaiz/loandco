@@ -1,17 +1,17 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { useMapContext } from './MapContext';
 
-interface MapControlsProps {
-  map: mapboxgl.Map;
-}
-
-const MapControls = ({ map }: MapControlsProps) => {
+const MapControls = () => {
+  const { map } = useMapContext();
   const navigationControlRef = useRef<mapboxgl.NavigationControl | null>(null);
 
   useEffect(() => {
+    if (!map) return;
+
     navigationControlRef.current = new mapboxgl.NavigationControl();
     map.addControl(navigationControlRef.current, 'top-right');
-    
+
     return () => {
       if (navigationControlRef.current) {
         map.removeControl(navigationControlRef.current);
