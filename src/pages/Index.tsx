@@ -1,13 +1,13 @@
-import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
 import Map from "@/components/Map";
-import { useState } from "react";
 import { useStores } from "@/hooks/useStores";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import SearchBar from "@/components/home/SearchBar";
+import CategoryFilter from "@/components/home/CategoryFilter";
+import StoreList from "@/components/home/StoreList";
+import FeatureCards from "@/components/home/FeatureCards";
 
 const STORE_CATEGORIES = [
   "All",
@@ -66,42 +66,19 @@ const Index = ({ user }) => {
             }
           </p>
           
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative">
-            <Input 
-              type="search" 
-              placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
-              className="pl-10 h-11 md:h-12 text-base md:text-lg"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Button 
-              type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-              size="sm"
-            >
-              Search
-            </Button>
-          </form>
+          <SearchBar 
+            userRole={userRole}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onSubmit={handleSearch}
+          />
         </div>
 
-        <div className="mb-6 max-w-xs mx-auto md:max-w-sm">
-          <Select
-            value={selectedCategory || "All"}
-            onValueChange={(value) => setSelectedCategory(value)}
-          >
-            <SelectTrigger className="h-9 md:h-10">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {STORE_CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CategoryFilter 
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          categories={STORE_CATEGORIES}
+        />
 
         <div className="mt-6 md:mt-8 mb-12 md:mb-16">
           <div className="mb-4">
@@ -128,72 +105,10 @@ const Index = ({ user }) => {
             markers={mapMarkers}
           />
           
-          {stores.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Nearby Stores</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stores.map((store) => (
-                  <div key={store.id} className="bg-white p-4 md:p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <h4 className="font-semibold">{store.name}</h4>
-                    <p className="text-sm text-gray-600">
-                      {store.category}
-                      {store.distance && ` - ${store.distance.toFixed(1)}km away`}
-                    </p>
-                    {store.description && (
-                      <p className="text-sm text-gray-500 mt-1">{store.description}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <StoreList stores={stores} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-          {userRole === "customer" ? (
-            <>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Browse Products</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Browse and compare products from local retailers
-                </p>
-              </div>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Connect</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Chat with retailers and get product information
-                </p>
-              </div>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Shop Local</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Support local businesses in your community
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Manage Products</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Add and update your product listings
-                </p>
-              </div>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Track Orders</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  Manage customer orders and inventory
-                </p>
-              </div>
-              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
-                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Analytics</h3>
-                <p className="text-gray-600 text-sm md:text-base">
-                  View sales and performance metrics
-                </p>
-              </div>
-            </>
-          )}
-        </div>
+        <FeatureCards userRole={userRole} />
       </div>
     </div>
   );
