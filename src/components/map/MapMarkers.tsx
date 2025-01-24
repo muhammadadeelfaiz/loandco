@@ -15,10 +15,11 @@ interface MapMarkersProps {
 }
 
 const MapMarkers = ({ markers }: MapMarkersProps) => {
-  const { map } = useMapContext();
+  const { mapRef } = useMapContext();
   const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
 
   useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
 
     // Remove markers that are no longer in the list
@@ -57,7 +58,7 @@ const MapMarkers = ({ markers }: MapMarkersProps) => {
       Object.values(markersRef.current).forEach(marker => marker.remove());
       markersRef.current = {};
     };
-  }, [map, markers]);
+  }, [mapRef, markers]);
 
   return null;
 };
