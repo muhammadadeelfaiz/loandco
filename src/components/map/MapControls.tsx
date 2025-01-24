@@ -4,17 +4,18 @@ import { useMapContext } from './MapContext';
 
 const MapControls = () => {
   const { map } = useMapContext();
-  const navigationControlRef = useRef<mapboxgl.NavigationControl | null>(null);
+  const controlRef = useRef<mapboxgl.NavigationControl | null>(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || controlRef.current) return;
 
-    navigationControlRef.current = new mapboxgl.NavigationControl();
-    map.addControl(navigationControlRef.current, 'top-right');
+    controlRef.current = new mapboxgl.NavigationControl();
+    map.addControl(controlRef.current, 'top-right');
 
     return () => {
-      if (navigationControlRef.current) {
-        map.removeControl(navigationControlRef.current);
+      if (controlRef.current) {
+        map.removeControl(controlRef.current);
+        controlRef.current = null;
       }
     };
   }, [map]);

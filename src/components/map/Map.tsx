@@ -31,12 +31,12 @@ const Map = ({
 }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<mapboxgl.Map | null>(null);
-  const userMarker = useRef<mapboxgl.Marker | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || mapInstance.current) return;
 
     try {
       mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
@@ -52,29 +52,14 @@ const Map = ({
         setIsLoading(false);
       });
 
-      if (!readonly) {
-        map.on('click', (e) => {
-          const { lng, lat } = e.lngLat;
-          
-          if (userMarker.current) {
-            userMarker.current.setLngLat([lng, lat]);
-          } else {
-            userMarker.current = new mapboxgl.Marker({ color: '#3B82F6' })
-              .setLngLat([lng, lat])
-              .addTo(map);
-          }
-
-          onLocationChange?.({ lng, lat });
-        });
-      }
-
       mapInstance.current = map;
 
       return () => {
-        if (userMarker.current) {
-          userMarker.current.remove();
+        if (markerRef.current) {
+          markerRef.current.remove();
         }
         map.remove();
+        mapInstance.current = null;
       };
     } catch (error) {
       console.error('Map initialization error:', error);
@@ -85,13 +70,38 @@ const Map = ({
         description: error instanceof Error ? error.message : "An unexpected error occurred"
       });
     }
-  }, [location?.lat, location?.lng, onLocationChange, readonly, toast]);
+  }, [location?.lat, location?.lng, toast]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || readonly) return;
+
+    const handleClick = (e: mapboxgl.MapMouseEvent) => {
+      const { lng, lat } = e.lngLat;
+      
+      if (markerRef.current) {
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        markerRef.current = new mapboxgl.Marker({ color: '#3B82F6' })
+          .setLngLat([lng, lat])
+          .addTo(map);
+      }
+
+      onLocationChange?.({ lng, lat });
+    };
+
+    map.on('click', handleClick);
+
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [readonly, onLocationChange]);
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
       <MapContext.Provider value={{ map: mapInstance.current }}>
         <div ref={mapContainer} className="absolute inset-0" />
-        {location && (
+        {location && mapInstance.current && (
           <CircleOverlay
             center={[location.lng, location.lat]}
             radiusInKm={searchRadius}
@@ -105,12 +115,6 @@ const Map = ({
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       )}
-      <style>{`
-        .marker {
-          background-size: cover;
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 };

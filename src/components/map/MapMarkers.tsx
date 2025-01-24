@@ -21,7 +21,7 @@ const MapMarkers = ({ markers }: MapMarkersProps) => {
   useEffect(() => {
     if (!map) return;
 
-    // Remove old markers
+    // Remove markers that are no longer in the list
     Object.entries(markersRef.current).forEach(([id, marker]) => {
       if (!markers.find(m => m.id === id)) {
         marker.remove();
