@@ -7,15 +7,11 @@ interface MapControlsProps {
 
 const MapControls = ({ map }: MapControlsProps) => {
   useEffect(() => {
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    const navigationControl = new mapboxgl.NavigationControl();
+    map.addControl(navigationControl, 'top-right');
     
     return () => {
-      const controls = map.getControls();
-      controls.forEach(control => {
-        if (control instanceof mapboxgl.NavigationControl) {
-          map.removeControl(control);
-        }
-      });
+      map.removeControl(navigationControl);
     };
   }, [map]);
 
