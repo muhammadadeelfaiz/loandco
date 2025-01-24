@@ -56,9 +56,7 @@ const Map = ({
           : 'mapbox://styles/mapbox/streets-v11',
         center: [initialCenter.lng, initialCenter.lat],
         zoom: defaultZoom,
-        minZoom: 2,
-        width: mapContainer.current.offsetWidth,
-        height: mapContainer.current.offsetHeight
+        minZoom: 2
       });
 
       map.on('load', () => {
@@ -164,7 +162,6 @@ const Map = ({
         <div 
           ref={mapContainer} 
           className="absolute inset-0 w-full h-full" 
-          style={{ minHeight: '600px' }}
         />
         {location && mapRef.current && (
           <CircleOverlay
