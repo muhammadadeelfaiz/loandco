@@ -8,6 +8,7 @@ import { supabase } from "./lib/supabase";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,10 @@ const App = () => {
             <Route 
               path="/signup" 
               element={!user ? <SignUp /> : <Navigate to="/" />} 
+            />
+            <Route 
+              path="/profile" 
+              element={user ? <Profile user={user} /> : <Navigate to="/signin" />} 
             />
           </Routes>
         </BrowserRouter>
