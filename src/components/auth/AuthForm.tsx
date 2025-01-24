@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, User } from "lucide-react";
+import { Mail, Lock, User, Calendar } from "lucide-react";
 import { OAuthButtons } from "./OAuthButtons";
 import { RegisterFields } from "./RegisterFields";
 import { validatePassword } from "@/utils/passwordValidation";
@@ -199,15 +199,18 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={handlePasswordChange}
-            required
-            className="pl-10"
-            placeholder="Enter your password"
-          />
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={handlePasswordChange}
+              required
+              className="pl-10"
+              placeholder="Enter your password"
+            />
+          </div>
           {mode === "register" && passwordErrors.length > 0 && (
             <ul className="text-sm text-destructive space-y-1 mt-2">
               {passwordErrors.map((error, index) => (
