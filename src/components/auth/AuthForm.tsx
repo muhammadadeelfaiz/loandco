@@ -2,29 +2,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Mail } from "lucide-react";
-import { format } from "date-fns";
+import { OAuthButtons } from "./OAuthButtons";
+import { RegisterFields } from "./RegisterFields";
+import { validatePassword } from "@/utils/passwordValidation";
+import { signInWithEmail, signUpWithEmail, signInWithOAuth } from "@/services/authService";
 
 type AuthMode = "login" | "register";
 
 interface AuthFormProps {
   defaultMode?: AuthMode;
 }
-
-const validatePassword = (password: string): string[] => {
-  const errors: string[] = [];
-  if (password.length < 8) errors.push("Password must be at least 8 characters long");
-  if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter");
-  if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
-  if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number");
-  if (!/[!@#$%^&*]/.test(password)) errors.push("Password must contain at least one special character (!@#$%^&*)");
-  return errors;
-};
 
 export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [mode] = useState<AuthMode>(defaultMode);
@@ -69,7 +60,6 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         return;
       }
 
-      // Validate required fields for registration
       if (!name.trim() || !username.trim()) {
         toast({
           variant: "destructive",
@@ -88,7 +78,6 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         return;
       }
 
-      // Check if user is at least 13 years old
       const birthDate = new Date(dateOfBirth);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
@@ -116,37 +105,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
     
     try {
       if (mode === "login") {
-        // Try login with email first
-        const { data: emailData, error: emailError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (emailError && emailError.message.includes("Invalid login credentials")) {
-          // If email login fails, try with username
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('email')
-            .eq('username', email)
-            .single();
-
-          if (userError) throw new Error("Invalid username/store name or password");
-
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: userData.email,
-            password,
-          });
-
-          if (error) {
-            if (error.message.includes("Email not confirmed")) {
-              throw new Error(
-                "Please verify your email before signing in. Check your inbox for the verification link."
-              );
-            }
-            throw error;
-          }
-        }
-
+        await signInWithEmail(email, password);
         toast({
           title: "Logged in successfully",
           description: `Welcome back!`,
@@ -157,42 +116,12 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           throw new Error("Please wait 45 seconds before trying to sign up again.");
         }
 
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              role: role,
-              name: name,
-              username: username,
-              date_of_birth: dateOfBirth,
-            },
-            emailRedirectTo: `${window.location.origin}/signin`,
-          },
+        await signUpWithEmail(email, password, {
+          role,
+          name,
+          username,
+          date_of_birth: dateOfBirth,
         });
-
-        if (error) {
-          if (error.message.includes("over_email_send_rate_limit")) {
-            startCooldown();
-            throw new Error("Please wait 45 seconds before trying again.");
-          }
-          throw error;
-        }
-
-        // Insert the user data into the users table
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([
-            {
-              email,
-              name,
-              username,
-              role,
-              date_of_birth: dateOfBirth,
-            }
-          ]);
-
-        if (insertError) throw insertError;
 
         startCooldown();
         toast({
@@ -213,22 +142,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
   const handleOAuthSignIn = async (provider: 'facebook' | 'google') => {
     try {
-      console.log(`Attempting to sign in with ${provider}`);
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: mode === 'register' ? {
-            default_role: role
-          } : undefined
-        }
-      });
-      
-      console.log('OAuth response:', { data, error });
-
-      if (error) throw error;
+      await signInWithOAuth(provider, mode, role);
     } catch (error) {
-      console.error('OAuth error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -239,46 +154,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
   return (
     <div className="space-y-6 w-full max-w-md">
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          variant="outline"
-          onClick={() => handleOAuthSignIn('facebook')}
-          className="w-full"
-        >
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-            <path
-              fill="#1877F2"
-              d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
-            />
-          </svg>
-          Facebook
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => handleOAuthSignIn('google')}
-          className="w-full"
-        >
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-          Google
-        </Button>
-      </div>
+      <OAuthButtons onOAuthSignIn={handleOAuthSignIn} />
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -293,45 +169,16 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
       <form onSubmit={handleEmailSignIn} className="space-y-6">
         {mode === "register" && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required={mode === "register"}
-                placeholder="John Doe"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="username">
-                {role === 'customer' ? 'Username' : 'Store Name'}
-              </Label>
-              <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required={mode === "register"}
-                placeholder={role === 'customer' ? 'johndoe123' : 'My Awesome Store'}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                required={mode === "register"}
-                max={format(new Date(), 'yyyy-MM-dd')}
-              />
-            </div>
-          </>
+          <RegisterFields
+            name={name}
+            setName={setName}
+            username={username}
+            setUsername={setUsername}
+            dateOfBirth={dateOfBirth}
+            setDateOfBirth={setDateOfBirth}
+            role={role}
+            setRole={setRole}
+          />
         )}
 
         <div className="space-y-2">
@@ -363,22 +210,6 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             </ul>
           )}
         </div>
-
-        {mode === "register" && (
-          <div className="space-y-2">
-            <Label>Role</Label>
-            <RadioGroup value={role} onValueChange={setRole} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="customer" id="customer" />
-                <Label htmlFor="customer">Customer</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="retailer" id="retailer" />
-                <Label htmlFor="retailer">Retailer</Label>
-              </div>
-            </RadioGroup>
-          </div>
-        )}
 
         <Button 
           type="submit" 
