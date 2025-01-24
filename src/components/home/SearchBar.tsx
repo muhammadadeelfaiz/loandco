@@ -11,11 +11,11 @@ interface SearchBarProps {
 
 const SearchBar = ({ userRole, searchTerm, onSearchChange, onSubmit }: SearchBarProps) => {
   return (
-    <form onSubmit={onSubmit} className="max-w-2xl mx-auto relative">
+    <form onSubmit={onSubmit} className="w-full max-w-2xl mx-auto relative">
       <Input 
         type="search" 
         placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
-        className="pl-10 h-11 md:h-12 text-base md:text-lg"
+        className="w-full pl-10 h-12"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
       />

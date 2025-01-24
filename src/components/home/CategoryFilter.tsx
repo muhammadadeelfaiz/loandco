@@ -8,12 +8,12 @@ interface CategoryFilterProps {
 
 const CategoryFilter = ({ selectedCategory, onCategoryChange, categories }: CategoryFilterProps) => {
   return (
-    <div className="mb-6 max-w-xs mx-auto md:max-w-sm">
+    <div className="w-full max-w-xs mx-auto">
       <Select
         value={selectedCategory || "All"}
         onValueChange={onCategoryChange}
       >
-        <SelectTrigger className="h-9 md:h-10">
+        <SelectTrigger>
           <SelectValue placeholder="Select category" />
         </SelectTrigger>
         <SelectContent>
