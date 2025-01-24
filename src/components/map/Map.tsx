@@ -35,8 +35,8 @@ const Map = ({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Default center coordinates (San Francisco)
-  const defaultCenter = { lng: -122.4194, lat: 37.7749 };
+  // Default center coordinates (Dubai)
+  const defaultCenter = { lng: 55.2708, lat: 25.2048 };
   const defaultZoom = 11;
 
   useEffect(() => {
