@@ -19,11 +19,28 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
   const [loading, setLoading] = useState(false);
+  const [signupCooldown, setSignupCooldown] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const startCooldown = () => {
+    setSignupCooldown(true);
+    setTimeout(() => {
+      setSignupCooldown(false);
+    }, 45000); // 45 seconds cooldown
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "register" && signupCooldown) {
+      toast({
+        variant: "destructive",
+        title: "Please wait",
+        description: "You can try signing up again after 45 seconds.",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -50,6 +67,10 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         });
         navigate("/");
       } else {
+        if (signupCooldown) {
+          throw new Error("Please wait 45 seconds before trying to sign up again.");
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -61,8 +82,15 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           },
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("over_email_send_rate_limit")) {
+            startCooldown();
+            throw new Error("Please wait 45 seconds before trying again.");
+          }
+          throw error;
+        }
 
+        startCooldown();
         toast({
           title: "Registration successful",
           description: "Please check your email to verify your account.",
@@ -119,9 +147,19 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         </div>
       )}
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={loading || (mode === "register" && signupCooldown)}
+      >
         {loading ? "Loading..." : mode === "login" ? "Sign In" : "Sign Up"}
       </Button>
+
+      {mode === "register" && signupCooldown && (
+        <p className="text-sm text-yellow-600 text-center">
+          Please wait 45 seconds before trying to sign up again
+        </p>
+      )}
 
       <p className="text-center text-sm">
         {mode === "login" ? "Don't have an account? " : "Already have an account? "}
