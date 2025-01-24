@@ -34,6 +34,17 @@ const App = () => {
       setUser(session?.user ?? null);
     });
 
+    // Initialize theme from localStorage or system preference
+    const initializeTheme = () => {
+      if (typeof window !== 'undefined') {
+        const root = window.document.documentElement;
+        const initialTheme = localStorage.getItem('theme') || 
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        root.classList.add(initialTheme);
+      }
+    };
+
+    initializeTheme();
     return () => subscription.unsubscribe();
   }, []);
 

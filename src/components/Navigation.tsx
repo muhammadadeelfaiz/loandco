@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface NavigationProps {
   user: any;
@@ -29,21 +30,22 @@ const Navigation = ({ user }: NavigationProps) => {
   };
 
   return (
-    <nav className="bg-white py-4 px-6 border-b">
+    <nav className="bg-background py-4 px-6 border-b">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="text-2xl font-bold text-primary">LoCo</Link>
           <div className="flex items-center gap-6">
-            <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
-            <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
+            <Link to="/" className="text-foreground hover:text-primary">Home</Link>
+            <Link to="/about" className="text-foreground hover:text-primary">About</Link>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           {user ? (
             <>
               {user?.user_metadata?.role === "retailer" && (
-                <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
+                <Link to="/products" className="text-foreground hover:text-primary">Products</Link>
               )}
               <Link to="/profile">
                 <Button variant="outline" size="sm">Profile</Button>
