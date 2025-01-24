@@ -51,9 +51,9 @@ const Index = ({ user }) => {
       <LocationPrompt onLocationReceived={handleLocationReceived} />
       <Navigation user={user} />
 
-      <div className="container mx-auto px-4 py-8 md:py-16 max-w-5xl">
+      <div className="container mx-auto px-4 md:px-6 py-8 md:py-16 max-w-7xl">
         <div className="text-center mb-8 md:mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-3 md:mb-4">
             {userRole === "customer" 
               ? "Find Local Products" 
               : "Manage Your Store"
@@ -70,7 +70,7 @@ const Index = ({ user }) => {
             <Input 
               type="search" 
               placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
-              className="pl-10 h-11 md:h-12 text-base"
+              className="pl-10 h-11 md:h-12 text-base md:text-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -85,7 +85,7 @@ const Index = ({ user }) => {
           </form>
         </div>
 
-        <div className="mb-6 max-w-xs mx-auto">
+        <div className="mb-6 max-w-xs mx-auto md:max-w-sm">
           <Select
             value={selectedCategory || "All"}
             onValueChange={(value) => setSelectedCategory(value)}
@@ -131,9 +131,9 @@ const Index = ({ user }) => {
           {stores.length > 0 && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-3">Nearby Stores</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {stores.map((store) => (
-                  <div key={store.id} className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  <div key={store.id} className="bg-white p-4 md:p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <h4 className="font-semibold">{store.name}</h4>
                     <p className="text-sm text-gray-600">
                       {store.category}
@@ -149,7 +149,7 @@ const Index = ({ user }) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
           {userRole === "customer" ? (
             <>
               <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
