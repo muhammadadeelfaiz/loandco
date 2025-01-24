@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import LocationPrompt from "@/components/LocationPrompt";
 import Map from "@/components/Map";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Index = ({ user }) => {
   const { toast } = useToast();
@@ -219,3 +219,4 @@ const Index = ({ user }) => {
 };
 
 export default Index;
+
