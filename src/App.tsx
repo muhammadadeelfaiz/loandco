@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Profile from "./pages/Profile";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +60,14 @@ const App = () => {
             <Route 
               path="/profile" 
               element={user ? <Profile user={user} /> : <Navigate to="/signin" />} 
+            />
+            <Route 
+              path="/privacy-policy" 
+              element={<PrivacyPolicy />} 
+            />
+            <Route 
+              path="/terms-of-service" 
+              element={<TermsOfService />} 
             />
           </Routes>
         </BrowserRouter>
