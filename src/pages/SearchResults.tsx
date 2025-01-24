@@ -32,6 +32,38 @@ const SearchResults = () => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    // Get user's location for distance calculation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        }
+      );
+    }
+  }, []);
+
+  const calculateDistance = (storeLat: number, storeLng: number) => {
+    if (!userLocation) return Infinity;
+    
+    const R = 6371; // Earth's radius in km
+    const dLat = (storeLat - userLocation.lat) * Math.PI / 180;
+    const dLon = (storeLng - userLocation.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(storeLat * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -73,6 +105,15 @@ const SearchResults = () => {
           case "name-desc":
             filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
             break;
+          case "distance":
+            if (userLocation) {
+              filteredProducts.sort((a, b) => {
+                const distanceA = calculateDistance(a.latitude, a.longitude);
+                const distanceB = calculateDistance(b.latitude, b.longitude);
+                return distanceA - distanceB;
+              });
+            }
+            break;
         }
 
         setProducts(filteredProducts);
@@ -88,7 +129,7 @@ const SearchResults = () => {
     };
 
     fetchProducts();
-  }, [query, sortBy, priceRange, category, toast]);
+  }, [query, sortBy, priceRange, category, userLocation, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -104,7 +145,7 @@ const SearchResults = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger>
               <SelectValue placeholder="Sort by" />
@@ -115,6 +156,7 @@ const SearchResults = () => {
               <SelectItem value="price-desc">Price: High to Low</SelectItem>
               <SelectItem value="name-asc">Name: A to Z</SelectItem>
               <SelectItem value="name-desc">Name: Z to A</SelectItem>
+              <SelectItem value="distance">Distance</SelectItem>
             </SelectContent>
           </Select>
 
@@ -124,10 +166,10 @@ const SearchResults = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Prices</SelectItem>
-              <SelectItem value="0-50">Under $50</SelectItem>
-              <SelectItem value="50-100">$50 - $100</SelectItem>
-              <SelectItem value="100-500">$100 - $500</SelectItem>
-              <SelectItem value="500">$500 and above</SelectItem>
+              <SelectItem value="0-50">Under 50 AED</SelectItem>
+              <SelectItem value="50-100">50 - 100 AED</SelectItem>
+              <SelectItem value="100-500">100 - 500 AED</SelectItem>
+              <SelectItem value="500">500 AED and above</SelectItem>
             </SelectContent>
           </Select>
 
@@ -160,7 +202,7 @@ const SearchResults = () => {
               >
                 <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
                 <p className="text-gray-600 mb-2">Category: {product.category}</p>
-                <p className="text-primary font-bold">${product.price}</p>
+                <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
                 <p className="text-sm text-gray-500 mt-2">
                   Seller: {product.retailer_name}
                 </p>
