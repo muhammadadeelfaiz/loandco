@@ -1,9 +1,31 @@
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
-const Index = () => {
+const Index = ({ user }) => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast({
+        title: "Signed out successfully",
+      });
+      navigate("/signin");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error signing out",
+        description: error instanceof Error ? error.message : "An error occurred",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       {/* Navigation */}
@@ -16,12 +38,23 @@ const Index = () => {
             <Link to="/retailers" className="text-gray-600 hover:text-primary">Retailers</Link>
             <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
             <div className="flex gap-2">
-              <Link to="/signin">
-                <Button variant="outline">Sign In</Button>
-              </Link>
-              <Link to="/signup">
-                <Button>Sign Up</Button>
-              </Link>
+              {user ? (
+                <>
+                  <span className="text-gray-600">Welcome, {user.email}</span>
+                  <Button variant="outline" onClick={handleSignOut}>
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/signin">
+                    <Button variant="outline">Sign In</Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button>Sign Up</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
