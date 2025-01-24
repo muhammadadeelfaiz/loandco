@@ -47,6 +47,50 @@ export type Database = {
           },
         ]
       }
+      stores: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          owner_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
