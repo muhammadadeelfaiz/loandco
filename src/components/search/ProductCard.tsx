@@ -47,7 +47,6 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
       <div className="flex gap-2">
         <Button 
           variant="outline"
-          className="flex-1"
           onClick={() => onContactRetailer(product.retailer_name)}
         >
           <Mail className="w-4 h-4 mr-2" />
@@ -56,17 +55,15 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
         {product.store_latitude && product.store_longitude && (
           <Button 
             variant="default"
-            className="flex-1"
             onClick={handleLocationClick}
           >
             <Map className="w-4 h-4 mr-2" />
-            View Location
+            Location
           </Button>
         )}
         {product.store_latitude && product.store_longitude && (
           <Button 
             variant="outline"
-            className="flex-1"
             onClick={() => onGetDirections(
               product.store_latitude,
               product.store_longitude,
