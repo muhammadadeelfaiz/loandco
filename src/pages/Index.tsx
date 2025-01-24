@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import LocationPrompt from "@/components/LocationPrompt";
+import Map from "@/components/Map";
 import { useState } from "react";
 
 const Index = ({ user }) => {
@@ -104,6 +105,15 @@ const Index = ({ user }) => {
             Showing results near you
           </div>
         )}
+
+        {/* Map Component */}
+        <div className="mt-8 mb-16">
+          <Map 
+            location={userLocation}
+            onLocationChange={handleLocationReceived}
+            readonly={false}
+          />
+        </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
           {userRole === "customer" ? (
