@@ -25,27 +25,18 @@ const Index = ({ user }) => {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchRadius, setSearchRadius] = useState(5);
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
   const { stores } = useStores(userLocation, selectedCategory === "All" ? null : selectedCategory);
 
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
     setUserLocation(coords);
   };
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast({
-        title: "Signed out successfully",
-      });
-      navigate("/signin");
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error signing out",
-        description: error instanceof Error ? error.message : "An error occurred",
-      });
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
 
@@ -111,14 +102,23 @@ const Index = ({ user }) => {
           </p>
           
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto relative">
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative">
             <Input 
               type="search" 
               placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
               className="pl-10 h-12"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          </div>
+            <Button 
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              size="sm"
+            >
+              Search
+            </Button>
+          </form>
         </div>
 
         {/* Category Filter */}

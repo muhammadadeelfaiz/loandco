@@ -13,6 +13,7 @@ import Products from "./pages/Products";
 import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,10 @@ const App = () => {
             <Route 
               path="/" 
               element={<Index user={user} />} 
+            />
+            <Route 
+              path="/search" 
+              element={<SearchResults />} 
             />
             <Route 
               path="/signin" 
