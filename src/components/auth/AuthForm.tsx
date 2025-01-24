@@ -29,6 +29,7 @@ const validatePassword = (password: string): string[] => {
 export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [mode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -68,12 +69,12 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         return;
       }
 
-      // Validate name and date of birth for registration
-      if (!name.trim()) {
+      // Validate required fields for registration
+      if (!name.trim() || !username.trim()) {
         toast({
           variant: "destructive",
-          title: "Name required",
-          description: "Please enter your name.",
+          title: "Required fields",
+          description: "Please enter your name and username.",
         });
         return;
       }
@@ -115,21 +116,35 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
     
     try {
       if (mode === "login") {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        // Try login with email first
+        const { data: emailData, error: emailError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) {
-          if (error.message.includes("Email not confirmed")) {
-            throw new Error(
-              "Please verify your email before signing in. Check your inbox for the verification link."
-            );
+        if (emailError && emailError.message.includes("Invalid login credentials")) {
+          // If email login fails, try with username
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('username', email)
+            .single();
+
+          if (userError) throw new Error("Invalid username or password");
+
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: userData.email,
+            password,
+          });
+
+          if (error) {
+            if (error.message.includes("Email not confirmed")) {
+              throw new Error(
+                "Please verify your email before signing in. Check your inbox for the verification link."
+              );
+            }
+            throw error;
           }
-          if (error.message.includes("Invalid login credentials")) {
-            throw new Error("Invalid email or password. Please try again.");
-          }
-          throw error;
         }
 
         toast({
@@ -149,6 +164,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             data: {
               role: role,
               name: name,
+              username: username,
               date_of_birth: dateOfBirth,
             },
             emailRedirectTo: `${window.location.origin}/signin`,
@@ -162,6 +178,21 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           }
           throw error;
         }
+
+        // Insert the user data into the users table
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([
+            {
+              email,
+              name,
+              username,
+              role,
+              date_of_birth: dateOfBirth,
+            }
+          ]);
+
+        if (insertError) throw insertError;
 
         startCooldown();
         toast({
@@ -276,6 +307,18 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required={mode === "register"}
+                placeholder="johndoe123"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
               <Input
                 id="dateOfBirth"
@@ -290,13 +333,14 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{mode === "login" ? "Email or Username" : "Email"}</Label>
           <Input
             id="email"
-            type="email"
+            type={mode === "login" ? "text" : "email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            placeholder={mode === "login" ? "Email or username" : "email@example.com"}
           />
         </div>
         
@@ -340,7 +384,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           disabled={loading || (mode === "register" && signupCooldown)}
         >
           <Mail className="mr-2 h-4 w-4" />
-          {loading ? "Loading..." : mode === "login" ? "Sign In with Email" : "Sign Up with Email"}
+          {loading ? "Loading..." : mode === "login" ? "Sign In" : "Sign Up"}
         </Button>
 
         {mode === "register" && signupCooldown && (
