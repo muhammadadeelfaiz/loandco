@@ -80,24 +80,6 @@ export const RegisterFields = ({
           />
         </div>
       </div>
-
-      <div className="space-y-2">
-        <Label>I am a</Label>
-        <RadioGroup 
-          value={role} 
-          onValueChange={setRole} 
-          className="flex gap-4"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="customer" id="customer" />
-            <Label htmlFor="customer" className="cursor-pointer">Customer</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="retailer" id="retailer" />
-            <Label htmlFor="retailer" className="cursor-pointer">Retailer</Label>
-          </div>
-        </RadioGroup>
-      </div>
     </>
   );
 };

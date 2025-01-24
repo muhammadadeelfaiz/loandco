@@ -10,6 +10,7 @@ import { OAuthButtons } from "./OAuthButtons";
 import { RegisterFields } from "./RegisterFields";
 import { validatePassword } from "@/utils/passwordValidation";
 import { signInWithEmail, signUpWithEmail, signInWithOAuth } from "@/services/authService";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type AuthMode = "login" | "register";
 
@@ -22,6 +23,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
@@ -50,6 +52,15 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
     e.preventDefault();
     
     if (mode === "register") {
+      if (password !== confirmPassword) {
+        toast({
+          variant: "destructive",
+          title: "Password mismatch",
+          description: "The passwords you entered do not match.",
+        });
+        return;
+      }
+
       const errors = validatePassword(password);
       if (errors.length > 0) {
         toast({
@@ -222,6 +233,44 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             </ul>
           )}
         </div>
+
+        {mode === "register" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="pl-10"
+                  placeholder="Confirm your password"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>I am a</Label>
+              <RadioGroup 
+                value={role} 
+                onValueChange={setRole} 
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="customer" id="customer" />
+                  <Label htmlFor="customer" className="cursor-pointer">Customer</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="retailer" id="retailer" />
+                  <Label htmlFor="retailer" className="cursor-pointer">Retailer</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </>
+        )}
 
         <Button 
           type="submit" 
