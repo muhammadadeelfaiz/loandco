@@ -15,10 +15,21 @@ interface AuthFormProps {
   defaultMode?: AuthMode;
 }
 
+const validatePassword = (password: string): string[] => {
+  const errors: string[] = [];
+  if (password.length < 8) errors.push("Password must be at least 8 characters long");
+  if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter");
+  if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
+  if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number");
+  if (!/[!@#$%^&*]/.test(password)) errors.push("Password must contain at least one special character (!@#$%^&*)");
+  return errors;
+};
+
 export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [mode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [role, setRole] = useState("customer");
   const [loading, setLoading] = useState(false);
   const [signupCooldown, setSignupCooldown] = useState(false);
@@ -32,8 +43,29 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
     }, 45000);
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (mode === "register") {
+      setPasswordErrors(validatePassword(newPassword));
+    }
+  };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === "register") {
+      const errors = validatePassword(password);
+      if (errors.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Invalid password",
+          description: "Please fix the password requirements below.",
+        });
+        return;
+      }
+    }
+
     if (mode === "register" && signupCooldown) {
       toast({
         variant: "destructive",
@@ -208,9 +240,16 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             id="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             required
           />
+          {mode === "register" && passwordErrors.length > 0 && (
+            <ul className="text-sm text-red-500 list-disc pl-4 mt-2">
+              {passwordErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {mode === "register" && (
