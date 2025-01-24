@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Mail, Navigation as NavigationIcon } from 'lucide-react';
+import Map from "@/components/map/Map";
 
 interface Product {
   id: string;
@@ -37,6 +39,22 @@ const SearchResults = () => {
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const handleContactRetailer = (retailerName: string) => {
+    // In a real application, this would open a contact form or modal
+    toast({
+      title: "Contact Information",
+      description: `Contact ${retailerName} for more information about this product.`,
+    });
+  };
+
+  const handleGetDirections = (lat: number, lng: number, storeName: string) => {
+    // Open in Google Maps
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${storeName}`,
+      '_blank'
+    );
+  };
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -239,8 +257,29 @@ const SearchResults = () => {
                 <p className="text-sm text-gray-500 mt-2">
                   Seller: {product.retailer_name}
                 </p>
-                <div className="mt-4">
-                  <Button className="w-full">View Details</Button>
+                <div className="mt-4 flex gap-2">
+                  <Button 
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleContactRetailer(product.retailer_name)}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Contact
+                  </Button>
+                  {product.store_latitude && product.store_longitude && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => handleGetDirections(
+                        product.store_latitude,
+                        product.store_longitude,
+                        product.retailer_name
+                      )}
+                    >
+                      <NavigationIcon className="w-4 h-4 mr-2" />
+                      Directions
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
