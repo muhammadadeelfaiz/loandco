@@ -74,7 +74,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         toast({
           variant: "destructive",
           title: "Required fields",
-          description: "Please enter your name and username.",
+          description: `Please enter your name and ${role === 'customer' ? 'username' : 'store name'}.`,
         });
         return;
       }
@@ -307,14 +307,16 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">
+                {role === 'customer' ? 'Username' : 'Store Name'}
+              </Label>
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required={mode === "register"}
-                placeholder="johndoe123"
+                placeholder={role === 'customer' ? 'johndoe123' : 'My Awesome Store'}
               />
             </div>
 
