@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
 import SearchBar from "@/components/home/SearchBar";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const CATEGORIES = [
   { name: "Tablets", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" },
@@ -115,12 +116,22 @@ const Index = ({ user }) => {
         {/* Top Retailers */}
         <section>
           <h2 className="text-2xl font-semibold mb-6">Top retailers in your area</h2>
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
             {stores.slice(0, 7).map((store) => (
-              <div key={store.id} className="flex-none">
-                <div className="w-24 h-24 rounded-full bg-white shadow-md flex items-center justify-center">
-                  <span className="text-sm text-gray-600">{store.name}</span>
-                </div>
+              <div key={store.id} className="flex flex-col items-center gap-2">
+                <Avatar className="w-20 h-20 border-2 border-white shadow-lg">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                    {store.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-center line-clamp-2">
+                  {store.name}
+                </span>
+                {store.distance && (
+                  <span className="text-xs text-gray-500">
+                    {store.distance.toFixed(1)}km away
+                  </span>
+                )}
               </div>
             ))}
           </div>
