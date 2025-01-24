@@ -2,30 +2,26 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
-import Map from "@/components/Map";
 import { useStores } from "@/hooks/useStores";
 import SearchBar from "@/components/home/SearchBar";
-import CategoryFilter from "@/components/home/CategoryFilter";
-import StoreList from "@/components/home/StoreList";
-import FeatureCards from "@/components/home/FeatureCards";
+import { Card } from "@/components/ui/card";
 
-const STORE_CATEGORIES = [
-  "All",
-  "Grocery",
-  "Electronics",
-  "Clothing",
-  "Hardware"
+const CATEGORIES = [
+  { name: "Tablets", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" },
+  { name: "Mobiles", image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" },
+  { name: "Laptops", image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625" },
+  { name: "Clothes", image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9" },
+  { name: "Watches", image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625" },
+  { name: "Footwear", image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9" },
+  { name: "Toys", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" },
 ];
 
 const Index = ({ user }) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [searchRadius, setSearchRadius] = useState(5);
   const [searchTerm, setSearchTerm] = useState("");
-
-  const { stores } = useStores(userLocation, selectedCategory === "All" ? null : selectedCategory);
+  const { stores } = useStores(userLocation);
 
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
     setUserLocation(coords);
@@ -38,80 +34,98 @@ const Index = ({ user }) => {
     }
   };
 
-  const mapMarkers = stores.map(store => ({
-    id: store.id,
-    lat: store.latitude,
-    lng: store.longitude,
-    title: store.name,
-    description: `${store.category} - ${store.distance ? `${store.distance.toFixed(1)}km away` : 'Distance unknown'}`
-  }));
-
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
       <Navigation user={user} />
 
-      <div className="min-h-[calc(100vh-73px)] dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-gradient-to-br from-blue-50/50 to-white">
-        <div className="container mx-auto px-4 md:px-6 py-8 md:py-16 max-w-7xl">
-          <div className="text-center mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary mb-3 md:mb-4">
-              {userRole === "customer" 
-                ? "Find Local Products" 
-                : "Manage Your Store"
-              }
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-6 md:mb-8">
-              {userRole === "customer"
-                ? "Connect with retailers and discover amazing products in your area"
-                : "List your products and connect with local customers"
-              }
-            </p>
-            
-            <SearchBar 
-              userRole={userRole}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onSubmit={handleSearch}
-            />
-          </div>
-
-          <CategoryFilter 
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            categories={STORE_CATEGORIES}
+      <main className="container mx-auto px-4 py-8">
+        {/* Search Bar */}
+        <div className="mb-12">
+          <SearchBar 
+            userRole={userRole}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onSubmit={handleSearch}
           />
-
-          <div className="mt-6 md:mt-8 mb-12 md:mb-16">
-            <div className="mb-4">
-              <label htmlFor="radius" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Search Radius (km)
-              </label>
-              <input
-                type="range"
-                id="radius"
-                min="1"
-                max="20"
-                value={searchRadius}
-                onChange={(e) => setSearchRadius(Number(e.target.value))}
-                className="w-full h-2 bg-blue-200 dark:bg-blue-900 rounded-lg appearance-none cursor-pointer"
-              />
-              <span className="text-sm text-gray-600 dark:text-gray-400">{searchRadius} km</span>
-            </div>
-            
-            <Map 
-              location={userLocation}
-              onLocationChange={handleLocationReceived}
-              readonly={false}
-              searchRadius={searchRadius}
-              markers={mapMarkers}
-            />
-            
-            <StoreList stores={stores} />
-          </div>
-
-          <FeatureCards userRole={userRole} />
         </div>
-      </div>
+
+        {/* Featured Products */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card className="aspect-[16/9] overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" 
+              alt="Featured Product 1"
+              className="w-full h-full object-cover"
+            />
+          </Card>
+          <Card className="aspect-[16/9] overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
+              alt="Featured Product 2"
+              className="w-full h-full object-cover"
+            />
+          </Card>
+          <Card className="aspect-[16/9] overflow-hidden">
+            <img 
+              src="https://images.unsplash.com/photo-1487958449943-2429e8be8625" 
+              alt="Featured Product 3"
+              className="w-full h-full object-cover"
+            />
+          </Card>
+        </div>
+
+        {/* Popular Categories */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6">Popular categories</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+            {CATEGORIES.map((category) => (
+              <div 
+                key={category.name}
+                className="group cursor-pointer"
+                onClick={() => navigate(`/search?category=${category.name.toLowerCase()}`)}
+              >
+                <div className="aspect-square rounded-lg overflow-hidden mb-2">
+                  <img 
+                    src={category.image} 
+                    alt={category.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                </div>
+                <p className="text-sm text-center">{category.name}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Best Sellers */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-semibold mb-6">Best sellers</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((item) => (
+              <Card key={item} className="aspect-[3/4] bg-white">
+                <div className="p-4 h-full flex items-center justify-center text-gray-400">
+                  Coming Soon
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Top Retailers */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">Top retailers in your area</h2>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {stores.slice(0, 7).map((store) => (
+              <div key={store.id} className="flex-none">
+                <div className="w-24 h-24 rounded-full bg-white shadow-md flex items-center justify-center">
+                  <span className="text-sm text-gray-600">{store.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
