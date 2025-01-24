@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Navigation } from 'lucide-react';
+import { Mail, MapPin, Navigation, Map } from 'lucide-react';
 
 interface ProductCardProps {
   product: {
@@ -16,17 +16,37 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCardProps) => {
+  const handleLocationClick = () => {
+    if (product.store_latitude && product.store_longitude) {
+      window.open(
+        `https://www.google.com/maps?q=${product.store_latitude},${product.store_longitude}`,
+        '_blank'
+      );
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
       <p className="text-gray-600 mb-2">Category: {product.category}</p>
       <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
-      {product.distance && product.distance !== Infinity && (
-        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-          <MapPin className="w-4 h-4" />
-          <span>{product.distance.toFixed(1)} km away</span>
-        </div>
-      )}
+      <div className="flex items-center justify-between">
+        {product.distance && product.distance !== Infinity && (
+          <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+            <MapPin className="w-4 h-4" />
+            <span>{product.distance.toFixed(1)} km away</span>
+          </div>
+        )}
+        {product.store_latitude && product.store_longitude && (
+          <button
+            onClick={handleLocationClick}
+            className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors mt-1"
+          >
+            <Map className="w-4 h-4" />
+            <span>View Store</span>
+          </button>
+        )}
+      </div>
       <p className="text-sm text-gray-500 mt-2">
         Seller: {product.retailer_name}
       </p>
