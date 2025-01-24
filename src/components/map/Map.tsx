@@ -35,22 +35,43 @@ const Map = ({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Default center coordinates (San Francisco)
+  const defaultCenter = { lng: -122.4194, lat: 37.7749 };
+  const defaultZoom = 11;
+
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
     try {
       mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
       
+      const initialCenter = location || defaultCenter;
+      
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v11',
-        center: location ? [location.lng, location.lat] : [0, 0],
-        zoom: 13
+        center: [initialCenter.lng, initialCenter.lat],
+        zoom: defaultZoom,
+        minZoom: 2 // Prevent zooming out too far
       });
 
       map.on('load', () => {
         setIsLoading(false);
+        if (location) {
+          map.flyTo({
+            center: [location.lng, location.lat],
+            zoom: defaultZoom,
+            essential: true
+          });
+        }
       });
+
+      // Add initial marker if location is provided
+      if (location) {
+        markerRef.current = new mapboxgl.Marker({ color: '#3B82F6' })
+          .setLngLat([location.lng, location.lat])
+          .addTo(map);
+      }
 
       mapInstance.current = map;
 
@@ -98,7 +119,7 @@ const Map = ({
   }, [readonly, onLocationChange]);
 
   return (
-    <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
+    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-200">
       <MapContext.Provider value={{ map: mapInstance.current }}>
         <div ref={mapContainer} className="absolute inset-0" />
         {location && mapInstance.current && (
