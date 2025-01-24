@@ -4,6 +4,7 @@ interface Product {
   price: number;
   category: string;
   distance?: number;
+  name: string;
 }
 
 export const useProductFilters = () => {

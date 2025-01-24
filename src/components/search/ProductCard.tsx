@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Mail, Navigation as NavigationIcon } from 'lucide-react';
+import { Mail, MapPin, Navigation } from 'lucide-react';
 
 interface ProductCardProps {
   product: {
@@ -22,9 +22,10 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
       <p className="text-gray-600 mb-2">Category: {product.category}</p>
       <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
       {product.distance && product.distance !== Infinity && (
-        <p className="text-sm text-gray-500 mt-1">
-          Distance: {product.distance.toFixed(1)} km
-        </p>
+        <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
+          <MapPin className="w-4 h-4" />
+          <span>{product.distance.toFixed(1)} km away</span>
+        </div>
       )}
       <p className="text-sm text-gray-500 mt-2">
         Seller: {product.retailer_name}
@@ -48,7 +49,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
               product.retailer_name
             )}
           >
-            <NavigationIcon className="w-4 h-4 mr-2" />
+            <Navigation className="w-4 h-4 mr-2" />
             Directions
           </Button>
         )}
