@@ -19,6 +19,9 @@ interface Product {
   category: string;
   availability: boolean;
   retailer_name: string;
+  store_latitude: number;
+  store_longitude: number;
+  distance?: number;
 }
 
 const SearchResults = () => {
@@ -32,10 +35,10 @@ const SearchResults = () => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
+  const [distanceRange, setDistanceRange] = useState("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    // Get user's location for distance calculation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -46,10 +49,15 @@ const SearchResults = () => {
         },
         (error) => {
           console.error("Error getting location:", error);
+          toast({
+            variant: "destructive",
+            title: "Location Error",
+            description: "Unable to get your location. Distance-based features may be limited."
+          });
         }
       );
     }
-  }, []);
+  }, [toast]);
 
   const calculateDistance = (storeLat: number, storeLng: number) => {
     if (!userLocation) return Infinity;
@@ -74,7 +82,12 @@ const SearchResults = () => {
 
         if (error) throw error;
 
-        let filteredProducts = [...(data as Product[])];
+        let filteredProducts = [...(data as Product[])].map(product => ({
+          ...product,
+          distance: product.store_latitude && product.store_longitude && userLocation
+            ? calculateDistance(product.store_latitude, product.store_longitude)
+            : Infinity
+        }));
 
         // Apply price range filter
         if (priceRange !== "all") {
@@ -88,6 +101,14 @@ const SearchResults = () => {
         if (category !== "all") {
           filteredProducts = filteredProducts.filter(
             product => product.category.toLowerCase() === category.toLowerCase()
+          );
+        }
+
+        // Apply distance filter
+        if (distanceRange !== "all" && userLocation) {
+          const maxDistance = parseInt(distanceRange);
+          filteredProducts = filteredProducts.filter(
+            product => product.distance && product.distance <= maxDistance
           );
         }
 
@@ -106,13 +127,7 @@ const SearchResults = () => {
             filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
             break;
           case "distance":
-            if (userLocation) {
-              filteredProducts.sort((a, b) => {
-                const distanceA = calculateDistance(a.latitude, a.longitude);
-                const distanceB = calculateDistance(b.latitude, b.longitude);
-                return distanceA - distanceB;
-              });
-            }
+            filteredProducts.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
             break;
         }
 
@@ -129,7 +144,7 @@ const SearchResults = () => {
     };
 
     fetchProducts();
-  }, [query, sortBy, priceRange, category, userLocation, toast]);
+  }, [query, sortBy, priceRange, category, distanceRange, userLocation, toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -173,6 +188,19 @@ const SearchResults = () => {
             </SelectContent>
           </Select>
 
+          <Select value={distanceRange} onValueChange={setDistanceRange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Distance Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any Distance</SelectItem>
+              <SelectItem value="5">Within 5 km</SelectItem>
+              <SelectItem value="10">Within 10 km</SelectItem>
+              <SelectItem value="20">Within 20 km</SelectItem>
+              <SelectItem value="50">Within 50 km</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger>
               <SelectValue placeholder="Category" />
@@ -203,6 +231,11 @@ const SearchResults = () => {
                 <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
                 <p className="text-gray-600 mb-2">Category: {product.category}</p>
                 <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
+                {product.distance && product.distance !== Infinity && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Distance: {product.distance.toFixed(1)} km
+                  </p>
+                )}
                 <p className="text-sm text-gray-500 mt-2">
                   Seller: {product.retailer_name}
                 </p>
