@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { Mail, User } from "lucide-react";
 import { OAuthButtons } from "./OAuthButtons";
 import { RegisterFields } from "./RegisterFields";
 import { validatePassword } from "@/utils/passwordValidation";
@@ -64,7 +64,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         toast({
           variant: "destructive",
           title: "Required fields",
-          description: `Please enter your name and ${role === 'customer' ? 'username' : 'store name'}.`,
+          description: `Please enter your ${role === 'customer' ? 'name and username' : 'name and store name'}.`,
         });
         return;
       }
@@ -108,7 +108,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         await signInWithEmail(email, password);
         toast({
           title: "Logged in successfully",
-          description: `Welcome back!`,
+          description: "Welcome back!",
         });
         navigate("/");
       } else {
@@ -153,7 +153,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-md">
+    <div className="space-y-6">
       <OAuthButtons onOAuthSignIn={handleOAuthSignIn} />
 
       <div className="relative">
@@ -167,7 +167,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         </div>
       </div>
 
-      <form onSubmit={handleEmailSignIn} className="space-y-6">
+      <form onSubmit={handleEmailSignIn} className="space-y-4">
         {mode === "register" && (
           <RegisterFields
             name={name}
@@ -182,15 +182,19 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email or Username/Store Name</Label>
-          <Input
-            id="email"
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="Enter your email or username/store name"
-          />
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="pl-10"
+              placeholder="Enter your email address"
+            />
+          </div>
         </div>
         
         <div className="space-y-2">
@@ -201,11 +205,16 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             value={password}
             onChange={handlePasswordChange}
             required
+            className="pl-10"
+            placeholder="Enter your password"
           />
           {mode === "register" && passwordErrors.length > 0 && (
-            <ul className="text-sm text-red-500 list-disc pl-4 mt-2">
+            <ul className="text-sm text-destructive space-y-1 mt-2">
               {passwordErrors.map((error, index) => (
-                <li key={index}>{error}</li>
+                <li key={index} className="flex items-center">
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive mr-2" />
+                  {error}
+                </li>
               ))}
             </ul>
           )}
@@ -216,8 +225,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           className="w-full" 
           disabled={loading || (mode === "register" && signupCooldown)}
         >
-          <Mail className="mr-2 h-4 w-4" />
-          {loading ? "Loading..." : mode === "login" ? "Sign In" : "Sign Up"}
+          <User className="mr-2 h-4 w-4" />
+          {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
         </Button>
 
         {mode === "register" && signupCooldown && (
@@ -226,11 +235,11 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           </p>
         )}
 
-        <p className="text-center text-sm">
+        <p className="text-center text-sm text-muted-foreground">
           {mode === "login" ? "Don't have an account? " : "Already have an account? "}
           <Link
             to={mode === "login" ? "/signup" : "/signin"}
-            className="text-primary hover:underline"
+            className="text-primary hover:underline font-medium"
           >
             {mode === "login" ? "Sign Up" : "Sign In"}
           </Link>
