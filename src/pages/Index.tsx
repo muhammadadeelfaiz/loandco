@@ -66,9 +66,8 @@ const Index = ({ user }) => {
           <h2 className="text-2xl font-bold text-primary">LoCo</h2>
           <div className="flex items-center gap-6">
             <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
-            <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
-            {userRole === "retailer" && (
-              <Link to="/retailers" className="text-gray-600 hover:text-primary">Retailers</Link>
+            {user?.user_metadata?.role === "retailer" && (
+              <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
             )}
             <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
             <div className="flex gap-2">
