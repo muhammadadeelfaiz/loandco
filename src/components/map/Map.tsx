@@ -56,7 +56,9 @@ const Map = ({
           : 'mapbox://styles/mapbox/streets-v11',
         center: [initialCenter.lng, initialCenter.lat],
         zoom: defaultZoom,
-        minZoom: 2
+        minZoom: 2,
+        width: mapContainer.current.offsetWidth,
+        height: mapContainer.current.offsetHeight
       });
 
       map.on('load', () => {
@@ -69,6 +71,8 @@ const Map = ({
             essential: true
           });
         }
+        // Force a resize to ensure the map fills the container
+        map.resize();
       });
 
       map.on('error', (e) => {
@@ -89,7 +93,17 @@ const Map = ({
 
       mapRef.current = map;
 
+      // Add resize handler
+      const handleResize = () => {
+        if (map) {
+          map.resize();
+        }
+      };
+
+      window.addEventListener('resize', handleResize);
+
       return () => {
+        window.removeEventListener('resize', handleResize);
         if (markerRef.current) {
           markerRef.current.remove();
         }
@@ -147,7 +161,11 @@ const Map = ({
   return (
     <div className="relative w-full h-[600px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <MapContext.Provider value={{ mapRef }}>
-        <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+        <div 
+          ref={mapContainer} 
+          className="absolute inset-0 w-full h-full" 
+          style={{ minHeight: '600px' }}
+        />
         {location && mapRef.current && (
           <CircleOverlay
             center={[location.lng, location.lat]}
