@@ -7,6 +7,7 @@ import { MapContext } from './MapContext';
 import MapControls from './MapControls';
 import CircleOverlay from './CircleOverlay';
 import MapMarkers from './MapMarkers';
+import { useTheme } from '@/hooks/useTheme';
 
 interface MapProps {
   location?: { lat: number; lng: number };
@@ -34,6 +35,7 @@ const Map = ({
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { theme } = useTheme();
 
   // Default center coordinates (Dubai)
   const defaultCenter = { lng: 55.2708, lat: 25.2048 };
@@ -43,14 +45,15 @@ const Map = ({
     if (!mapContainer.current || mapRef.current) return;
 
     try {
-      // Use the MAPBOX_PUBLIC_TOKEN from Supabase Edge Function Secrets
       mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
       
       const initialCenter = location || defaultCenter;
       
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: theme === 'dark' 
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : 'mapbox://styles/mapbox/streets-v11',
         center: [initialCenter.lng, initialCenter.lat],
         zoom: defaultZoom,
         minZoom: 2
@@ -102,7 +105,19 @@ const Map = ({
         description: error instanceof Error ? error.message : "An unexpected error occurred"
       });
     }
-  }, [location?.lat, location?.lng, toast]);
+  }, [location?.lat, location?.lng, toast, theme]);
+
+  // Update map style when theme changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.setStyle(
+      theme === 'dark'
+        ? 'mapbox://styles/mapbox/dark-v11'
+        : 'mapbox://styles/mapbox/streets-v11'
+    );
+  }, [theme]);
 
   useEffect(() => {
     const map = mapRef.current;
