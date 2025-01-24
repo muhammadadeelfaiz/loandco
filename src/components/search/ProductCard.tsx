@@ -27,30 +27,32 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-      <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-      <p className="text-gray-600 mb-2">Category: {product.category}</p>
-      <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
-      <div className="flex items-center justify-between">
-        {product.distance && product.distance !== Infinity && (
-          <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-            <MapPin className="w-4 h-4" />
-            <span>{product.distance.toFixed(1)} km away</span>
-          </div>
-        )}
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="text-lg font-semibold">{product.name}</h3>
         {product.store_latitude && product.store_longitude && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleLocationClick}
-            className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors mt-1"
+            className="flex items-center gap-1 text-primary hover:text-primary-foreground hover:bg-primary"
           >
             <Map className="w-4 h-4" />
             <span>View Store</span>
-          </button>
+          </Button>
         )}
       </div>
-      <p className="text-sm text-gray-500 mt-2">
+      <p className="text-gray-600 mb-2">Category: {product.category}</p>
+      <p className="text-primary font-bold mb-2">{product.price.toFixed(2)} AED</p>
+      {product.distance && product.distance !== Infinity && (
+        <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
+          <MapPin className="w-4 h-4" />
+          <span>{product.distance.toFixed(1)} km away</span>
+        </div>
+      )}
+      <p className="text-sm text-gray-500 mb-4">
         Seller: {product.retailer_name}
       </p>
-      <div className="mt-4 flex gap-2">
+      <div className="flex gap-2">
         <Button 
           variant="outline"
           className="flex-1"
