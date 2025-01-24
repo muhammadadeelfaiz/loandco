@@ -145,9 +145,9 @@ const Map = ({
   }, [readonly, onLocationChange]);
 
   return (
-    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="relative w-full h-[600px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <MapContext.Provider value={{ mapRef }}>
-        <div ref={mapContainer} className="absolute inset-0" />
+        <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
         {location && mapRef.current && (
           <CircleOverlay
             center={[location.lng, location.lat]}
