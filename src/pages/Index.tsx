@@ -53,27 +53,18 @@ const Index = ({ user }) => {
 
         {/* Featured Products */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
-            <img 
-              src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" 
-              alt="Featured Product 1"
-              className="w-full h-full object-cover"
-            />
-          </Card>
-          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
-            <img 
-              src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" 
-              alt="Featured Product 2"
-              className="w-full h-full object-cover"
-            />
-          </Card>
-          <Card className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow">
-            <img 
-              src="https://images.unsplash.com/photo-1487958449943-2429e8be8625" 
-              alt="Featured Product 3"
-              className="w-full h-full object-cover"
-            />
-          </Card>
+          {[1, 2, 3].map((item) => (
+            <Card 
+              key={item}
+              className="aspect-[16/9] overflow-hidden bg-white hover:shadow-lg transition-shadow cursor-pointer group"
+            >
+              <img 
+                src={`https://images.unsplash.com/photo-148859052850${item}-98d2b5aba04b`}
+                alt={`Featured Product ${item}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </Card>
+          ))}
         </div>
 
         {/* Popular Categories */}
@@ -90,10 +81,12 @@ const Index = ({ user }) => {
                   <img 
                     src={category.image} 
                     alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <p className="text-sm text-center text-[#8E9196]">{category.name}</p>
+                <p className="text-sm text-center text-[#8E9196] group-hover:text-[#6E59A5] transition-colors">
+                  {category.name}
+                </p>
               </div>
             ))}
           </div>
@@ -104,8 +97,11 @@ const Index = ({ user }) => {
           <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Best sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((item) => (
-              <Card key={item} className="aspect-[3/4] bg-white hover:shadow-lg transition-shadow">
-                <div className="p-4 h-full flex items-center justify-center text-[#8E9196]">
+              <Card 
+                key={item} 
+                className="aspect-[3/4] bg-white hover:shadow-lg transition-shadow cursor-pointer group"
+              >
+                <div className="p-4 h-full flex items-center justify-center text-[#8E9196] group-hover:text-[#6E59A5] transition-colors">
                   Coming Soon
                 </div>
               </Card>
@@ -118,13 +114,16 @@ const Index = ({ user }) => {
           <h2 className="text-2xl font-semibold mb-6 text-[#1A1F2C]">Top retailers in your area</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
             {stores.slice(0, 7).map((store) => (
-              <div key={store.id} className="flex flex-col items-center gap-2">
-                <Avatar className="w-20 h-20 border-2 border-white shadow-lg hover:shadow-xl transition-shadow">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+              <div 
+                key={store.id} 
+                className="flex flex-col items-center gap-2 cursor-pointer group"
+              >
+                <Avatar className="w-20 h-20 border-2 border-white shadow-lg group-hover:shadow-xl transition-shadow bg-[#9b87f5]">
+                  <AvatarFallback className="bg-[#9b87f5] text-white text-xl">
                     {store.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-center line-clamp-2 text-[#1A1F2C]">
+                <span className="text-sm font-medium text-center line-clamp-2 text-[#1A1F2C] group-hover:text-[#6E59A5] transition-colors">
                   {store.name}
                 </span>
                 {store.distance && (
