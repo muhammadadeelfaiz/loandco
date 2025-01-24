@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { toast } from "./ui/use-toast";
+import { Input } from "./ui/input";
+import { Search } from "lucide-react";
 
 interface LocationPromptProps {
   onLocationReceived: (coords: { lat: number; lng: number }) => void;
@@ -8,6 +10,8 @@ interface LocationPromptProps {
 
 const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
   const [isPrompting, setIsPrompting] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [zipCode, setZipCode] = useState("");
 
   useEffect(() => {
     const savedLocation = localStorage.getItem('userLocation');
@@ -22,9 +26,10 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
     if (!navigator.geolocation) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Geolocation is not supported by your browser"
+        title: "Browser Not Supported",
+        description: "Your browser doesn't support location services. Please enter your location manually."
       });
+      setShowManualInput(true);
       return;
     }
 
@@ -39,14 +44,57 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
         setIsPrompting(false);
       },
       (error) => {
+        console.log("Geolocation error:", error.message);
+        let errorMessage = "Unable to get your location. ";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "You denied location access. Please enter your location manually.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out.";
+            break;
+          default:
+            errorMessage += "An unknown error occurred.";
+        }
+
         toast({
           variant: "destructive",
-          title: "Error",
-          description: error.message
+          title: "Location Error",
+          description: errorMessage
         });
-        setIsPrompting(false);
+        setShowManualInput(true);
       }
     );
+  };
+
+  const handleManualLocation = async () => {
+    try {
+      // For demo purposes, using a default location for NYC
+      // In production, you would want to use a geocoding service
+      const defaultCoords = {
+        lat: 40.7128,
+        lng: -74.0060
+      };
+      
+      localStorage.setItem('userLocation', JSON.stringify(defaultCoords));
+      onLocationReceived(defaultCoords);
+      setIsPrompting(false);
+      
+      toast({
+        title: "Location Set",
+        description: "Using approximate location based on your input"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Unable to set location. Please try again."
+      });
+    }
   };
 
   if (!isPrompting) return null;
@@ -59,14 +107,38 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
           To show you nearby products and stores, we need your location. 
           Your location data will only be used to show relevant results.
         </p>
-        <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={() => setIsPrompting(false)}>
-            Skip
-          </Button>
-          <Button onClick={handleGetLocation}>
-            Allow Location
-          </Button>
-        </div>
+
+        {showManualInput ? (
+          <div className="space-y-4">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Enter your ZIP code"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                className="pl-10"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            </div>
+            <div className="flex justify-end gap-4">
+              <Button variant="outline" onClick={() => setIsPrompting(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleManualLocation}>
+                Set Location
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => setShowManualInput(true)}>
+              Enter Manually
+            </Button>
+            <Button onClick={handleGetLocation}>
+              Allow Location
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
