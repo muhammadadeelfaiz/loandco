@@ -2,17 +2,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Navigation as NavigationIcon } from 'lucide-react';
-import Map from "@/components/map/Map";
+import SearchFilters from "@/components/search/SearchFilters";
+import ProductCard from "@/components/search/ProductCard";
+import { useLocation as useUserLocation } from "@/hooks/useLocation";
+import { useProductFilters } from "@/hooks/useProductFilters";
 
 interface Product {
   id: string;
@@ -34,14 +29,20 @@ const SearchResults = () => {
   const query = searchParams.get("q") || "";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("default");
-  const [priceRange, setPriceRange] = useState("all");
-  const [category, setCategory] = useState("all");
-  const [distanceRange, setDistanceRange] = useState("all");
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const userLocation = useUserLocation();
+  const {
+    sortBy,
+    setSortBy,
+    priceRange,
+    setPriceRange,
+    category,
+    setCategory,
+    distanceRange,
+    setDistanceRange,
+    filterProducts,
+  } = useProductFilters();
 
   const handleContactRetailer = (retailerName: string) => {
-    // In a real application, this would open a contact form or modal
     toast({
       title: "Contact Information",
       description: `Contact ${retailerName} for more information about this product.`,
@@ -49,33 +50,11 @@ const SearchResults = () => {
   };
 
   const handleGetDirections = (lat: number, lng: number, storeName: string) => {
-    // Open in Google Maps
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${storeName}`,
       '_blank'
     );
   };
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          toast({
-            variant: "destructive",
-            title: "Location Error",
-            description: "Unable to get your location. Distance-based features may be limited."
-          });
-        }
-      );
-    }
-  }, [toast]);
 
   const calculateDistance = (storeLat: number, storeLng: number) => {
     if (!userLocation) return Infinity;
@@ -100,56 +79,14 @@ const SearchResults = () => {
 
         if (error) throw error;
 
-        let filteredProducts = [...(data as Product[])].map(product => ({
+        const productsWithDistance = (data as Product[]).map(product => ({
           ...product,
           distance: product.store_latitude && product.store_longitude && userLocation
             ? calculateDistance(product.store_latitude, product.store_longitude)
             : Infinity
         }));
 
-        // Apply price range filter
-        if (priceRange !== "all") {
-          const [min, max] = priceRange.split("-").map(Number);
-          filteredProducts = filteredProducts.filter(
-            product => product.price >= min && (max ? product.price <= max : true)
-          );
-        }
-
-        // Apply category filter
-        if (category !== "all") {
-          filteredProducts = filteredProducts.filter(
-            product => product.category.toLowerCase() === category.toLowerCase()
-          );
-        }
-
-        // Apply distance filter
-        if (distanceRange !== "all" && userLocation) {
-          const maxDistance = parseInt(distanceRange);
-          filteredProducts = filteredProducts.filter(
-            product => product.distance && product.distance <= maxDistance
-          );
-        }
-
-        // Apply sorting
-        switch (sortBy) {
-          case "price-asc":
-            filteredProducts.sort((a, b) => a.price - b.price);
-            break;
-          case "price-desc":
-            filteredProducts.sort((a, b) => b.price - a.price);
-            break;
-          case "name-asc":
-            filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-            break;
-          case "name-desc":
-            filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-            break;
-          case "distance":
-            filteredProducts.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
-            break;
-        }
-
-        setProducts(filteredProducts);
+        setProducts(productsWithDistance);
       } catch (error) {
         toast({
           variant: "destructive",
@@ -162,7 +99,9 @@ const SearchResults = () => {
     };
 
     fetchProducts();
-  }, [query, sortBy, priceRange, category, distanceRange, userLocation, toast]);
+  }, [query, userLocation, toast]);
+
+  const filteredProducts = filterProducts(products);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -178,110 +117,32 @@ const SearchResults = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default</SelectItem>
-              <SelectItem value="price-asc">Price: Low to High</SelectItem>
-              <SelectItem value="price-desc">Price: High to Low</SelectItem>
-              <SelectItem value="name-asc">Name: A to Z</SelectItem>
-              <SelectItem value="name-desc">Name: Z to A</SelectItem>
-              <SelectItem value="distance">Distance</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={priceRange} onValueChange={setPriceRange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Price Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Prices</SelectItem>
-              <SelectItem value="0-50">Under 50 AED</SelectItem>
-              <SelectItem value="50-100">50 - 100 AED</SelectItem>
-              <SelectItem value="100-500">100 - 500 AED</SelectItem>
-              <SelectItem value="500">500 AED and above</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={distanceRange} onValueChange={setDistanceRange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Distance Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any Distance</SelectItem>
-              <SelectItem value="5">Within 5 km</SelectItem>
-              <SelectItem value="10">Within 10 km</SelectItem>
-              <SelectItem value="20">Within 20 km</SelectItem>
-              <SelectItem value="50">Within 50 km</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="electronics">Electronics</SelectItem>
-              <SelectItem value="clothing">Clothing</SelectItem>
-              <SelectItem value="food">Food</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <SearchFilters
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          category={category}
+          setCategory={setCategory}
+          distanceRange={distanceRange}
+          setDistanceRange={setDistanceRange}
+        />
 
         {loading ? (
           <div className="text-center py-8">Loading...</div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-8">
             No products found matching your search criteria
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <div
+            {filteredProducts.map((product) => (
+              <ProductCard
                 key={product.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-2">Category: {product.category}</p>
-                <p className="text-primary font-bold">{product.price.toFixed(2)} AED</p>
-                {product.distance && product.distance !== Infinity && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Distance: {product.distance.toFixed(1)} km
-                  </p>
-                )}
-                <p className="text-sm text-gray-500 mt-2">
-                  Seller: {product.retailer_name}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <Button 
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => handleContactRetailer(product.retailer_name)}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Contact
-                  </Button>
-                  {product.store_latitude && product.store_longitude && (
-                    <Button 
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleGetDirections(
-                        product.store_latitude,
-                        product.store_longitude,
-                        product.retailer_name
-                      )}
-                    >
-                      <NavigationIcon className="w-4 h-4 mr-2" />
-                      Directions
-                    </Button>
-                  )}
-                </div>
-              </div>
+                product={product}
+                onContactRetailer={handleContactRetailer}
+                onGetDirections={handleGetDirections}
+              />
             ))}
           </div>
         )}
