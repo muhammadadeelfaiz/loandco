@@ -14,6 +14,12 @@ const Profile = ({ user }) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow numbers and common phone number characters
+    const value = e.target.value.replace(/[^\d+\-() ]/g, '');
+    setPhone(value);
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -32,6 +38,9 @@ const Profile = ({ user }) => {
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
+      
+      // Redirect to home page after successful update
+      navigate("/");
     } catch (error) {
       toast({
         variant: "destructive",
@@ -102,8 +111,11 @@ const Profile = ({ user }) => {
               <Input
                 id="phone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
                 placeholder="Enter your phone number"
+                type="tel"
+                pattern="[\d+\-() ]+"
+                title="Please enter a valid phone number"
               />
             </div>
 
