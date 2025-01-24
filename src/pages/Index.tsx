@@ -6,13 +6,31 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import LocationPrompt from "@/components/LocationPrompt";
 import Map from "@/components/Map";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useStores } from "@/hooks/useStores";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const STORE_CATEGORIES = [
+  "All",
+  "Grocery",
+  "Electronics",
+  "Clothing",
+  "Hardware"
+];
 
 const Index = ({ user }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchRadius, setSearchRadius] = useState(5);
+  
+  const { stores } = useStores(userLocation, selectedCategory === "All" ? null : selectedCategory);
+
+  const handleLocationReceived = (coords: { lat: number; lng: number }) => {
+    setUserLocation(coords);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -31,36 +49,13 @@ const Index = ({ user }) => {
     }
   };
 
-  const handleLocationReceived = (coords: { lat: number; lng: number }) => {
-    setUserLocation(coords);
-  };
-  const [searchRadius, setSearchRadius] = useState(5); // 5km default radius
-  const [nearbyStores, setNearbyStores] = useState([]);
-
-  // Simulated nearby stores data - in a real app, this would come from your database
-  const mockNearbyStores = [
-    {
-      id: '1',
-      lat: userLocation ? userLocation.lat + 0.01 : 0,
-      lng: userLocation ? userLocation.lng + 0.01 : 0,
-      title: 'Store A',
-      description: 'Local grocery store'
-    },
-    {
-      id: '2',
-      lat: userLocation ? userLocation.lat - 0.01 : 0,
-      lng: userLocation ? userLocation.lng - 0.01 : 0,
-      title: 'Store B',
-      description: 'Electronics store'
-    }
-  ];
-
-  useEffect(() => {
-    if (userLocation) {
-      // In a real app, you would fetch nearby stores based on location and radius
-      setNearbyStores(mockNearbyStores);
-    }
-  }, [userLocation]);
+  const mapMarkers = stores.map(store => ({
+    id: store.id,
+    lat: store.latitude,
+    lng: store.longitude,
+    title: store.name,
+    description: `${store.category} - ${store.distance ? `${store.distance.toFixed(1)}km away` : 'Distance unknown'}`
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -127,6 +122,25 @@ const Index = ({ user }) => {
           </div>
         </div>
 
+        {/* Category Filter */}
+        <div className="mb-6 max-w-xs mx-auto">
+          <Select
+            value={selectedCategory || "All"}
+            onValueChange={(value) => setSelectedCategory(value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {STORE_CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Map Section */}
         <div className="mt-8 mb-16">
           <div className="mb-4">
@@ -150,17 +164,23 @@ const Index = ({ user }) => {
             onLocationChange={handleLocationReceived}
             readonly={false}
             searchRadius={searchRadius}
-            markers={nearbyStores}
+            markers={mapMarkers}
           />
           
-          {nearbyStores.length > 0 && (
+          {stores.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-semibold mb-2">Nearby Stores</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nearbyStores.map((store) => (
+                {stores.map((store) => (
                   <div key={store.id} className="bg-white p-4 rounded-lg shadow-sm">
-                    <h4 className="font-semibold">{store.title}</h4>
-                    <p className="text-sm text-gray-600">{store.description}</p>
+                    <h4 className="font-semibold">{store.name}</h4>
+                    <p className="text-sm text-gray-600">
+                      {store.category}
+                      {store.distance && ` - ${store.distance.toFixed(1)}km away`}
+                    </p>
+                    {store.description && (
+                      <p className="text-sm text-gray-500 mt-1">{store.description}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -219,4 +239,3 @@ const Index = ({ user }) => {
 };
 
 export default Index;
-

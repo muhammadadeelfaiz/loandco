@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -77,7 +77,7 @@ const Map = ({
         const radiusSource = {
           type: 'geojson',
           data: createGeoJSONCircle([location.lng, location.lat], searchRadius)
-        } as mapboxgl.GeoJSONSourceRaw;
+        } as mapboxgl.GeoJSONSource;
 
         if (mapInstance.getSource('radius')) {
           (mapInstance.getSource('radius') as mapboxgl.GeoJSONSource).setData(
@@ -122,12 +122,10 @@ const Map = ({
     }
 
     return () => {
-      // Clean up markers
       Object.values(markersRef.current).forEach(marker => marker.remove());
       if (userMarker.current) {
         userMarker.current.remove();
       }
-      // Clean up map
       mapInstance.remove();
     };
   }, [location, onLocationChange, readonly, searchRadius]);
@@ -135,7 +133,6 @@ const Map = ({
   useEffect(() => {
     if (!map.current) return;
 
-    // Clean up old markers
     Object.entries(markersRef.current).forEach(([id, marker]) => {
       if (!markers.find(m => m.id === id)) {
         marker.remove();
@@ -143,7 +140,6 @@ const Map = ({
       }
     });
 
-    // Update or add new markers
     markers.forEach(marker => {
       if (markersRef.current[marker.id]) {
         markersRef.current[marker.id].setLngLat([marker.lng, marker.lat]);
@@ -168,7 +164,6 @@ const Map = ({
     });
 
     return () => {
-      // Clean up markers when component unmounts or markers change
       Object.values(markersRef.current).forEach(marker => marker.remove());
       markersRef.current = {};
     };
