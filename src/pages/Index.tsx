@@ -47,31 +47,30 @@ const Index = ({ user }) => {
   }));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-white">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
       <Navigation user={user} />
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-primary mb-4">
+      <div className="container mx-auto px-4 py-8 md:py-16 max-w-5xl">
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4">
             {userRole === "customer" 
               ? "Find Local Products" 
               : "Manage Your Store"
             }
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-6 md:mb-8">
             {userRole === "customer"
               ? "Connect with retailers and discover amazing products in your area"
               : "List your products and connect with local customers"
             }
           </p>
           
-          {/* Search Bar */}
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto relative">
             <Input 
               type="search" 
               placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
-              className="pl-10 h-12"
+              className="pl-10 h-11 md:h-12 text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -86,13 +85,12 @@ const Index = ({ user }) => {
           </form>
         </div>
 
-        {/* Category Filter */}
         <div className="mb-6 max-w-xs mx-auto">
           <Select
             value={selectedCategory || "All"}
             onValueChange={(value) => setSelectedCategory(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-9 md:h-10">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -105,10 +103,9 @@ const Index = ({ user }) => {
           </Select>
         </div>
 
-        {/* Map Section */}
-        <div className="mt-8 mb-16">
+        <div className="mt-6 md:mt-8 mb-12 md:mb-16">
           <div className="mb-4">
-            <label htmlFor="radius" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="radius" className="block text-sm font-medium text-gray-700 mb-2">
               Search Radius (km)
             </label>
             <input
@@ -132,11 +129,11 @@ const Index = ({ user }) => {
           />
           
           {stores.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Nearby Stores</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Nearby Stores</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {stores.map((store) => (
-                  <div key={store.id} className="bg-white p-4 rounded-lg shadow-sm">
+                  <div key={store.id} className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <h4 className="font-semibold">{store.name}</h4>
                     <p className="text-sm text-gray-600">
                       {store.category}
@@ -152,45 +149,45 @@ const Index = ({ user }) => {
           )}
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
           {userRole === "customer" ? (
             <>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Browse Products</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Browse Products</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   Browse and compare products from local retailers
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Connect</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Connect</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   Chat with retailers and get product information
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Shop Local</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Shop Local</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   Support local businesses in your community
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Manage Products</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Manage Products</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   Add and update your product listings
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Track Orders</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Track Orders</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   Manage customer orders and inventory
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                <h3 className="text-xl font-semibold mb-4">Analytics</h3>
-                <p className="text-gray-600">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow">
+                <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Analytics</h3>
+                <p className="text-gray-600 text-sm md:text-base">
                   View sales and performance metrics
                 </p>
               </div>

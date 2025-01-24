@@ -29,32 +29,32 @@ const Navigation = ({ user }: NavigationProps) => {
   };
 
   return (
-    <nav className="bg-white shadow-sm py-4">
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-bold text-primary">LoCo</Link>
-        <div className="flex items-center gap-6">
-          <Link to="/" className="text-gray-600 hover:text-primary">Home</Link>
+    <nav className="bg-white shadow-sm py-3 md:py-4">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+        <Link to="/" className="text-xl md:text-2xl font-bold text-primary">LoCo</Link>
+        <div className="flex flex-wrap items-center gap-4 md:gap-6">
+          <Link to="/" className="text-gray-600 hover:text-primary text-sm md:text-base">Home</Link>
           {user?.user_metadata?.role === "retailer" && (
-            <Link to="/products" className="text-gray-600 hover:text-primary">Products</Link>
+            <Link to="/products" className="text-gray-600 hover:text-primary text-sm md:text-base">Products</Link>
           )}
-          <Link to="/about" className="text-gray-600 hover:text-primary">About</Link>
-          <div className="flex gap-2">
+          <Link to="/about" className="text-gray-600 hover:text-primary text-sm md:text-base">About</Link>
+          <div className="flex gap-2 ml-auto">
             {user ? (
               <>
                 <Link to="/profile">
-                  <Button variant="outline">Profile</Button>
+                  <Button variant="outline" size="sm" className="h-8 md:h-9">Profile</Button>
                 </Link>
-                <Button variant="outline" onClick={handleSignOut}>
+                <Button variant="outline" size="sm" onClick={handleSignOut} className="h-8 md:h-9">
                   Sign Out
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/signin">
-                  <Button variant="outline">Sign In</Button>
+                  <Button variant="outline" size="sm" className="h-8 md:h-9">Sign In</Button>
                 </Link>
                 <Link to="/signup">
-                  <Button>Sign Up</Button>
+                  <Button size="sm" className="h-8 md:h-9">Sign Up</Button>
                 </Link>
               </>
             )}
