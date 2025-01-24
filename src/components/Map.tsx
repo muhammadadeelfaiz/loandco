@@ -79,7 +79,7 @@ const Map = ({
         
         if (!mapInstance.getSource('radius')) {
           mapInstance.addSource('radius', {
-            type: 'geojson',
+            type: 'geojson' as const,
             data: circleData
           });
           
