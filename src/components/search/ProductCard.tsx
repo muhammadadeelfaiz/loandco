@@ -31,23 +31,12 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
       <p className="text-gray-600 mb-2">Category: {product.category}</p>
       <p className="text-primary font-bold mb-2">{product.price.toFixed(2)} AED</p>
       
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         {product.distance && product.distance !== Infinity && (
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <MapPin className="w-4 h-4" />
             <span>{product.distance.toFixed(1)} km away</span>
           </div>
-        )}
-        {product.store_latitude && product.store_longitude && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleLocationClick}
-            className="flex items-center gap-1 bg-primary text-white hover:bg-primary/90"
-          >
-            <Map className="w-4 h-4" />
-            <span>View Location</span>
-          </Button>
         )}
       </div>
 
@@ -64,6 +53,16 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
           <Mail className="w-4 h-4 mr-2" />
           Contact
         </Button>
+        {product.store_latitude && product.store_longitude && (
+          <Button 
+            variant="default"
+            className="flex-1"
+            onClick={handleLocationClick}
+          >
+            <Map className="w-4 h-4 mr-2" />
+            View Location
+          </Button>
+        )}
         {product.store_latitude && product.store_longitude && (
           <Button 
             variant="outline"
