@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import MapMarker from './MapMarker';
-import CircleOverlay from './CircleOverlay';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import MapControls from './MapControls';
+import MapMarkerList from './MapMarkerList';
+import MapCircleOverlay from './MapCircleOverlay';
 
 interface MapProps {
   location?: { lat: number; lng: number };
@@ -53,31 +54,6 @@ const Map = ({
 
         newMap.on('load', () => {
           setIsLoading(false);
-          
-          if (location) {
-            const circleData = createGeoJSONCircle([location.lng, location.lat], searchRadius);
-            
-            if (!newMap.getSource('radius')) {
-              newMap.addSource('radius', {
-                type: 'geojson',
-                data: circleData
-              });
-              
-              newMap.addLayer({
-                id: 'radius',
-                type: 'fill',
-                source: 'radius',
-                paint: {
-                  'fill-color': '#3B82F6',
-                  'fill-opacity': 0.1,
-                  'fill-outline-color': '#3B82F6'
-                }
-              });
-            } else {
-              const source = newMap.getSource('radius') as mapboxgl.GeoJSONSource;
-              source.setData(circleData);
-            }
-          }
         });
 
         newMap.on('error', (e) => {
@@ -89,9 +65,6 @@ const Map = ({
             description: "Please check your internet connection and try again."
           });
         });
-
-        mapInstance.current = newMap;
-        newMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         if (!readonly) {
           newMap.on('click', (e) => {
@@ -105,15 +78,11 @@ const Map = ({
                 .addTo(newMap);
             }
 
-            const source = newMap.getSource('radius') as mapboxgl.GeoJSONSource;
-            if (source) {
-              source.setData(createGeoJSONCircle([lng, lat], searchRadius));
-            }
-
             onLocationChange?.({ lng, lat });
           });
         }
 
+        mapInstance.current = newMap;
       } catch (err) {
         console.error('Map initialization error:', err);
         setError('Failed to initialize map. Please try again later.');
@@ -136,31 +105,7 @@ const Map = ({
         mapInstance.current.remove();
       }
     };
-  }, [location?.lat, location?.lng, onLocationChange, readonly, searchRadius, toast]);
-
-  const createGeoJSONCircle = (center: [number, number], radiusInKm: number) => {
-    const points = 64;
-    const coords: number[][] = [];
-    const distanceX = radiusInKm / (111.320 * Math.cos((center[1] * Math.PI) / 180));
-    const distanceY = radiusInKm / 110.574;
-
-    for (let i = 0; i < points; i++) {
-      const theta = (i / points) * (2 * Math.PI);
-      const x = distanceX * Math.cos(theta);
-      const y = distanceY * Math.sin(theta);
-      coords.push([center[0] + x, center[1] + y]);
-    }
-    coords.push(coords[0]);
-
-    return {
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [coords]
-      },
-      properties: {}
-    };
-  };
+  }, [location?.lat, location?.lng, onLocationChange, readonly, toast]);
 
   if (error) {
     return (
@@ -186,14 +131,19 @@ const Map = ({
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       )}
-      {mapInstance.current && markers.map(marker => (
-        <MapMarker
-          key={marker.id}
-          map={mapInstance.current!}
-          {...marker}
-          onMarkerRemove={() => {}}
-        />
-      ))}
+      {mapInstance.current && (
+        <>
+          <MapControls map={mapInstance.current} />
+          <MapMarkerList map={mapInstance.current} markers={markers} />
+          {location && (
+            <MapCircleOverlay
+              map={mapInstance.current}
+              center={[location.lng, location.lat]}
+              radiusInKm={searchRadius}
+            />
+          )}
+        </>
+      )}
       <style>{`
         .marker {
           background-size: cover;
