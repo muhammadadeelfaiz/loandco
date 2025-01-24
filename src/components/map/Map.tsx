@@ -43,6 +43,7 @@ const Map = ({
     if (!mapContainer.current || mapRef.current) return;
 
     try {
+      // Use the MAPBOX_PUBLIC_TOKEN from Supabase Edge Function Secrets
       mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
       
       const initialCenter = location || defaultCenter;
@@ -56,6 +57,7 @@ const Map = ({
       });
 
       map.on('load', () => {
+        console.log('Map loaded successfully');
         setIsLoading(false);
         if (location) {
           map.flyTo({
@@ -64,6 +66,16 @@ const Map = ({
             essential: true
           });
         }
+      });
+
+      map.on('error', (e) => {
+        console.error('Map error:', e);
+        toast({
+          variant: "destructive",
+          title: "Map Error",
+          description: "There was an error loading the map. Please try again."
+        });
+        setIsLoading(false);
       });
 
       if (location) {
@@ -118,7 +130,7 @@ const Map = ({
   }, [readonly, onLocationChange]);
 
   return (
-    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-200">
+    <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <MapContext.Provider value={{ mapRef }}>
         <div ref={mapContainer} className="absolute inset-0" />
         {location && mapRef.current && (
@@ -131,7 +143,7 @@ const Map = ({
         <MapMarkers markers={markers} />
       </MapContext.Provider>
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       )}
