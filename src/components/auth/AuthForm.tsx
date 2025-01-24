@@ -51,14 +51,15 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         });
 
         if (error) {
+          if (error.message.includes("Email not confirmed")) {
+            throw new Error(
+              "Please verify your email before signing in. Check your inbox for the verification link."
+            );
+          }
           if (error.message.includes("Invalid login credentials")) {
             throw new Error("Invalid email or password. Please try again.");
           }
           throw error;
-        }
-
-        if (!data.user?.email_confirmed_at) {
-          throw new Error("Please verify your email before signing in.");
         }
 
         toast({
