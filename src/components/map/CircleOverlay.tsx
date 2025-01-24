@@ -9,10 +9,11 @@ interface CircleOverlayProps {
 }
 
 const CircleOverlay = ({ center, radiusInKm }: CircleOverlayProps) => {
-  const { map } = useMapContext();
+  const { mapRef } = useMapContext();
   const sourceRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
 
     const sourceId = 'radius-source';
@@ -48,7 +49,7 @@ const CircleOverlay = ({ center, radiusInKm }: CircleOverlayProps) => {
         map.removeSource(sourceId);
       }
     };
-  }, [map, center, radiusInKm]);
+  }, [mapRef, center, radiusInKm]);
 
   return null;
 };

@@ -30,7 +30,7 @@ const Map = ({
   markers = []
 }: MapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -40,7 +40,7 @@ const Map = ({
   const defaultZoom = 11;
 
   useEffect(() => {
-    if (!mapContainer.current || mapInstance.current) return;
+    if (!mapContainer.current || mapRef.current) return;
 
     try {
       mapboxgl.accessToken = process.env.MAPBOX_PUBLIC_TOKEN || 'pk.eyJ1IjoibGFzdG1hbjFvMW8xIiwiYSI6ImNtNjhhY3JrZjBkYnIycnM4czBxdHJ0ODYifQ._X04qSsIXJCSzmvgFmyFQw';
@@ -52,7 +52,7 @@ const Map = ({
         style: 'mapbox://styles/mapbox/streets-v11',
         center: [initialCenter.lng, initialCenter.lat],
         zoom: defaultZoom,
-        minZoom: 2 // Prevent zooming out too far
+        minZoom: 2
       });
 
       map.on('load', () => {
@@ -66,21 +66,20 @@ const Map = ({
         }
       });
 
-      // Add initial marker if location is provided
       if (location) {
         markerRef.current = new mapboxgl.Marker({ color: '#3B82F6' })
           .setLngLat([location.lng, location.lat])
           .addTo(map);
       }
 
-      mapInstance.current = map;
+      mapRef.current = map;
 
       return () => {
         if (markerRef.current) {
           markerRef.current.remove();
         }
         map.remove();
-        mapInstance.current = null;
+        mapRef.current = null;
       };
     } catch (error) {
       console.error('Map initialization error:', error);
@@ -94,7 +93,7 @@ const Map = ({
   }, [location?.lat, location?.lng, toast]);
 
   useEffect(() => {
-    const map = mapInstance.current;
+    const map = mapRef.current;
     if (!map || readonly) return;
 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
@@ -120,9 +119,9 @@ const Map = ({
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-gray-200">
-      <MapContext.Provider value={{ map: mapInstance.current }}>
+      <MapContext.Provider value={{ mapRef }}>
         <div ref={mapContainer} className="absolute inset-0" />
-        {location && mapInstance.current && (
+        {location && mapRef.current && (
           <CircleOverlay
             center={[location.lng, location.lat]}
             radiusInKm={searchRadius}
