@@ -34,6 +34,33 @@ const Index = ({ user }) => {
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
     setUserLocation(coords);
   };
+  const [searchRadius, setSearchRadius] = useState(5); // 5km default radius
+  const [nearbyStores, setNearbyStores] = useState([]);
+
+  // Simulated nearby stores data - in a real app, this would come from your database
+  const mockNearbyStores = [
+    {
+      id: '1',
+      lat: userLocation ? userLocation.lat + 0.01 : 0,
+      lng: userLocation ? userLocation.lng + 0.01 : 0,
+      title: 'Store A',
+      description: 'Local grocery store'
+    },
+    {
+      id: '2',
+      lat: userLocation ? userLocation.lat - 0.01 : 0,
+      lng: userLocation ? userLocation.lng - 0.01 : 0,
+      title: 'Store B',
+      description: 'Electronics store'
+    }
+  ];
+
+  useEffect(() => {
+    if (userLocation) {
+      // In a real app, you would fetch nearby stores based on location and radius
+      setNearbyStores(mockNearbyStores);
+    }
+  }, [userLocation]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -100,19 +127,45 @@ const Index = ({ user }) => {
           </div>
         </div>
 
-        {userLocation && (
-          <div className="mt-4 text-center text-sm text-gray-600">
-            Showing results near you
-          </div>
-        )}
-
-        {/* Map Component */}
+        {/* Map Section */}
         <div className="mt-8 mb-16">
+          <div className="mb-4">
+            <label htmlFor="radius" className="block text-sm font-medium text-gray-700">
+              Search Radius (km)
+            </label>
+            <input
+              type="range"
+              id="radius"
+              min="1"
+              max="20"
+              value={searchRadius}
+              onChange={(e) => setSearchRadius(Number(e.target.value))}
+              className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-sm text-gray-600">{searchRadius} km</span>
+          </div>
+          
           <Map 
             location={userLocation}
             onLocationChange={handleLocationReceived}
             readonly={false}
+            searchRadius={searchRadius}
+            markers={nearbyStores}
           />
+          
+          {nearbyStores.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold mb-2">Nearby Stores</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nearbyStores.map((store) => (
+                  <div key={store.id} className="bg-white p-4 rounded-lg shadow-sm">
+                    <h4 className="font-semibold">{store.title}</h4>
+                    <p className="text-sm text-gray-600">{store.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
