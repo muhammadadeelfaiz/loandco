@@ -22,9 +22,9 @@ const SearchFilters = ({
   setDistanceRange,
 }: SearchFiltersProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <Select value={sortBy} onValueChange={setSortBy}>
-        <SelectTrigger>
+        <SelectTrigger className="h-9">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
@@ -38,7 +38,7 @@ const SearchFilters = ({
       </Select>
 
       <Select value={priceRange} onValueChange={setPriceRange}>
-        <SelectTrigger>
+        <SelectTrigger className="h-9">
           <SelectValue placeholder="Price Range" />
         </SelectTrigger>
         <SelectContent>
@@ -51,8 +51,8 @@ const SearchFilters = ({
       </Select>
 
       <Select value={distanceRange} onValueChange={setDistanceRange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Distance Range" />
+        <SelectTrigger className="h-9">
+          <SelectValue placeholder="Distance" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Any Distance</SelectItem>
@@ -64,7 +64,7 @@ const SearchFilters = ({
       </Select>
 
       <Select value={category} onValueChange={setCategory}>
-        <SelectTrigger>
+        <SelectTrigger className="h-9">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>

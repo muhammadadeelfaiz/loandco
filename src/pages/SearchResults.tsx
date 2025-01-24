@@ -104,38 +104,51 @@ const SearchResults = () => {
   const filteredProducts = filterProducts(products);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-white">
       <Navigation user={null} />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold">
-            Search Results for "{query}"
-          </h1>
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            Back
+      <main className="container mx-auto px-4 py-4 md:py-8 max-w-5xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Search Results
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Showing results for "{query}"
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+            className="w-full md:w-auto"
+          >
+            Back to Search
           </Button>
         </div>
 
-        <SearchFilters
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          priceRange={priceRange}
-          setPriceRange={setPriceRange}
-          category={category}
-          setCategory={setCategory}
-          distanceRange={distanceRange}
-          setDistanceRange={setDistanceRange}
-        />
+        <div className="mb-6">
+          <SearchFilters
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            category={category}
+            setCategory={setCategory}
+            distanceRange={distanceRange}
+            setDistanceRange={setDistanceRange}
+          />
+        </div>
 
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-8">
-            No products found matching your search criteria
+          <div className="text-center py-12">
+            <p className="text-gray-500">No products found matching your search criteria</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -146,7 +159,7 @@ const SearchResults = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
