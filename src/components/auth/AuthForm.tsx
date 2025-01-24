@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Mail } from "lucide-react";
+import { format } from "date-fns";
 
 type AuthMode = "login" | "register";
 
@@ -29,6 +30,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [mode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [role, setRole] = useState("customer");
   const [loading, setLoading] = useState(false);
@@ -61,6 +64,39 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           variant: "destructive",
           title: "Invalid password",
           description: "Please fix the password requirements below.",
+        });
+        return;
+      }
+
+      // Validate name and date of birth for registration
+      if (!name.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Name required",
+          description: "Please enter your name.",
+        });
+        return;
+      }
+
+      if (!dateOfBirth) {
+        toast({
+          variant: "destructive",
+          title: "Date of birth required",
+          description: "Please enter your date of birth.",
+        });
+        return;
+      }
+
+      // Check if user is at least 13 years old
+      const birthDate = new Date(dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (age < 13 || (age === 13 && monthDiff < 0)) {
+        toast({
+          variant: "destructive",
+          title: "Age restriction",
+          description: "You must be at least 13 years old to register.",
         });
         return;
       }
@@ -112,6 +148,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           options: {
             data: {
               role: role,
+              name: name,
+              date_of_birth: dateOfBirth,
             },
             emailRedirectTo: `${window.location.origin}/signin`,
           },
@@ -223,6 +261,34 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
       </div>
 
       <form onSubmit={handleEmailSignIn} className="space-y-6">
+        {mode === "register" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required={mode === "register"}
+                placeholder="John Doe"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                required={mode === "register"}
+                max={format(new Date(), 'yyyy-MM-dd')}
+              />
+            </div>
+          </>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
