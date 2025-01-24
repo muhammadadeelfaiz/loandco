@@ -112,7 +112,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
   const handleOAuthSignIn = async (provider: 'facebook' | 'google') => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log(`Attempting to sign in with ${provider}`);
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/`,
@@ -121,9 +122,12 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           } : undefined
         }
       });
+      
+      console.log('OAuth response:', { data, error });
 
       if (error) throw error;
     } catch (error) {
+      console.error('OAuth error:', error);
       toast({
         variant: "destructive",
         title: "Error",
