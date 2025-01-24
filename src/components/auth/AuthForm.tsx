@@ -18,20 +18,31 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("customer");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            throw new Error("Invalid email or password. Please try again.");
+          }
+          throw error;
+        }
+
+        if (!data.user?.email_confirmed_at) {
+          throw new Error("Please verify your email before signing in.");
+        }
 
         toast({
           title: "Logged in successfully",
@@ -46,6 +57,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
             data: {
               role: role,
             },
+            emailRedirectTo: `${window.location.origin}/signin`,
           },
         });
 
@@ -62,6 +74,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         title: "Error",
         description: error instanceof Error ? error.message : "An error occurred",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,8 +119,8 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         </div>
       )}
 
-      <Button type="submit" className="w-full">
-        {mode === "login" ? "Sign In" : "Sign Up"}
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Loading..." : mode === "login" ? "Sign In" : "Sign Up"}
       </Button>
 
       <p className="text-center text-sm">
