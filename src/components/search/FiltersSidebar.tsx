@@ -7,91 +7,82 @@ interface FiltersSidebarProps {
 }
 
 const FiltersSidebar = ({ onFilterChange }: FiltersSidebarProps) => {
-  const brands = ["Nike", "Adidas", "Puma", "New Balance", "Under Armour", "Reebok"];
-  const colors = [
-    "black", "red", "purple", "pink", "gray", "white",
-    "teal", "lime", "violet", "brown", "silver", "beige"
+  const categories = [
+    "Electronics", "Fashion", "Home & Garden", 
+    "Sports", "Books", "Toys", "Beauty",
+    "Automotive", "Health", "Food & Beverages"
   ];
-  const sizes = [
-    "36", "36.5", "37", "37.5", "38", "38.5",
-    "39", "39.5", "40", "40.5", "41", "41.5"
+
+  const conditions = ["New", "Like New", "Good", "Fair"];
+  
+  const priceRanges = [
+    "Under 50 AED",
+    "50-100 AED",
+    "100-500 AED",
+    "500-1000 AED",
+    "Over 1000 AED"
   ];
 
   return (
     <div className="w-64 bg-white dark:bg-gray-800 p-4 rounded-lg space-y-6">
       <div>
-        <h3 className="font-semibold mb-3">Gender</h3>
+        <h3 className="font-semibold mb-3">Categories</h3>
         <div className="space-y-2">
-          {["Men", "Women", "Kids", "Girls", "Boys", "Unisex"].map((gender) => (
-            <div key={gender} className="flex items-center space-x-2">
+          {categories.map((category) => (
+            <div key={category} className="flex items-center space-x-2">
               <Checkbox 
-                id={`gender-${gender}`}
-                onCheckedChange={(checked) => onFilterChange("gender", { value: gender, checked })}
+                id={`category-${category}`}
+                onCheckedChange={(checked) => onFilterChange("category", { value: category, checked })}
               />
-              <Label htmlFor={`gender-${gender}`}>{gender}</Label>
+              <Label htmlFor={`category-${category}`}>{category}</Label>
             </div>
           ))}
         </div>
       </div>
 
       <div>
-        <h3 className="font-semibold mb-3">Brands</h3>
+        <h3 className="font-semibold mb-3">Condition</h3>
         <div className="space-y-2">
-          {brands.map((brand) => (
-            <div key={brand} className="flex items-center space-x-2">
+          {conditions.map((condition) => (
+            <div key={condition} className="flex items-center space-x-2">
               <Checkbox 
-                id={`brand-${brand}`}
-                onCheckedChange={(checked) => onFilterChange("brand", { value: brand, checked })}
+                id={`condition-${condition}`}
+                onCheckedChange={(checked) => onFilterChange("condition", { value: condition, checked })}
               />
-              <Label htmlFor={`brand-${brand}`}>{brand}</Label>
+              <Label htmlFor={`condition-${condition}`}>{condition}</Label>
             </div>
           ))}
         </div>
-        <button className="text-sm text-primary mt-2">see more</button>
       </div>
 
       <div>
-        <h3 className="font-semibold mb-3">Colors</h3>
-        <div className="grid grid-cols-6 gap-2">
-          {colors.map((color) => (
-            <button
-              key={color}
-              className={`w-6 h-6 rounded-full border border-gray-200 hover:ring-2 ring-primary`}
-              style={{ backgroundColor: color }}
-              onClick={() => onFilterChange("color", color)}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-3">Shoe Size</h3>
-        <div className="grid grid-cols-4 gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              className="px-2 py-1 text-sm border rounded hover:bg-primary hover:text-white transition-colors"
-              onClick={() => onFilterChange("size", size)}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-3">Price</h3>
+        <h3 className="font-semibold mb-3">Price Range</h3>
         <div className="px-2">
           <Slider
-            defaultValue={[0, 600]}
-            max={600}
+            defaultValue={[0, 1000]}
+            max={1000}
             step={50}
             onValueChange={(value) => onFilterChange("price", value)}
           />
-          <div className="flex justify-between mt-2 text-sm text-gray-600">
+          <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>0 AED</span>
-            <span>600 AED</span>
+            <span>1000+ AED</span>
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-3">Price Brackets</h3>
+        <div className="space-y-2">
+          {priceRanges.map((range) => (
+            <div key={range} className="flex items-center space-x-2">
+              <Checkbox 
+                id={`price-${range}`}
+                onCheckedChange={(checked) => onFilterChange("priceRange", { value: range, checked })}
+              />
+              <Label htmlFor={`price-${range}`}>{range}</Label>
+            </div>
+          ))}
         </div>
       </div>
     </div>

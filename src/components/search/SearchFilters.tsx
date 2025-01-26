@@ -28,12 +28,29 @@ const SearchFilters = ({
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="default">Default</SelectItem>
+          <SelectItem value="default">Featured</SelectItem>
           <SelectItem value="price-asc">Price: Low to High</SelectItem>
           <SelectItem value="price-desc">Price: High to Low</SelectItem>
           <SelectItem value="name-asc">Name: A to Z</SelectItem>
           <SelectItem value="name-desc">Name: Z to A</SelectItem>
-          <SelectItem value="distance">Distance</SelectItem>
+          <SelectItem value="distance">Nearest First</SelectItem>
+          <SelectItem value="rating">Highest Rated</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={category} onValueChange={setCategory}>
+        <SelectTrigger className="h-9">
+          <SelectValue placeholder="Category" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Categories</SelectItem>
+          <SelectItem value="electronics">Electronics</SelectItem>
+          <SelectItem value="fashion">Fashion</SelectItem>
+          <SelectItem value="home">Home & Garden</SelectItem>
+          <SelectItem value="sports">Sports</SelectItem>
+          <SelectItem value="books">Books</SelectItem>
+          <SelectItem value="toys">Toys</SelectItem>
+          <SelectItem value="beauty">Beauty</SelectItem>
         </SelectContent>
       </Select>
 
@@ -46,7 +63,8 @@ const SearchFilters = ({
           <SelectItem value="0-50">Under 50 AED</SelectItem>
           <SelectItem value="50-100">50 - 100 AED</SelectItem>
           <SelectItem value="100-500">100 - 500 AED</SelectItem>
-          <SelectItem value="500">500 AED and above</SelectItem>
+          <SelectItem value="500-1000">500 - 1000 AED</SelectItem>
+          <SelectItem value="1000">1000+ AED</SelectItem>
         </SelectContent>
       </Select>
 
@@ -56,23 +74,11 @@ const SearchFilters = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Any Distance</SelectItem>
+          <SelectItem value="1">Within 1 km</SelectItem>
           <SelectItem value="5">Within 5 km</SelectItem>
           <SelectItem value="10">Within 10 km</SelectItem>
           <SelectItem value="20">Within 20 km</SelectItem>
           <SelectItem value="50">Within 50 km</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select value={category} onValueChange={setCategory}>
-        <SelectTrigger className="h-9">
-          <SelectValue placeholder="Category" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Categories</SelectItem>
-          <SelectItem value="electronics">Electronics</SelectItem>
-          <SelectItem value="clothing">Clothing</SelectItem>
-          <SelectItem value="food">Food</SelectItem>
-          <SelectItem value="other">Other</SelectItem>
         </SelectContent>
       </Select>
     </div>
