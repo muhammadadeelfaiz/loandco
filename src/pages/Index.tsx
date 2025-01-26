@@ -69,7 +69,7 @@ const Index = ({ user }) => {
 
         {/* Popular Categories */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-white">Popular categories</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Popular categories</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
             {CATEGORIES.map((category) => (
               <div 
@@ -94,7 +94,7 @@ const Index = ({ user }) => {
 
         {/* Best Sellers */}
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-white">Best sellers</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Best sellers</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((item) => (
               <Card 
@@ -111,7 +111,7 @@ const Index = ({ user }) => {
 
         {/* Top Retailers */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6 text-white">Top retailers in your area</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Top retailers in your area</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
             {stores.slice(0, 7).map((store) => (
               <div 
