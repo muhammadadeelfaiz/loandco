@@ -84,7 +84,7 @@ const Index = ({ user }) => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <p className="text-sm text-center text-white/80 group-hover:text-white transition-colors">
+                <p className="text-sm text-center font-medium text-gray-800">
                   {category.name}
                 </p>
               </div>
@@ -123,11 +123,11 @@ const Index = ({ user }) => {
                     {store.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium text-center line-clamp-2 text-white/80 group-hover:text-white transition-colors">
+                <span className="text-sm font-medium text-center line-clamp-2 text-gray-800">
                   {store.name}
                 </span>
                 {store.distance && (
-                  <span className="text-xs text-white/60">
+                  <span className="text-xs text-gray-600">
                     {store.distance.toFixed(1)}km away
                   </span>
                 )}
