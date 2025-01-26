@@ -10,6 +10,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  retailer_id?: string;
+  retailer_name?: string;
+  distance?: number;
+  store_latitude?: number;
+  store_longitude?: number;
+}
+
 const SearchResults = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const userLocation = useLocation();
@@ -33,7 +45,7 @@ const SearchResults = () => {
         search_term: searchTerm,
       });
       if (error) throw error;
-      return data;
+      return data as Product[];
     },
   });
 
