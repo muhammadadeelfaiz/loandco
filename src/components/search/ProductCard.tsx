@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Navigation, Map } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 
 interface ProductCardProps {
   product: {
@@ -15,82 +15,36 @@ interface ProductCardProps {
   onGetDirections: (lat: number, lng: number, storeName: string) => void;
 }
 
-const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCardProps) => {
-  const handleLocationClick = () => {
-    if (product.store_latitude && product.store_longitude) {
-      window.open(
-        `https://www.google.com/maps?q=${product.store_latitude},${product.store_longitude}`,
-        '_blank'
-      );
-    }
-  };
-
+const ProductCard = ({ product, onContactRetailer }: ProductCardProps) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all duration-200 border border-gray-100">
-      <div className="space-y-2">
-        <h3 className="text-lg font-medium text-gray-900 leading-tight">{product.name}</h3>
-        
-        <div className="flex items-center justify-between">
-          <p className="text-primary font-semibold text-lg">
-            {product.price.toFixed(2)} AED
-          </p>
-          <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-            {product.category}
-          </span>
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 hover:shadow-lg transition-shadow">
+      <div className="flex gap-6">
+        <div className="w-40 h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+          {/* Placeholder for product image */}
+          <div className="text-gray-400">Product Image</div>
         </div>
-
-        <div className="flex items-center gap-1 text-sm text-gray-500">
-          {product.distance && product.distance !== Infinity && (
-            <div className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              <span className="text-xs">{product.distance.toFixed(1)} km</span>
-            </div>
-          )}
-        </div>
-
-        <p className="text-sm text-gray-600">
-          {product.retailer_name}
-        </p>
-      </div>
-      
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button 
-          variant="outline"
-          size="sm"
-          className="flex-1 min-w-[80px]"
-          onClick={() => onContactRetailer(product.retailer_name)}
-        >
-          <Mail className="w-3 h-3 mr-1" />
-          Contact
-        </Button>
         
-        {product.store_latitude && product.store_longitude && (
-          <>
-            <Button 
-              variant="default"
-              size="sm"
-              className="flex-1 min-w-[80px]"
-              onClick={handleLocationClick}
-            >
-              <Map className="w-3 h-3 mr-1" />
-              Location
-            </Button>
+        <div className="flex-1 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{product.name}</h3>
+            <p className="text-lg font-bold text-primary mt-1">
+              AED {product.price.toFixed(2)}
+            </p>
             
-            <Button 
-              variant="outline"
-              size="sm"
-              className="flex-1 min-w-[80px]"
-              onClick={() => onGetDirections(
-                product.store_latitude,
-                product.store_longitude,
-                product.retailer_name
-              )}
-            >
-              <Navigation className="w-3 h-3 mr-1" />
-              Directions
-            </Button>
-          </>
-        )}
+            <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-300">
+              <MapPin className="w-4 h-4" />
+              <span>
+                Retailer located {product.distance?.toFixed(1)}km from your current location!
+              </span>
+            </div>
+            
+            <div className="mt-2">
+              <span className="text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                Sold by {product.retailer_name}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
