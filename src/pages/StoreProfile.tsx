@@ -33,6 +33,23 @@ const StoreProfile = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Check active sessions
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const { data: store, isLoading } = useQuery({
     queryKey: ['store', id],
@@ -100,7 +117,7 @@ const StoreProfile = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-modern dark:bg-gradient-modern-dark">
-        <Navigation />
+        <Navigation user={user} />
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
@@ -115,7 +132,7 @@ const StoreProfile = () => {
   if (!store) {
     return (
       <div className="min-h-screen bg-gradient-modern dark:bg-gradient-modern-dark">
-        <Navigation />
+        <Navigation user={user} />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Store not found
@@ -127,7 +144,7 @@ const StoreProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-modern dark:bg-gradient-modern-dark">
-      <Navigation />
+      <Navigation user={user} />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="glass-card p-6 rounded-xl">
