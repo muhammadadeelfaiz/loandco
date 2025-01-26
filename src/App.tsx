@@ -14,6 +14,7 @@ import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import SearchResults from "./pages/SearchResults";
+import StoreProfile from "./pages/StoreProfile";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,10 @@ const App = () => {
                   ? <Products /> 
                   : <Navigate to="/" />
               } 
+            />
+            <Route 
+              path="/store/:id" 
+              element={<StoreProfile />} 
             />
             <Route 
               path="/about" 
