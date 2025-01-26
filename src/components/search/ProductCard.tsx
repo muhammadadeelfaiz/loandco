@@ -3,10 +3,12 @@ import { Mail, MapPin } from 'lucide-react';
 
 interface ProductCardProps {
   product: {
+    id: string;
     name: string;
     price: number;
     category: string;
-    retailer_name: string;
+    retailer_id?: string;
+    retailer_name?: string;
     distance?: number;
     store_latitude?: number;
     store_longitude?: number;
@@ -31,18 +33,22 @@ const ProductCard = ({ product, onContactRetailer }: ProductCardProps) => {
               AED {product.price.toFixed(2)}
             </p>
             
-            <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-300">
-              <MapPin className="w-4 h-4" />
-              <span>
-                Retailer located {product.distance?.toFixed(1)}km from your current location!
-              </span>
-            </div>
+            {product.distance && (
+              <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-300">
+                <MapPin className="w-4 h-4" />
+                <span>
+                  Retailer located {product.distance.toFixed(1)}km from your current location!
+                </span>
+              </div>
+            )}
             
-            <div className="mt-2">
-              <span className="text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
-                Sold by {product.retailer_name}
-              </span>
-            </div>
+            {product.retailer_name && (
+              <div className="mt-2">
+                <span className="text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                  Sold by {product.retailer_name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
