@@ -44,13 +44,16 @@ const SearchFilters = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Categories</SelectItem>
-          <SelectItem value="electronics">Electronics</SelectItem>
-          <SelectItem value="fashion">Fashion</SelectItem>
-          <SelectItem value="home">Home & Garden</SelectItem>
-          <SelectItem value="sports">Sports</SelectItem>
-          <SelectItem value="books">Books</SelectItem>
-          <SelectItem value="toys">Toys</SelectItem>
-          <SelectItem value="beauty">Beauty</SelectItem>
+          <SelectItem value="Electronics">Electronics</SelectItem>
+          <SelectItem value="Fashion">Fashion</SelectItem>
+          <SelectItem value="Home & Garden">Home & Garden</SelectItem>
+          <SelectItem value="Sports">Sports</SelectItem>
+          <SelectItem value="Books">Books</SelectItem>
+          <SelectItem value="Toys">Toys</SelectItem>
+          <SelectItem value="Beauty">Beauty</SelectItem>
+          <SelectItem value="Automotive">Automotive</SelectItem>
+          <SelectItem value="Health">Health</SelectItem>
+          <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
         </SelectContent>
       </Select>
 

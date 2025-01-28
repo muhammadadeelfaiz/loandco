@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
-import FiltersSidebar from "@/components/search/FiltersSidebar";
+import SearchFilters from "@/components/search/SearchFilters";
 import SearchBar from "@/components/home/SearchBar";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -15,15 +15,13 @@ const SearchResults = () => {
   const categoryParam = searchParams.get("category");
   const { toast } = useToast();
   
-  const [activeFilters, setActiveFilters] = useState({
-    categories: new Set<string>(categoryParam ? [categoryParam] : []),
-    conditions: new Set<string>(),
-    priceRange: [0, 1000],
-    priceBrackets: new Set<string>(),
-  });
+  const [sortBy, setSortBy] = useState("default");
+  const [priceRange, setPriceRange] = useState("all");
+  const [category, setCategory] = useState(categoryParam || "all");
+  const [distanceRange, setDistanceRange] = useState("all");
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", searchQuery, categoryParam],
+    queryKey: ["products", searchQuery, category],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -41,8 +39,8 @@ const SearchResults = () => {
         query = query.ilike("name", `%${searchQuery}%`);
       }
 
-      if (categoryParam) {
-        query = query.eq("category", categoryParam);
+      if (category && category !== "all") {
+        query = query.eq("category", category);
       }
 
       const { data, error } = await query;
@@ -51,98 +49,19 @@ const SearchResults = () => {
     },
   });
 
-  const handleFilterChange = (type: string, value: any) => {
-    setActiveFilters(prev => {
-      const newFilters = { ...prev };
-      
-      switch (type) {
-        case "category":
-          const categories = new Set(prev.categories);
-          if (value.checked) {
-            categories.clear(); // Clear other categories
-            categories.add(value.value);
-            setSearchParams(params => {
-              params.set("category", value.value);
-              return params;
-            });
-          } else {
-            categories.delete(value.value);
-            setSearchParams(params => {
-              params.delete("category");
-              return params;
-            });
-          }
-          newFilters.categories = categories;
-          break;
-        
-        case "condition":
-          const conditions = new Set(prev.conditions);
-          if (value.checked) {
-            conditions.add(value.value);
-          } else {
-            conditions.delete(value.value);
-          }
-          newFilters.conditions = conditions;
-          break;
-        
-        case "price":
-          newFilters.priceRange = value;
-          break;
-        
-        case "priceRange":
-          const priceBrackets = new Set(prev.priceBrackets);
-          if (value.checked) {
-            priceBrackets.add(value.value);
-          } else {
-            priceBrackets.delete(value.value);
-          }
-          newFilters.priceBrackets = priceBrackets;
-          break;
-      }
-      
-      return newFilters;
-    });
-  };
-
-  const handleResetFilters = () => {
-    setActiveFilters({
-      categories: new Set<string>(),
-      conditions: new Set<string>(),
-      priceRange: [0, 1000],
-      priceBrackets: new Set<string>(),
-    });
-    setSearchParams(params => {
-      params.delete("category");
-      return params;
-    });
-  };
-
-  const filterProducts = (products: any[]) => {
-    return products.filter(product => {
-      if (activeFilters.categories.size > 0 && !activeFilters.categories.has(product.category)) {
-        return false;
-      }
-
-      if (product.price < activeFilters.priceRange[0] || product.price > activeFilters.priceRange[1]) {
-        return false;
-      }
-
-      if (activeFilters.priceBrackets.size > 0) {
-        const price = product.price;
-        let matchesBracket = false;
-        
-        activeFilters.priceBrackets.forEach(bracket => {
-          const [min, max] = bracket.split('-').map(v => v === 'Over' ? Infinity : Number(v.replace(/[^0-9]/g, '')));
-          if (price >= min && (max === Infinity || price <= max)) {
-            matchesBracket = true;
-          }
-        });
-
-        if (!matchesBracket) return false;
-      }
-
-      return true;
-    });
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    if (value === "all") {
+      setSearchParams(params => {
+        params.delete("category");
+        return params;
+      });
+    } else {
+      setSearchParams(params => {
+        params.set("category", value);
+        return params;
+      });
+    }
   };
 
   const handleContactRetailer = (retailerName: string) => {
@@ -170,10 +89,7 @@ const SearchResults = () => {
 
   useEffect(() => {
     if (categoryParam) {
-      setActiveFilters(prev => ({
-        ...prev,
-        categories: new Set([categoryParam])
-      }));
+      setCategory(categoryParam);
     }
   }, [categoryParam]);
 
@@ -191,8 +107,6 @@ const SearchResults = () => {
     );
   }
 
-  const filteredProducts = filterProducts(products || []);
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navigation user={null} />
@@ -208,43 +122,44 @@ const SearchResults = () => {
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {categoryParam 
-              ? `${categoryParam} Products`
+            {category !== "all" 
+              ? `${category} Products`
               : searchQuery 
               ? `Search Results for "${searchQuery}"`
               : "All Products"}
           </h1>
+          
+          <div className="mb-6">
+            <SearchFilters 
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              category={category}
+              setCategory={handleCategoryChange}
+              distanceRange={distanceRange}
+              setDistanceRange={setDistanceRange}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <aside className="md:sticky md:top-24 h-fit transition-all duration-300 ease-in-out">
-            <FiltersSidebar 
-              onFilterChange={handleFilterChange} 
-              onReset={handleResetFilters}
-              activeFilters={activeFilters}
-            />
-          </aside>
-          
-          <div className="md:col-span-3">
-            <div className="space-y-4">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onContactRetailer={handleContactRetailer}
-                  onGetDirections={handleGetDirections}
-                />
-              ))}
-              
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No products found.
-                  </p>
-                </div>
-              )}
+        <div className="space-y-4">
+          {products && products.length > 0 ? (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onContactRetailer={handleContactRetailer}
+                onGetDirections={handleGetDirections}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400">
+                No products found.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
