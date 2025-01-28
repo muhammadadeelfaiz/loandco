@@ -148,7 +148,12 @@ const SearchResults = () => {
             products.map((product) => (
               <ProductCard
                 key={product.id}
-                product={product}
+                product={{
+                  ...product,
+                  retailer_name: product.stores?.name,
+                  store_latitude: product.stores?.latitude,
+                  store_longitude: product.stores?.longitude
+                }}
                 onContactRetailer={handleContactRetailer}
                 onGetDirections={handleGetDirections}
               />
