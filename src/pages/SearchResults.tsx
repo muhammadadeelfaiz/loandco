@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
 import FiltersSidebar from "@/components/search/FiltersSidebar";
+import SearchBar from "@/components/home/SearchBar";
 import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get("q");
+  const navigate = useNavigate();
+  const searchQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("category");
   const { toast } = useToast();
   const [activeFilters, setActiveFilters] = useState({
-    categories: new Set<string>(),
+    categories: new Set<string>(categoryFilter ? [categoryFilter] : []),
     conditions: new Set<string>(),
     priceRange: [0, 1000],
     priceBrackets: new Set<string>(),
@@ -138,6 +140,15 @@ const SearchResults = () => {
     );
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/search?q=${searchQuery}`);
+  };
+
+  const handleSearchChange = (value: string) => {
+    navigate(`/search?q=${value}`);
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -150,6 +161,14 @@ const SearchResults = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
+          <div className="mb-6">
+            <SearchBar 
+              userRole="customer"
+              searchTerm={searchQuery}
+              onSearchChange={handleSearchChange}
+              onSubmit={handleSearch}
+            />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             {categoryFilter 
               ? `${categoryFilter} Products`
