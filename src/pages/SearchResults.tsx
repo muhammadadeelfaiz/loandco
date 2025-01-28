@@ -9,7 +9,7 @@ import SearchBar from "@/components/home/SearchBar";
 import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("category");
@@ -40,10 +40,6 @@ const SearchResults = () => {
         query = query.ilike("name", `%${searchQuery}%`);
       }
 
-      if (categoryFilter) {
-        query = query.eq("category", categoryFilter);
-      }
-
       const { data, error } = await query;
 
       if (error) throw error;
@@ -60,8 +56,18 @@ const SearchResults = () => {
           const categories = new Set(prev.categories);
           if (value.checked) {
             categories.add(value.value);
+            // Update URL with the selected category
+            setSearchParams(params => {
+              params.set("category", value.value);
+              return params;
+            });
           } else {
             categories.delete(value.value);
+            // Remove category from URL
+            setSearchParams(params => {
+              params.delete("category");
+              return params;
+            });
           }
           newFilters.categories = categories;
           break;
@@ -92,6 +98,20 @@ const SearchResults = () => {
       }
       
       return newFilters;
+    });
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters({
+      categories: new Set<string>(),
+      conditions: new Set<string>(),
+      priceRange: [0, 1000],
+      priceBrackets: new Set<string>(),
+    });
+    // Clear category from URL
+    setSearchParams(params => {
+      params.delete("category");
+      return params;
     });
   };
 
@@ -179,7 +199,11 @@ const SearchResults = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <FiltersSidebar onFilterChange={handleFilterChange} />
+          <FiltersSidebar 
+            onFilterChange={handleFilterChange} 
+            onReset={handleResetFilters}
+            activeFilters={activeFilters}
+          />
           
           <div className="md:col-span-3">
             <div className="space-y-4">
