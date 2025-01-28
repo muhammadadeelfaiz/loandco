@@ -5,17 +5,22 @@ import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
 import SearchBar from "@/components/home/SearchBar";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const CATEGORIES = [
   { name: "Tablets", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
   { name: "Mobiles", image: "/lovable-uploads/be208822-034e-4099-aad8-47621d7c713e.png" },
   { name: "Laptops", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" },
-  { name: "Clothes", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
+  { name: "Clothes", image: "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png" },
   { name: "Watches", image: "/lovable-uploads/7ea95596-4821-4572-9437-984f0a07e449.png" },
   { name: "Footwear", image: "/lovable-uploads/72f9d866-4935-4e69-baf1-ffc1549c4a62.png" },
   { name: "Toys", image: "/lovable-uploads/6766b6ef-3ac2-4559-bf7e-d8fecd971b72.png" },
 ];
+
+const RETAILER_IMAGES = {
+  "Digital Store": "/lovable-uploads/5a3d5e73-5f21-4d64-8954-5684bbd5a3bb.png",
+  "Fashion Hub": "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png",
+};
 
 const Index = ({ user }) => {
   const navigate = useNavigate();
@@ -119,9 +124,17 @@ const Index = ({ user }) => {
                 className="flex flex-col items-center gap-2 cursor-pointer group"
               >
                 <Avatar className="w-20 h-20 border-2 border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xl">
-                    {store.name.charAt(0)}
-                  </AvatarFallback>
+                  {RETAILER_IMAGES[store.name] ? (
+                    <AvatarImage 
+                      src={RETAILER_IMAGES[store.name]} 
+                      alt={store.name}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xl">
+                      {store.name.charAt(0)}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 <span className="text-sm font-medium text-center line-clamp-2 text-gray-800">
                   {store.name}
