@@ -16,6 +16,7 @@ import TermsOfService from "./pages/TermsOfService";
 import SearchResults from "./pages/SearchResults";
 import StoreProfile from "./pages/StoreProfile";
 import ProductDetails from "./pages/ProductDetails";
+import CreateStore from "./pages/CreateStore";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,14 @@ const App = () => {
             <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
             <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
             <Route path="/products" element={user?.user_metadata?.role === "retailer" ? <Products /> : <Navigate to="/" />} />
+            <Route 
+              path="/create-store" 
+              element={
+                user?.user_metadata?.role === "retailer" 
+                  ? <CreateStore /> 
+                  : <Navigate to="/" />
+              } 
+            />
             <Route path="/store/:id" element={<StoreProfile />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/about" element={<About />} />
