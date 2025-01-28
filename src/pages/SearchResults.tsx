@@ -44,24 +44,30 @@ const SearchResults = () => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      
+      if (error) {
+        console.error("Error fetching products:", error);
+        throw error;
+      }
+
+      // Transform the data to match the expected format
+      return data?.map(product => ({
+        ...product,
+        retailer_name: product.stores?.name,
+        store_latitude: product.stores?.latitude,
+        store_longitude: product.stores?.longitude
+      })) || [];
     },
   });
 
   const handleCategoryChange = (value: string) => {
     setCategory(value);
     if (value === "all") {
-      setSearchParams(params => {
-        params.delete("category");
-        return params;
-      });
+      searchParams.delete("category");
     } else {
-      setSearchParams(params => {
-        params.set("category", value);
-        return params;
-      });
+      searchParams.set("category", value);
     }
+    setSearchParams(searchParams);
   };
 
   const handleContactRetailer = (retailerName: string) => {
@@ -80,11 +86,15 @@ const SearchResults = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/search?q=${searchQuery}`);
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   const handleSearchChange = (value: string) => {
-    navigate(`/search?q=${value}`);
+    const params = new URLSearchParams(searchParams);
+    params.set("q", value);
+    setSearchParams(params);
   };
 
   useEffect(() => {
