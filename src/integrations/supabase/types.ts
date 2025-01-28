@@ -77,6 +77,7 @@ export type Database = {
           id: string
           is_verified: boolean | null
           latitude: number
+          logo_url: string | null
           longitude: number
           name: string
           opening_hours: Json | null
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           latitude: number
+          logo_url?: string | null
           longitude: number
           name: string
           opening_hours?: Json | null
@@ -109,6 +111,7 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           latitude?: number
+          logo_url?: string | null
           longitude?: number
           name?: string
           opening_hours?: Json | null

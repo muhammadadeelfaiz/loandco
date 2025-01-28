@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import StoreLocationPicker from "@/components/StoreLocationPicker";
-import { Building, Mail, Phone, Globe, Clock } from "lucide-react";
+import { Building, Mail, Phone, Globe, Clock, Image } from "lucide-react";
 
 const CreateStore = () => {
   const [name, setName] = useState("");
@@ -19,9 +19,45 @@ const CreateStore = () => {
   const [website, setWebsite] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Logo file must be less than 5MB"
+        });
+        return;
+      }
+      setLogo(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadLogo = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${crypto.randomUUID()}.${fileExt}`;
+    const { error: uploadError, data } = await supabase.storage
+      .from('store-logos')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      throw new Error('Failed to upload logo');
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('store-logos')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,12 +81,25 @@ const CreateStore = () => {
       return;
     }
 
+    if (!logo) {
+      toast({
+        variant: "destructive",
+        title: "Logo Required",
+        description: "Please upload a logo for your store."
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("stores").insert([
+      // Upload logo first
+      const logoUrl = await uploadLogo(logo);
+      if (!logoUrl) throw new Error("Failed to upload logo");
+
+      const { error: storeError } = await supabase.from("stores").insert([
         {
           name,
           description,
@@ -61,10 +110,21 @@ const CreateStore = () => {
           email,
           website,
           owner_id: userData.user.id,
+          logo_url: logoUrl,
         },
       ]);
 
-      if (error) throw error;
+      if (storeError) {
+        if (storeError.code === '23505') { // Unique violation error code
+          toast({
+            variant: "destructive",
+            title: "Store Name Already Exists",
+            description: "Please choose a different store name."
+          });
+          return;
+        }
+        throw storeError;
+      }
 
       toast({
         title: "Store Created Successfully",
@@ -94,7 +154,7 @@ const CreateStore = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Building className="w-5 h-5 text-gray-500" />
-                <Label htmlFor="name">Store Name</Label>
+                <Label htmlFor="name">Store Name *</Label>
               </div>
               <Input
                 id="name"
@@ -102,7 +162,32 @@ const CreateStore = () => {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Enter your store name"
+                className="border-2 border-blue-500"
               />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Image className="w-5 h-5 text-gray-500" />
+                <Label htmlFor="logo">Store Logo *</Label>
+              </div>
+              <Input
+                id="logo"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                required
+                className="border-2 border-blue-500"
+              />
+              {logoPreview && (
+                <div className="mt-2">
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    className="w-32 h-32 object-contain border rounded"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
