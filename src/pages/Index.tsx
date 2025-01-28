@@ -42,6 +42,10 @@ const Index = ({ user }) => {
     }
   };
 
+  const handleCategoryClick = (categoryName: string) => {
+    navigate(`/search?category=${encodeURIComponent(categoryName)}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-loco">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
@@ -58,7 +62,7 @@ const Index = ({ user }) => {
         </div>
 
         <FeaturedProducts />
-        <CategoryGrid categories={CATEGORIES} />
+        <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         <BestSellers />
         <RetailerGrid stores={stores} retailerImages={RETAILER_IMAGES} />
       </main>
