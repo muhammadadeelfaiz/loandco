@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const CATEGORIES = [
-  { name: "Tablets", image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158" },
+  { name: "Tablets", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
   { name: "Mobiles", image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b" },
   { name: "Laptops", image: "https://images.unsplash.com/photo-1487958449943-2429e8be8625" },
   { name: "Clothes", image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9" },
