@@ -4,8 +4,10 @@ import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
 import SearchBar from "@/components/home/SearchBar";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
+import CategoryGrid from "@/components/home/CategoryGrid";
+import BestSellers from "@/components/home/BestSellers";
+import RetailerGrid from "@/components/home/RetailerGrid";
 
 const CATEGORIES = [
   { name: "Tablets", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
@@ -46,7 +48,6 @@ const Index = ({ user }) => {
       <Navigation user={user} />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Search Bar */}
         <div className="mb-12">
           <SearchBar 
             userRole={userRole}
@@ -56,98 +57,10 @@ const Index = ({ user }) => {
           />
         </div>
 
-        {/* Featured Products */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {[1, 2, 3].map((item) => (
-            <Card 
-              key={item}
-              className="aspect-[16/9] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
-            >
-              <img 
-                src={`https://images.unsplash.com/photo-148859052850${item}-98d2b5aba04b`}
-                alt={`Featured Product ${item}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </Card>
-          ))}
-        </div>
-
-        {/* Popular Categories */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Popular categories</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
-            {CATEGORIES.map((category) => (
-              <div 
-                key={category.name}
-                className="group cursor-pointer"
-                onClick={() => navigate(`/search?category=${category.name.toLowerCase()}`)}
-              >
-                <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-xl transition-all duration-300">
-                  <img 
-                    src={category.image} 
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <p className="text-sm text-center font-medium text-gray-800">
-                  {category.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Best Sellers */}
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Best sellers</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((item) => (
-              <Card 
-                key={item} 
-                className="aspect-[3/4] bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
-              >
-                <div className="p-4 h-full flex items-center justify-center text-secondary group-hover:text-accent transition-colors">
-                  Coming Soon
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Top Retailers */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Top retailers in your area</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
-            {stores.slice(0, 7).map((store) => (
-              <div 
-                key={store.id} 
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-              >
-                <Avatar className="w-20 h-20 border-2 border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
-                  {RETAILER_IMAGES[store.name] ? (
-                    <AvatarImage 
-                      src={RETAILER_IMAGES[store.name]} 
-                      alt={store.name}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xl">
-                      {store.name.charAt(0)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <span className="text-sm font-medium text-center line-clamp-2 text-gray-800">
-                  {store.name}
-                </span>
-                {store.distance && (
-                  <span className="text-xs text-gray-600">
-                    {store.distance.toFixed(1)}km away
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+        <FeaturedProducts />
+        <CategoryGrid categories={CATEGORIES} />
+        <BestSellers />
+        <RetailerGrid stores={stores} retailerImages={RETAILER_IMAGES} />
       </main>
     </div>
   );
