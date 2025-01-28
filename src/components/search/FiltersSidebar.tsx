@@ -33,18 +33,26 @@ const FiltersSidebar = ({ onFilterChange, onReset, activeFilters }: FiltersSideb
   ];
 
   return (
-    <div className="w-64 bg-white dark:bg-gray-800 p-4 rounded-lg space-y-6">
+    <div className="w-64 bg-white dark:bg-gray-800 p-4 rounded-lg space-y-6 transition-all duration-300">
       <div>
         <h3 className="font-semibold mb-3">Categories</h3>
         <div className="space-y-2">
           {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
+            <div key={category} className="flex items-center space-x-2 transition-opacity duration-200">
               <Checkbox 
                 id={`category-${category}`}
                 checked={activeFilters.categories.has(category)}
-                onCheckedChange={(checked) => onFilterChange("category", { value: category, checked })}
+                onCheckedChange={(checked) => {
+                  onFilterChange("category", { value: category, checked });
+                }}
+                className="transition-all duration-200"
               />
-              <Label htmlFor={`category-${category}`}>{category}</Label>
+              <Label 
+                htmlFor={`category-${category}`}
+                className="cursor-pointer transition-colors duration-200 hover:text-primary"
+              >
+                {category}
+              </Label>
             </div>
           ))}
         </div>
@@ -75,6 +83,7 @@ const FiltersSidebar = ({ onFilterChange, onReset, activeFilters }: FiltersSideb
             max={1000}
             step={50}
             onValueChange={(value) => onFilterChange("price", value)}
+            className="transition-all duration-200"
           />
           <div className="flex justify-between mt-2 text-sm text-gray-600 dark:text-gray-300">
             <span>0 AED</span>
@@ -101,7 +110,7 @@ const FiltersSidebar = ({ onFilterChange, onReset, activeFilters }: FiltersSideb
 
       <Button 
         variant="outline" 
-        className="w-full mt-4 flex items-center gap-2"
+        className="w-full mt-4 flex items-center gap-2 transition-all duration-200 hover:bg-primary hover:text-white"
         onClick={onReset}
       >
         <RotateCcw className="w-4 h-4" />

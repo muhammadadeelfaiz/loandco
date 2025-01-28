@@ -12,17 +12,18 @@ const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get("q") || "";
-  const categoryFilter = searchParams.get("category");
+  const categoryParam = searchParams.get("category");
   const { toast } = useToast();
+  
   const [activeFilters, setActiveFilters] = useState({
-    categories: new Set<string>(categoryFilter ? [categoryFilter] : []),
+    categories: new Set<string>(categoryParam ? [categoryParam] : []),
     conditions: new Set<string>(),
     priceRange: [0, 1000],
     priceBrackets: new Set<string>(),
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", searchQuery, categoryFilter],
+    queryKey: ["products", searchQuery, categoryParam],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -40,8 +41,11 @@ const SearchResults = () => {
         query = query.ilike("name", `%${searchQuery}%`);
       }
 
-      const { data, error } = await query;
+      if (categoryParam) {
+        query = query.eq("category", categoryParam);
+      }
 
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -55,15 +59,14 @@ const SearchResults = () => {
         case "category":
           const categories = new Set(prev.categories);
           if (value.checked) {
+            categories.clear(); // Clear other categories
             categories.add(value.value);
-            // Update URL with the selected category
             setSearchParams(params => {
               params.set("category", value.value);
               return params;
             });
           } else {
             categories.delete(value.value);
-            // Remove category from URL
             setSearchParams(params => {
               params.delete("category");
               return params;
@@ -108,7 +111,6 @@ const SearchResults = () => {
       priceRange: [0, 1000],
       priceBrackets: new Set<string>(),
     });
-    // Clear category from URL
     setSearchParams(params => {
       params.delete("category");
       return params;
@@ -117,17 +119,14 @@ const SearchResults = () => {
 
   const filterProducts = (products: any[]) => {
     return products.filter(product => {
-      // Category filter
       if (activeFilters.categories.size > 0 && !activeFilters.categories.has(product.category)) {
         return false;
       }
 
-      // Price range filter
       if (product.price < activeFilters.priceRange[0] || product.price > activeFilters.priceRange[1]) {
         return false;
       }
 
-      // Price brackets filter
       if (activeFilters.priceBrackets.size > 0) {
         const price = product.price;
         let matchesBracket = false;
@@ -169,8 +168,27 @@ const SearchResults = () => {
     navigate(`/search?q=${value}`);
   };
 
+  useEffect(() => {
+    if (categoryParam) {
+      setActiveFilters(prev => ({
+        ...prev,
+        categories: new Set([categoryParam])
+      }));
+    }
+  }, [categoryParam]);
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navigation user={null} />
+        <main className="container mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const filteredProducts = filterProducts(products || []);
@@ -181,7 +199,7 @@ const SearchResults = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="mb-6">
+          <div className="mb-6 sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 py-4">
             <SearchBar 
               userRole="customer"
               searchTerm={searchQuery}
@@ -190,8 +208,8 @@ const SearchResults = () => {
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {categoryFilter 
-              ? `${categoryFilter} Products`
+            {categoryParam 
+              ? `${categoryParam} Products`
               : searchQuery 
               ? `Search Results for "${searchQuery}"`
               : "All Products"}
@@ -199,11 +217,13 @@ const SearchResults = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <FiltersSidebar 
-            onFilterChange={handleFilterChange} 
-            onReset={handleResetFilters}
-            activeFilters={activeFilters}
-          />
+          <aside className="md:sticky md:top-24 h-fit transition-all duration-300 ease-in-out">
+            <FiltersSidebar 
+              onFilterChange={handleFilterChange} 
+              onReset={handleResetFilters}
+              activeFilters={activeFilters}
+            />
+          </aside>
           
           <div className="md:col-span-3">
             <div className="space-y-4">
