@@ -25,6 +25,17 @@ const CreateStore = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    if (!phone.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Phone Number Required",
+        description: "Please enter a phone number for your store."
+      });
+      return;
+    }
+
     if (!location) {
       toast({
         variant: "destructive",
@@ -120,7 +131,7 @@ const CreateStore = () => {
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Phone className="w-5 h-5 text-gray-500" />
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                 </div>
                 <Input
                   id="phone"
@@ -129,6 +140,7 @@ const CreateStore = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   required
                   placeholder="Enter phone number"
+                  className="border-2 border-blue-500"
                 />
               </div>
 
@@ -142,7 +154,6 @@ const CreateStore = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                   placeholder="Enter store email"
                 />
               </div>
@@ -163,13 +174,19 @@ const CreateStore = () => {
             </div>
 
             <div className="space-y-4">
-              <Label>Store Location</Label>
-              <div className="h-[300px] rounded-lg overflow-hidden">
+              <Label className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-gray-500" />
+                <span>Store Location *</span>
+              </Label>
+              <div className="h-[300px] rounded-lg overflow-hidden border-2 border-blue-500">
                 <StoreLocationPicker
                   onLocationSelect={setLocation}
                   initialLocation={location}
                 />
               </div>
+              {!location && (
+                <p className="text-sm text-red-500">Please select a location on the map</p>
+              )}
             </div>
 
             <Button
