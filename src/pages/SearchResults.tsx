@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
@@ -9,15 +8,12 @@ import SearchBar from "@/components/home/SearchBar";
 import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const searchQuery = searchParams.get("q") || "";
-  const categoryParam = searchParams.get("category");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
-  const [category, setCategory] = useState(categoryParam || "all");
+  const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
 
   const { data: products, isLoading } = useQuery({
@@ -49,21 +45,6 @@ const SearchResults = () => {
     },
   });
 
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
-    if (value === "all") {
-      setSearchParams(params => {
-        params.delete("category");
-        return params;
-      });
-    } else {
-      setSearchParams(params => {
-        params.set("category", value);
-        return params;
-      });
-    }
-  };
-
   const handleContactRetailer = (retailerName: string) => {
     toast({
       title: "Contact Information",
@@ -80,18 +61,11 @@ const SearchResults = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/search?q=${searchQuery}`);
   };
 
   const handleSearchChange = (value: string) => {
-    navigate(`/search?q=${value}`);
+    setSearchQuery(value);
   };
-
-  useEffect(() => {
-    if (categoryParam) {
-      setCategory(categoryParam);
-    }
-  }, [categoryParam]);
 
   if (isLoading) {
     return (
@@ -136,7 +110,7 @@ const SearchResults = () => {
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               category={category}
-              setCategory={handleCategoryChange}
+              setCategory={setCategory}
               distanceRange={distanceRange}
               setDistanceRange={setDistanceRange}
             />
