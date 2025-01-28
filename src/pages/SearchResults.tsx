@@ -5,8 +5,6 @@ import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
 import FiltersSidebar from "@/components/search/FiltersSidebar";
-import SearchFilters from "@/components/search/SearchFilters";
-import { useProductFilters } from "@/hooks/useProductFilters";
 import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
@@ -14,24 +12,12 @@ const SearchResults = () => {
   const searchQuery = searchParams.get("q");
   const categoryFilter = searchParams.get("category");
   const { toast } = useToast();
-
-  const {
-    sortBy,
-    setSortBy,
-    priceRange,
-    setPriceRange,
-    category,
-    setCategory,
-    distanceRange,
-    setDistanceRange,
-    filterProducts,
-  } = useProductFilters();
-
-  useEffect(() => {
-    if (categoryFilter) {
-      setCategory(categoryFilter);
-    }
-  }, [categoryFilter, setCategory]);
+  const [activeFilters, setActiveFilters] = useState({
+    categories: new Set<string>(),
+    conditions: new Set<string>(),
+    priceRange: [0, 1000],
+    priceBrackets: new Set<string>(),
+  });
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["products", searchQuery, categoryFilter],
@@ -62,6 +48,81 @@ const SearchResults = () => {
       return data || [];
     },
   });
+
+  const handleFilterChange = (type: string, value: any) => {
+    setActiveFilters(prev => {
+      const newFilters = { ...prev };
+      
+      switch (type) {
+        case "category":
+          const categories = new Set(prev.categories);
+          if (value.checked) {
+            categories.add(value.value);
+          } else {
+            categories.delete(value.value);
+          }
+          newFilters.categories = categories;
+          break;
+        
+        case "condition":
+          const conditions = new Set(prev.conditions);
+          if (value.checked) {
+            conditions.add(value.value);
+          } else {
+            conditions.delete(value.value);
+          }
+          newFilters.conditions = conditions;
+          break;
+        
+        case "price":
+          newFilters.priceRange = value;
+          break;
+        
+        case "priceRange":
+          const priceBrackets = new Set(prev.priceBrackets);
+          if (value.checked) {
+            priceBrackets.add(value.value);
+          } else {
+            priceBrackets.delete(value.value);
+          }
+          newFilters.priceBrackets = priceBrackets;
+          break;
+      }
+      
+      return newFilters;
+    });
+  };
+
+  const filterProducts = (products: any[]) => {
+    return products.filter(product => {
+      // Category filter
+      if (activeFilters.categories.size > 0 && !activeFilters.categories.has(product.category)) {
+        return false;
+      }
+
+      // Price range filter
+      if (product.price < activeFilters.priceRange[0] || product.price > activeFilters.priceRange[1]) {
+        return false;
+      }
+
+      // Price brackets filter
+      if (activeFilters.priceBrackets.size > 0) {
+        const price = product.price;
+        let matchesBracket = false;
+        
+        activeFilters.priceBrackets.forEach(bracket => {
+          const [min, max] = bracket.split('-').map(v => v === 'Over' ? Infinity : Number(v.replace(/[^0-9]/g, '')));
+          if (price >= min && (max === Infinity || price <= max)) {
+            matchesBracket = true;
+          }
+        });
+
+        if (!matchesBracket) return false;
+      }
+
+      return true;
+    });
+  };
 
   const handleContactRetailer = (retailerName: string) => {
     toast({
@@ -96,21 +157,10 @@ const SearchResults = () => {
               ? `Search Results for "${searchQuery}"`
               : "All Products"}
           </h1>
-          
-          <SearchFilters
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            category={category}
-            setCategory={setCategory}
-            distanceRange={distanceRange}
-            setDistanceRange={setDistanceRange}
-          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <FiltersSidebar onFilterChange={() => {}} />
+          <FiltersSidebar onFilterChange={handleFilterChange} />
           
           <div className="md:col-span-3">
             <div className="space-y-4">
