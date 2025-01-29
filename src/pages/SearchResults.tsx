@@ -71,19 +71,26 @@ const SearchResults = () => {
     
     let filteredProducts = [...products];
 
-    // Apply price range filter
-    if (priceRange !== "all") {
-      const [min, max] = priceRange.split("-").map(Number);
-      filteredProducts = filteredProducts.filter(
-        product => product.price >= min && (max ? product.price <= max : true)
-      );
-    }
-
     // Apply category filter
     if (category !== "all") {
       filteredProducts = filteredProducts.filter(
-        product => product.category === category
+        product => product.category.toLowerCase() === category.toLowerCase()
       );
+    }
+
+    // Apply price range filter
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      if (max) {
+        filteredProducts = filteredProducts.filter(
+          product => product.price >= min && product.price <= max
+        );
+      } else {
+        // Handle cases like "1000+" where there's no upper limit
+        filteredProducts = filteredProducts.filter(
+          product => product.price >= min
+        );
+      }
     }
 
     // Apply sorting
@@ -99,6 +106,18 @@ const SearchResults = () => {
         break;
       case "name-desc":
         filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "distance":
+        if (distanceRange !== "all") {
+          const maxDistance = parseInt(distanceRange);
+          filteredProducts = filteredProducts.filter(
+            product => product.distance && product.distance <= maxDistance
+          );
+        }
+        filteredProducts.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+        break;
+      case "rating":
+        // If we implement ratings later, we can add sorting here
         break;
     }
 
