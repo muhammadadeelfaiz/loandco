@@ -8,14 +8,15 @@ import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["search-products", searchQuery],
+    queryKey: ["search-products", submittedQuery],
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc('search_products', {
-          search_term: searchQuery
+          search_term: submittedQuery
         });
 
       if (error) {
@@ -25,7 +26,7 @@ const SearchResults = () => {
 
       return data || [];
     },
-    enabled: searchQuery.length > 0
+    enabled: submittedQuery.length > 0
   });
 
   const handleContactRetailer = (retailerName: string) => {
@@ -44,6 +45,7 @@ const SearchResults = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmittedQuery(searchQuery);
   };
 
   const handleSearchChange = (value: string) => {
@@ -79,7 +81,7 @@ const SearchResults = () => {
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {searchQuery ? `Search Results for "${searchQuery}"` : "All Products"}
+            {submittedQuery ? `Search Results for "${submittedQuery}"` : "All Products"}
           </h1>
         </div>
 
@@ -101,7 +103,7 @@ const SearchResults = () => {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">
-                {searchQuery ? "No products found matching your search." : "Start searching to see products."}
+                {submittedQuery ? "No products found matching your search." : "Start searching to see products."}
               </p>
             </div>
           )}
