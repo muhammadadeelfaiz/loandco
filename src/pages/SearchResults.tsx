@@ -1,23 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
-import SearchFilters from "@/components/search/SearchFilters";
 import SearchBar from "@/components/home/SearchBar";
 import { useToast } from "@/components/ui/use-toast";
 
 const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
-  
-  const [sortBy, setSortBy] = useState("default");
-  const [priceRange, setPriceRange] = useState("all");
-  const [category, setCategory] = useState("all");
-  const [distanceRange, setDistanceRange] = useState("all");
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", searchQuery, category],
+    queryKey: ["products", searchQuery],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -33,10 +27,6 @@ const SearchResults = () => {
 
       if (searchQuery) {
         query = query.ilike("name", `%${searchQuery}%`);
-      }
-
-      if (category && category !== "all") {
-        query = query.eq("category", category);
       }
 
       const { data, error } = await query;
@@ -87,7 +77,7 @@ const SearchResults = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="mb-6 sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 py-4">
+          <div className="mb-6">
             <SearchBar 
               userRole="customer"
               searchTerm={searchQuery}
@@ -96,25 +86,8 @@ const SearchResults = () => {
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {category !== "all" 
-              ? `${category} Products`
-              : searchQuery 
-              ? `Search Results for "${searchQuery}"`
-              : "All Products"}
+            {searchQuery ? `Search Results for "${searchQuery}"` : "All Products"}
           </h1>
-          
-          <div className="mb-6">
-            <SearchFilters 
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              priceRange={priceRange}
-              setPriceRange={setPriceRange}
-              category={category}
-              setCategory={setCategory}
-              distanceRange={distanceRange}
-              setDistanceRange={setDistanceRange}
-            />
-          </div>
         </div>
 
         <div className="space-y-4">
