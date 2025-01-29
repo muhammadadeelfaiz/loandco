@@ -11,28 +11,21 @@ const SearchResults = () => {
   const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", searchQuery],
+    queryKey: ["search-products", searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from("products")
-        .select(`
-          *,
-          stores:retailer_id (
-            id,
-            name,
-            latitude,
-            longitude
-          )
-        `);
+      const { data, error } = await supabase
+        .rpc('search_products', {
+          search_term: searchQuery
+        });
 
-      if (searchQuery) {
-        query = query.ilike("name", `%${searchQuery}%`);
+      if (error) {
+        console.error('Error searching products:', error);
+        throw error;
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
       return data || [];
     },
+    enabled: searchQuery.length > 0
   });
 
   const handleContactRetailer = (retailerName: string) => {
@@ -97,9 +90,9 @@ const SearchResults = () => {
                 key={product.id}
                 product={{
                   ...product,
-                  retailer_name: product.stores?.name,
-                  store_latitude: product.stores?.latitude,
-                  store_longitude: product.stores?.longitude
+                  retailer_name: product.retailer_name,
+                  store_latitude: null,
+                  store_longitude: null
                 }}
                 onContactRetailer={handleContactRetailer}
                 onGetDirections={handleGetDirections}
@@ -108,7 +101,7 @@ const SearchResults = () => {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">
-                No products found.
+                {searchQuery ? "No products found matching your search." : "Start searching to see products."}
               </p>
             </div>
           )}
