@@ -12,6 +12,7 @@ import { Database } from "@/integrations/supabase/types";
 
 type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
   retailer_name?: string;
+  distance?: number;
 };
 
 const SearchResults = () => {
@@ -47,7 +48,8 @@ const SearchResults = () => {
         
         query = (data || []).map(product => ({
           ...product,
-          retailer_name: (product.users as { name: string } | null)?.name
+          retailer_name: (product.users as { name: string } | null)?.name,
+          distance: undefined // Initialize distance as undefined
         }));
       }
 
@@ -129,10 +131,14 @@ const SearchResults = () => {
         if (distanceRange !== "all") {
           const maxDistance = parseInt(distanceRange);
           filteredProducts = filteredProducts.filter(
-            product => product.distance && product.distance <= maxDistance
+            product => typeof product.distance === 'number' && product.distance <= maxDistance
           );
         }
-        filteredProducts.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+        filteredProducts.sort((a, b) => {
+          const distA = a.distance ?? Infinity;
+          const distB = b.distance ?? Infinity;
+          return distA - distB;
+        });
         break;
       case "rating":
         // If we implement ratings later, we can add sorting here
