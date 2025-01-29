@@ -4,11 +4,18 @@ import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
 import SearchBar from "@/components/home/SearchBar";
+import SearchFilters from "@/components/search/SearchFilters";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 
 const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
+  const [sortBy, setSortBy] = useState("default");
+  const [priceRange, setPriceRange] = useState("all");
+  const [category, setCategory] = useState("all");
+  const [distanceRange, setDistanceRange] = useState("all");
   const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery({
@@ -52,6 +59,52 @@ const SearchResults = () => {
     setSearchQuery(value);
   };
 
+  const resetFilters = () => {
+    setSortBy("default");
+    setPriceRange("all");
+    setCategory("all");
+    setDistanceRange("all");
+  };
+
+  const filterProducts = (products: any[]) => {
+    if (!products) return [];
+    
+    let filteredProducts = [...products];
+
+    // Apply price range filter
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      filteredProducts = filteredProducts.filter(
+        product => product.price >= min && (max ? product.price <= max : true)
+      );
+    }
+
+    // Apply category filter
+    if (category !== "all") {
+      filteredProducts = filteredProducts.filter(
+        product => product.category === category
+      );
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "price-asc":
+        filteredProducts.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        filteredProducts.sort((a, b) => b.price - a.price);
+        break;
+      case "name-asc":
+        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "name-desc":
+        filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+    }
+
+    return filteredProducts;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -65,6 +118,8 @@ const SearchResults = () => {
       </div>
     );
   }
+
+  const filteredProducts = filterProducts(products);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -80,14 +135,38 @@ const SearchResults = () => {
               onSubmit={handleSearch}
             />
           </div>
+          
+          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center mb-6">
+            <div className="flex-1">
+              <SearchFilters
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                category={category}
+                setCategory={setCategory}
+                distanceRange={distanceRange}
+                setDistanceRange={setDistanceRange}
+              />
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={resetFilters}
+              className="w-full md:w-auto"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset Filters
+            </Button>
+          </div>
+
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             {submittedQuery ? `Search Results for "${submittedQuery}"` : "All Products"}
           </h1>
         </div>
 
         <div className="space-y-4">
-          {products && products.length > 0 ? (
-            products.map((product) => (
+          {filteredProducts && filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={{
