@@ -24,7 +24,11 @@ const RETAILER_IMAGES = {
   "Fashion Hub": "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png",
 };
 
-const Index = ({ user }) => {
+interface IndexProps {
+  user: any;
+}
+
+const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
