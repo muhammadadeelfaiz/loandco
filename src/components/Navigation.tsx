@@ -52,6 +52,14 @@ const Navigation = ({ user }: NavigationProps) => {
             >
               About
             </Link>
+            {user?.user_metadata?.role === "customer" && (
+              <Link 
+                to="/wishlist" 
+                className="text-gray-700 dark:text-gray-200 hover:text-primary transition-colors"
+              >
+                Wishlist
+              </Link>
+            )}
           </div>
         </div>
         
