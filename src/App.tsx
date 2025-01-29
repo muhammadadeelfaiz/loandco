@@ -26,16 +26,25 @@ const App = () => {
 
   useEffect(() => {
     // Check active sessions and subscribe to auth changes
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        setLoading(false);
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+        // Set up real-time subscription to auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user ?? null);
+        });
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Error checking auth state:", error);
+        setLoading(false);
+      }
+    };
 
     // Initialize theme from localStorage or system preference
     const initializeTheme = () => {
@@ -47,8 +56,8 @@ const App = () => {
       }
     };
 
+    checkUser();
     initializeTheme();
-    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {
