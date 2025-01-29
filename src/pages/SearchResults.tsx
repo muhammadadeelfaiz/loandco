@@ -21,19 +21,34 @@ const SearchResults = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", submittedQuery],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('search_products', {
+      let query;
+      
+      if (submittedQuery) {
+        const { data, error } = await supabase.rpc('search_products', {
           search_term: submittedQuery
         });
-
-      if (error) {
-        console.error('Error searching products:', error);
-        throw error;
+        if (error) throw error;
+        query = data;
+      } else {
+        // If no search query, fetch all products
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            users!products_retailer_id_fkey (
+              name as retailer_name
+            )
+          `);
+        if (error) throw error;
+        query = data.map(product => ({
+          ...product,
+          retailer_name: product.users?.name
+        }));
       }
 
-      return data || [];
+      return query || [];
     },
-    enabled: submittedQuery.length > 0
+    enabled: true // Now we'll always fetch products, even without a search query
   });
 
   const handleContactRetailer = (retailerName: string) => {
@@ -76,6 +91,7 @@ const SearchResults = () => {
       filteredProducts = filteredProducts.filter(
         product => product.category.toLowerCase() === category.toLowerCase()
       );
+      console.log('Filtered by category:', category, 'Results:', filteredProducts.length);
     }
 
     // Apply price range filter
@@ -86,7 +102,6 @@ const SearchResults = () => {
           product => product.price >= min && product.price <= max
         );
       } else {
-        // Handle cases like "1000+" where there's no upper limit
         filteredProducts = filteredProducts.filter(
           product => product.price >= min
         );
