@@ -8,6 +8,11 @@ import SearchFilters from "@/components/search/SearchFilters";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
+import { Database } from "@/integrations/supabase/types";
+
+type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
+  retailer_name?: string;
+};
 
 const SearchResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,34 +26,34 @@ const SearchResults = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", submittedQuery],
     queryFn: async () => {
-      let query;
+      let query: ProductWithRetailer[];
       
       if (submittedQuery) {
         const { data, error } = await supabase.rpc('search_products', {
           search_term: submittedQuery
         });
         if (error) throw error;
-        query = data;
+        query = data as ProductWithRetailer[];
       } else {
-        // If no search query, fetch all products
         const { data, error } = await supabase
           .from('products')
           .select(`
             *,
-            users!products_retailer_id_fkey (
-              name as retailer_name
+            users (
+              name
             )
           `);
         if (error) throw error;
-        query = data.map(product => ({
+        
+        query = (data || []).map(product => ({
           ...product,
-          retailer_name: product.users?.name
+          retailer_name: (product.users as { name: string } | null)?.name
         }));
       }
 
-      return query || [];
+      return query;
     },
-    enabled: true // Now we'll always fetch products, even without a search query
+    enabled: true
   });
 
   const handleContactRetailer = (retailerName: string) => {
@@ -81,12 +86,11 @@ const SearchResults = () => {
     setDistanceRange("all");
   };
 
-  const filterProducts = (products: any[]) => {
+  const filterProducts = (products: ProductWithRetailer[] | undefined) => {
     if (!products) return [];
     
     let filteredProducts = [...products];
 
-    // Apply category filter
     if (category !== "all") {
       filteredProducts = filteredProducts.filter(
         product => product.category.toLowerCase() === category.toLowerCase()
@@ -94,7 +98,6 @@ const SearchResults = () => {
       console.log('Filtered by category:', category, 'Results:', filteredProducts.length);
     }
 
-    // Apply price range filter
     if (priceRange !== "all") {
       const [min, max] = priceRange.split("-").map(Number);
       if (max) {
@@ -205,7 +208,6 @@ const SearchResults = () => {
                 key={product.id}
                 product={{
                   ...product,
-                  retailer_name: product.retailer_name,
                   store_latitude: null,
                   store_longitude: null
                 }}
