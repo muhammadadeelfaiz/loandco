@@ -17,6 +17,7 @@ import SearchResults from "./pages/SearchResults";
 import StoreProfile from "./pages/StoreProfile";
 import ProductDetails from "./pages/ProductDetails";
 import CreateStore from "./pages/CreateStore";
+import Wishlist from "./pages/Wishlist";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => {
             <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
             <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
             <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
+            <Route path="/wishlist" element={user ? <Wishlist user={user} /> : <Navigate to="/signin" />} />
             <Route path="/products" element={user?.user_metadata?.role === "retailer" ? <Products /> : <Navigate to="/" />} />
             <Route 
               path="/create-store" 

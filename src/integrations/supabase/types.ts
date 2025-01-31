@@ -30,6 +30,35 @@ export type Database = {
         }
         Relationships: []
       }
+      product_wishlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_wishlists_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           availability: boolean | null
@@ -61,6 +90,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "products_retailer_id_fkey"
+            columns: ["retailer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retailer_wishlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          retailer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          retailer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          retailer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retailer_wishlists_retailer_id_fkey"
             columns: ["retailer_id"]
             isOneToOne: false
             referencedRelation: "users"
