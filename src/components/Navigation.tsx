@@ -5,6 +5,15 @@ import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import SearchBar from "@/components/home/SearchBar";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User } from "lucide-react";
 
 interface NavigationProps {
   user: any;
@@ -88,23 +97,35 @@ const Navigation = ({ user }: NavigationProps) => {
                     Products
                   </Link>
                 )}
-                <Link to="/profile">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="border-primary/20 hover:border-primary/40 transition-colors"
-                  >
-                    Profile
-                  </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSignOut}
-                  className="border-primary/20 hover:border-primary/40 transition-colors"
-                >
-                  Sign Out
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-primary/20 hover:border-primary/40 transition-colors"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Account
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      {user.user_metadata?.name || user.email}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">Profile Settings</Link>
+                    </DropdownMenuItem>
+                    {userRole === "retailer" && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/create-store">Create Store</Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
