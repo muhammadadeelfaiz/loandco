@@ -53,7 +53,6 @@ const ProductDetails = () => {
       
       if (error) throw error;
 
-      // Transform the data to match our interface
       return {
         ...data,
         stores: data.retailer?.stores?.[0] || null
@@ -87,6 +86,22 @@ const ProductDetails = () => {
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
+  };
+
+  const getStorageOptions = () => {
+    return ["128GB", "256GB", "512GB", "1TB"].map((size) => ({
+      size,
+      available: true // You can make this dynamic based on your data
+    }));
+  };
+
+  const getColorOptions = () => {
+    return [
+      { name: "Space Black", hex: "#1C1C1E" },
+      { name: "Silver", hex: "#F5F5F7" },
+      { name: "Gold", hex: "#FAE7CF" },
+      { name: "Deep Purple", hex: "#635985" }
+    ];
   };
 
   if (!product) {
@@ -164,16 +179,38 @@ const ProductDetails = () => {
                 )}
               </div>
 
+              {/* Storage Options */}
               <div className="space-y-4 mb-8">
-                <h3 className="font-semibold">Select Size</h3>
-                <div className="grid grid-cols-5 gap-2">
-                  {Array.from({ length: 10 }, (_, i) => i + 38).map((size) => (
+                <h3 className="font-semibold">Select Storage</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {getStorageOptions().map((option) => (
                     <Button
-                      key={size}
+                      key={option.size}
                       variant="outline"
                       className="w-full"
+                      disabled={!option.available}
                     >
-                      {size}
+                      {option.size}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color Options */}
+              <div className="space-y-4 mb-8">
+                <h3 className="font-semibold">Select Color</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {getColorOptions().map((color) => (
+                    <Button
+                      key={color.name}
+                      variant="outline"
+                      className="w-full flex items-center gap-2"
+                    >
+                      <span 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: color.hex }}
+                      />
+                      {color.name}
                     </Button>
                   ))}
                 </div>
@@ -201,7 +238,7 @@ const ProductDetails = () => {
               <div className="prose dark:prose-invert max-w-none">
                 <h3>Product Description</h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {product.description || "No description available for this product."}
+                  {product.description || "Experience the latest iPhone with its stunning display, powerful A16 Bionic chip, and advanced camera system. Features include 5G capability, MagSafe charging, and all-day battery life."}
                 </p>
               </div>
             </div>
