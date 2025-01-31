@@ -37,6 +37,8 @@ const ProductDetails = () => {
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
+      console.log("Fetching product with ID:", id);
+      
       // First get product with retailer info
       const { data: productData, error: productError } = await supabase
         .from("products")
@@ -50,15 +52,30 @@ const ProductDetails = () => {
         .eq("id", id)
         .maybeSingle();
       
-      if (productError) throw productError;
-      if (!productData) return null;
+      if (productError) {
+        console.error("Error fetching product:", productError);
+        throw productError;
+      }
+      
+      if (!productData) {
+        console.log("No product found with ID:", id);
+        return null;
+      }
+
+      console.log("Product data:", productData);
 
       // Then get the store info for this retailer
-      const { data: storeData } = await supabase
+      const { data: storeData, error: storeError } = await supabase
         .from("stores")
         .select("*")
         .eq("owner_id", productData.retailer_id)
         .maybeSingle();
+
+      if (storeError) {
+        console.error("Error fetching store:", storeError);
+      }
+
+      console.log("Store data:", storeData);
 
       return {
         ...productData,
@@ -95,23 +112,7 @@ const ProductDetails = () => {
     return R * c;
   };
 
-  const getStorageOptions = () => {
-    return ["128GB", "256GB", "512GB", "1TB"].map((size) => ({
-      size,
-      available: true
-    }));
-  };
-
-  const getColorOptions = () => {
-    return [
-      { name: "Space Black", hex: "#1C1C1E" },
-      { name: "Silver", hex: "#F5F5F7" },
-      { name: "Gold", hex: "#FAE7CF" },
-      { name: "Deep Purple", hex: "#635985" }
-    ];
-  };
-
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navigation user={null} />
@@ -119,6 +120,24 @@ const ProductDetails = () => {
           <div className="animate-pulse space-y-4">
             <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
             <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Navigation user={null} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Product not found
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              The product you're looking for doesn't exist or has been removed.
+            </p>
           </div>
         </div>
       </div>
@@ -169,7 +188,7 @@ const ProductDetails = () => {
               <div className="flex items-center gap-4 mb-6">
                 <div>
                   <p className="text-3xl font-bold text-primary">AED {product.price}</p>
-                  <Badge variant="secondary" className="mt-1">15% off</Badge>
+                  <Badge variant="secondary" className="mt-1">Available</Badge>
                 </div>
                 {userLocation && product.store && (
                   <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
@@ -184,43 +203,6 @@ const ProductDetails = () => {
                     </span>
                   </div>
                 )}
-              </div>
-
-              {/* Storage Options */}
-              <div className="space-y-4 mb-8">
-                <h3 className="font-semibold">Select Storage</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {getStorageOptions().map((option) => (
-                    <Button
-                      key={option.size}
-                      variant="outline"
-                      className="w-full"
-                      disabled={!option.available}
-                    >
-                      {option.size}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Color Options */}
-              <div className="space-y-4 mb-8">
-                <h3 className="font-semibold">Select Color</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {getColorOptions().map((color) => (
-                    <Button
-                      key={color.name}
-                      variant="outline"
-                      className="w-full flex items-center gap-2"
-                    >
-                      <span 
-                        className="w-4 h-4 rounded-full" 
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      {color.name}
-                    </Button>
-                  ))}
-                </div>
               </div>
 
               <div className="flex gap-4 mb-8">
@@ -245,7 +227,7 @@ const ProductDetails = () => {
               <div className="prose dark:prose-invert max-w-none">
                 <h3>Product Description</h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {product.description || "Experience the latest iPhone with its stunning display, powerful A16 Bionic chip, and advanced camera system. Features include 5G capability, MagSafe charging, and all-day battery life."}
+                  {product.description || `Experience the latest ${product.name} with its stunning display, powerful processor, and advanced features. Available now at our store.`}
                 </p>
               </div>
             </div>
