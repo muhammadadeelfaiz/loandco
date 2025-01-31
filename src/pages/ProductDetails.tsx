@@ -11,9 +11,18 @@ import { Badge } from "@/components/ui/badge";
 interface Store {
   id: string;
   name: string;
-  price: number;
-  distance?: number;
+  latitude: number;
+  longitude: number;
   website?: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description?: string;
+  stores: Store | null;
 }
 
 const ProductDetails = () => {
@@ -27,18 +36,28 @@ const ProductDetails = () => {
         .from("products")
         .select(`
           *,
-          stores:retailer_id (
+          retailer:retailer_id (
             id,
             name,
-            latitude,
-            longitude
+            stores:stores (
+              id,
+              name,
+              latitude,
+              longitude,
+              website
+            )
           )
         `)
         .eq("id", id)
         .single();
       
       if (error) throw error;
-      return data;
+
+      // Transform the data to match our interface
+      return {
+        ...data,
+        stores: data.retailer?.stores?.[0] || null
+      } as Product;
     },
   });
 
@@ -130,7 +149,7 @@ const ProductDetails = () => {
                   <p className="text-3xl font-bold text-primary">AED {product.price}</p>
                   <Badge variant="secondary" className="mt-1">15% off</Badge>
                 </div>
-                {userLocation && product.stores?.latitude && (
+                {userLocation && product.stores && (
                   <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                     <MapPin className="w-4 h-4" />
                     <span>
@@ -161,10 +180,19 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex gap-4 mb-8">
-                <Button className="flex-1">
-                  <Store className="w-4 h-4 mr-2" />
-                  Visit Store
-                </Button>
+                {product.stores?.website ? (
+                  <Button className="flex-1" asChild>
+                    <a href={product.stores.website} target="_blank" rel="noopener noreferrer">
+                      <Store className="w-4 h-4 mr-2" />
+                      Visit Store
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="flex-1" disabled>
+                    <Store className="w-4 h-4 mr-2" />
+                    Store Unavailable
+                  </Button>
+                )}
                 <Button variant="outline" className="flex-1">
                   Compare Prices
                 </Button>
