@@ -22,11 +22,12 @@ interface Product {
   price: number;
   category: string;
   description?: string;
-  retailer: {
+  retailer_id: string;
+  retailer?: {
     id: string;
     name: string;
-    stores: Store[];
-  } | null;
+  };
+  store?: Store;
 }
 
 const ProductDetails = () => {
@@ -36,27 +37,33 @@ const ProductDetails = () => {
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get product with retailer info
+      const { data: productData, error: productError } = await supabase
         .from("products")
         .select(`
           *,
-          retailer:retailer_id (
+          retailer:users!products_retailer_id_fkey (
             id,
-            name,
-            stores (
-              id,
-              name,
-              latitude,
-              longitude,
-              website
-            )
+            name
           )
         `)
         .eq("id", id)
         .maybeSingle();
       
-      if (error) throw error;
-      return data as Product;
+      if (productError) throw productError;
+      if (!productData) return null;
+
+      // Then get the store info for this retailer
+      const { data: storeData } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("owner_id", productData.retailer_id)
+        .maybeSingle();
+
+      return {
+        ...productData,
+        store: storeData
+      } as Product;
     },
   });
 
@@ -118,8 +125,6 @@ const ProductDetails = () => {
     );
   }
 
-  const store = product.retailer?.stores?.[0];
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navigation user={null} />
@@ -166,15 +171,15 @@ const ProductDetails = () => {
                   <p className="text-3xl font-bold text-primary">AED {product.price}</p>
                   <Badge variant="secondary" className="mt-1">15% off</Badge>
                 </div>
-                {userLocation && store && (
+                {userLocation && product.store && (
                   <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                     <MapPin className="w-4 h-4" />
                     <span>
                       {calculateDistance(
                         userLocation.lat,
                         userLocation.lng,
-                        store.latitude,
-                        store.longitude
+                        product.store.latitude,
+                        product.store.longitude
                       ).toFixed(1)}km away
                     </span>
                   </div>
@@ -219,9 +224,9 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex gap-4 mb-8">
-                {store?.website ? (
+                {product.store?.website ? (
                   <Button className="flex-1" asChild>
-                    <a href={store.website} target="_blank" rel="noopener noreferrer">
+                    <a href={product.store.website} target="_blank" rel="noopener noreferrer">
                       <Store className="w-4 h-4 mr-2" />
                       Visit Store
                     </a>
