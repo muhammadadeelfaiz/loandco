@@ -3,7 +3,6 @@ import { useState } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
-import SearchBar from "@/components/home/SearchBar";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import BestSellers from "@/components/home/BestSellers";
@@ -50,18 +49,10 @@ const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const { stores } = useStores(userLocation);
 
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
     setUserLocation(coords);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
-    }
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -74,15 +65,6 @@ const Index = ({ user }: IndexProps) => {
       <Navigation user={user} />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-12">
-          <SearchBar 
-            userRole={userRole}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSubmit={handleSearch}
-          />
-        </div>
-
         <FeaturedProducts />
         <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         
