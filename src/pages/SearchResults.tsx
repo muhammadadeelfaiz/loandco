@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
 import ProductCard from "@/components/search/ProductCard";
-import SearchBar from "@/components/home/SearchBar";
 import SearchFilters from "@/components/search/SearchFilters";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -16,13 +15,15 @@ type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
 };
 
 const SearchResults = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
   const { toast } = useToast();
+
+  // Get search query from URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const submittedQuery = searchParams.get('q') || '';
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", submittedQuery],
@@ -49,7 +50,7 @@ const SearchResults = () => {
         query = (data || []).map(product => ({
           ...product,
           retailer_name: (product.users as { name: string } | null)?.name,
-          distance: undefined // Initialize distance as undefined
+          distance: undefined
         }));
       }
 
@@ -72,15 +73,6 @@ const SearchResults = () => {
     );
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittedQuery(searchQuery);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-  };
-
   const resetFilters = () => {
     setSortBy("default");
     setPriceRange("all");
@@ -97,7 +89,6 @@ const SearchResults = () => {
       filteredProducts = filteredProducts.filter(
         product => product.category.toLowerCase() === category.toLowerCase()
       );
-      console.log('Filtered by category:', category, 'Results:', filteredProducts.length);
     }
 
     if (priceRange !== "all") {
@@ -113,7 +104,6 @@ const SearchResults = () => {
       }
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "price-asc":
         filteredProducts.sort((a, b) => a.price - b.price);
@@ -141,7 +131,6 @@ const SearchResults = () => {
         });
         break;
       case "rating":
-        // If we implement ratings later, we can add sorting here
         break;
     }
 
@@ -170,15 +159,6 @@ const SearchResults = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="mb-6">
-            <SearchBar 
-              userRole="customer"
-              searchTerm={searchQuery}
-              onSearchChange={handleSearchChange}
-              onSubmit={handleSearch}
-            />
-          </div>
-          
           <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center mb-6">
             <div className="flex-1">
               <SearchFilters
