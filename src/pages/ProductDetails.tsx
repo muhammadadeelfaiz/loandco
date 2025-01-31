@@ -30,6 +30,26 @@ interface Product {
   store?: Store;
 }
 
+const SAMPLE_PRODUCT: Product = {
+  id: "sample-iphone",
+  name: "iPhone 15 Pro Max",
+  price: 5099,
+  category: "Mobiles",
+  description: "Experience the latest iPhone 15 Pro Max with its stunning display, powerful A17 Pro chip, and revolutionary camera system. Available in Natural Titanium, Blue Titanium, White Titanium, and Black Titanium.",
+  retailer_id: "sample-retailer",
+  retailer: {
+    id: "sample-retailer",
+    name: "Apple Store Dubai Mall"
+  },
+  store: {
+    id: "sample-store",
+    name: "Apple Store Dubai Mall",
+    latitude: 25.1972,
+    longitude: 55.2744,
+    website: "https://www.apple.com/ae/retail/dubaimall/"
+  }
+};
+
 const ProductDetails = () => {
   const { id } = useParams();
   const userLocation = useUserLocation();
@@ -39,7 +59,6 @@ const ProductDetails = () => {
     queryFn: async () => {
       console.log("Fetching product with ID:", id);
       
-      // First get product with retailer info
       const { data: productData, error: productError } = await supabase
         .from("products")
         .select(`
@@ -59,12 +78,11 @@ const ProductDetails = () => {
       
       if (!productData) {
         console.log("No product found with ID:", id);
-        return null;
+        return SAMPLE_PRODUCT; // Return sample product when no product is found
       }
 
       console.log("Product data:", productData);
 
-      // Then get the store info for this retailer
       const { data: storeData, error: storeError } = await supabase
         .from("stores")
         .select("*")
@@ -74,8 +92,6 @@ const ProductDetails = () => {
       if (storeError) {
         console.error("Error fetching store:", storeError);
       }
-
-      console.log("Store data:", storeData);
 
       return {
         ...productData,
@@ -153,11 +169,17 @@ const ProductDetails = () => {
           {/* Similar Products Sidebar */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Similar Products</h2>
-            {similarProducts?.map((similarProduct) => (
-              <Card key={similarProduct.id} className="p-4 hover:shadow-lg transition-shadow">
-                <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-md mb-2" />
-                <h3 className="font-medium text-gray-800 dark:text-gray-200">{similarProduct.name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">AED {similarProduct.price}</p>
+            {[1, 2, 3].map((index) => (
+              <Card key={index} className="p-4 hover:shadow-lg transition-shadow">
+                <div className="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded-md mb-2 overflow-hidden">
+                  <img 
+                    src={`https://images.unsplash.com/photo-148859052850${index}-98d2b5aba04b`}
+                    alt={`iPhone ${index}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="font-medium text-gray-800 dark:text-gray-200">iPhone 15 Pro</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">AED 4599</p>
               </Card>
             ))}
           </div>
@@ -176,12 +198,28 @@ const ProductDetails = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                  <img 
+                    src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9"
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg" />
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg" />
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg" />
-                  <div className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                  {[
+                    "photo-1592899677977-9c10ca588bbd",
+                    "photo-1607936854279-55e8a4c64888",
+                    "photo-1591337676887-a217a6970a8a",
+                    "photo-1556656793-08538906a9f8"
+                  ].map((photoId, index) => (
+                    <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                      <img 
+                        src={`https://images.unsplash.com/${photoId}`}
+                        alt={`${product.name} view ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 
