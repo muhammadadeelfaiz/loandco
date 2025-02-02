@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Mail, Phone, MapPin, Star, MessageSquare, Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
-import Map from "@/components/Map";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -36,7 +35,7 @@ interface Store {
 }
 
 const StoreProfile = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
@@ -48,22 +47,23 @@ const StoreProfile = () => {
     });
   }, []);
 
-  // Separate queries for store and products
+  // Separate queries for store and products with proper error handling
   const { data: store, isLoading: isStoreLoading, error: storeError } = useQuery({
     queryKey: ['store', id],
     queryFn: async () => {
       if (!id) throw new Error('Store ID is required');
 
-      const { data: storeData, error: storeError } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (storeError) throw storeError;
-      if (!storeData) throw new Error('Store not found');
-      return storeData as Store;
+      if (error) throw error;
+      if (!data) throw new Error('Store not found');
+      return data as Store;
     },
+    enabled: !!id,
     retry: 1
   });
 
@@ -72,15 +72,15 @@ const StoreProfile = () => {
     queryFn: async () => {
       if (!id) return [];
 
-      const { data: productsData, error: productsError } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('store_id', id);
 
-      if (productsError) throw productsError;
-      return productsData as Product[];
+      if (error) throw error;
+      return data as Product[];
     },
-    enabled: !!store,
+    enabled: !!store?.id,
     retry: 1
   });
 
@@ -163,73 +163,75 @@ const StoreProfile = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Navigation user={user} />
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              {store.logo_url ? (
-                <img 
-                  src={store.logo_url} 
-                  alt={`${store.name} logo`}
-                  className="w-24 h-24 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-gray-400">
-                    {store.name.charAt(0)}
-                  </span>
+        {store && (
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                {store.logo_url ? (
+                  <img 
+                    src={store.logo_url} 
+                    alt={`${store.name} logo`}
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-3xl font-bold text-gray-400">
+                      {store.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-3xl font-bold">{store.name}</h1>
+                  <p className="text-gray-600">{store.category}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-2 text-gray-600">{rating}.0</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleAddToWishlist}>
+                  <Heart className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+                <Button>
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Contact
+                </Button>
+              </div>
+            </div>
+
+            <p className="mt-6 text-gray-700">{store.description || 'No description available.'}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              {store.phone && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Phone className="w-5 h-5" />
+                  <span>{store.phone}</span>
                 </div>
               )}
-              <div>
-                <h1 className="text-3xl font-bold">{store.name}</h1>
-                <p className="text-gray-600">{store.category}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-gray-600">{rating}.0</span>
+              {store.email && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail className="w-5 h-5" />
+                  <span>{store.email}</span>
                 </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleAddToWishlist}>
-                <Heart className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-              <Button>
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Contact
-              </Button>
+              )}
+              {(store.latitude && store.longitude) && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-5 h-5" />
+                  <span>View on map</span>
+                </div>
+              )}
             </div>
           </div>
-
-          <p className="mt-6 text-gray-700">{store.description || 'No description available.'}</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            {store.phone && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-5 h-5" />
-                <span>{store.phone}</span>
-              </div>
-            )}
-            {store.email && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail className="w-5 h-5" />
-                <span>{store.email}</span>
-              </div>
-            )}
-            {(store.latitude && store.longitude) && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <MapPin className="w-5 h-5" />
-                <span>View on map</span>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
 
         <Tabs defaultValue="products" className="space-y-4">
           <TabsList>
