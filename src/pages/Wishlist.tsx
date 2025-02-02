@@ -81,13 +81,13 @@ const Wishlist = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       <Navigation user={user} />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-primary mb-8">My Wishlist</h1>
 
         <Tabs defaultValue="products" className="space-y-4">
-          <TabsList>
+          <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="products" className="space-x-2">
               <Heart className="w-4 h-4" />
               <span>Saved Products</span>
@@ -101,13 +101,16 @@ const Wishlist = ({ user }) => {
           <TabsContent value="products">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {productWishlists?.map((item) => (
-                <Card key={item.id} className="p-4">
+                <Card key={item.id} className="p-4 hover:shadow-lg transition-shadow">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{item.product.name}</h3>
-                      <p className="text-sm text-gray-600">{item.product.category}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.product.category}</p>
                       <p className="text-primary font-medium mt-2">
                         AED {item.product.price}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {item.product.availability ? "In Stock" : "Out of Stock"}
                       </p>
                     </div>
                     <Button
@@ -115,7 +118,7 @@ const Wishlist = ({ user }) => {
                       size="icon"
                       onClick={() => removeFromWishlist('product', item.id)}
                     >
-                      <Heart className="w-4 h-4 fill-current" />
+                      <Heart className="w-4 h-4 fill-current text-red-500" />
                     </Button>
                   </div>
                   <Button 
@@ -127,7 +130,7 @@ const Wishlist = ({ user }) => {
                 </Card>
               ))}
               {productWishlists?.length === 0 && (
-                <div className="col-span-full text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
                   No products in your wishlist yet
                 </div>
               )}
@@ -137,18 +140,18 @@ const Wishlist = ({ user }) => {
           <TabsContent value="retailers">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {retailerWishlists?.map((item) => (
-                <Card key={item.id} className="p-4">
+                <Card key={item.id} className="p-4 hover:shadow-lg transition-shadow">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{item.retailer.name}</h3>
-                      <p className="text-sm text-gray-600">{item.retailer.email}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{item.retailer.email}</p>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFromWishlist('retailer', item.id)}
                     >
-                      <Heart className="w-4 h-4 fill-current" />
+                      <Heart className="w-4 h-4 fill-current text-red-500" />
                     </Button>
                   </div>
                   <Button 
@@ -160,7 +163,7 @@ const Wishlist = ({ user }) => {
                 </Card>
               ))}
               {retailerWishlists?.length === 0 && (
-                <div className="col-span-full text-center py-8 text-gray-500">
+                <div className="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
                   No retailers in your wishlist yet
                 </div>
               )}
