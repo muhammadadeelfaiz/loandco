@@ -29,7 +29,10 @@ interface Store {
   email?: string;
   website?: string;
   logo_url?: string;
+  owner_id?: string;
   products?: Product[];
+  is_verified?: boolean;
+  opening_hours?: Record<string, any>;
 }
 
 const StoreProfile = () => {
