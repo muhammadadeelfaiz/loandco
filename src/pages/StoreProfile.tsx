@@ -47,7 +47,6 @@ const StoreProfile = () => {
     });
   }, []);
 
-  // Separate queries for store and products with proper error handling
   const { data: store, isLoading: isStoreLoading, error: storeError } = useQuery({
     queryKey: ['store', id],
     queryFn: async () => {
@@ -59,25 +58,36 @@ const StoreProfile = () => {
         .eq('id', id)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) throw new Error('Store not found');
+      if (error) {
+        console.error('Store fetch error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Store not found');
+      }
+
       return data as Store;
     },
     enabled: !!id,
     retry: 1
   });
 
-  const { data: products, isLoading: isProductsLoading } = useQuery({
-    queryKey: ['store-products', id],
+  const { data: products = [], isLoading: isProductsLoading } = useQuery({
+    queryKey: ['store-products', store?.id],
     queryFn: async () => {
-      if (!id) return [];
+      if (!store?.id) return [];
 
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', id);
+        .eq('store_id', store.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Products fetch error:', error);
+        throw error;
+      }
+
       return data as Product[];
     },
     enabled: !!store?.id,
@@ -115,6 +125,7 @@ const StoreProfile = () => {
         description: "Store has been added to your wishlist"
       });
     } catch (error) {
+      console.error('Wishlist error:', error);
       toast({
         variant: "destructive",
         title: "Error",
