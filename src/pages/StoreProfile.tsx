@@ -16,6 +16,7 @@ interface Product {
   price: number;
   category: string;
   availability: boolean;
+  store_id: string;
 }
 
 interface Store {
@@ -30,7 +31,6 @@ interface Store {
   website?: string | null;
   logo_url?: string | null;
   owner_id?: string | null;
-  products?: Product[];
   is_verified?: boolean;
   opening_hours?: Record<string, any> | null;
 }
@@ -40,7 +40,7 @@ const StoreProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
-  const [rating] = useState(Math.floor(Math.random() * 2) + 4); // Random rating between 4-5
+  const [rating] = useState(Math.floor(Math.random() * 2) + 4);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,30 +48,39 @@ const StoreProfile = () => {
     });
   }, []);
 
-  const { data: store, isLoading, error } = useQuery({
+  // Separate queries for store and products
+  const { data: store, isLoading: isStoreLoading, error: storeError } = useQuery({
     queryKey: ['store', id],
     queryFn: async () => {
       if (!id) throw new Error('Store ID is required');
 
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
-        .select(`
-          *,
-          products (
-            id,
-            name,
-            price,
-            category,
-            availability
-          )
-        `)
+        .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .single();
 
       if (storeError) throw storeError;
       if (!storeData) throw new Error('Store not found');
       return storeData as Store;
     },
+    retry: 1
+  });
+
+  const { data: products, isLoading: isProductsLoading } = useQuery({
+    queryKey: ['store-products', id],
+    queryFn: async () => {
+      if (!id) return [];
+
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', id);
+
+      if (productsError) throw productsError;
+      return productsData as Product[];
+    },
+    enabled: !!store,
     retry: 1
   });
 
@@ -114,14 +123,14 @@ const StoreProfile = () => {
     }
   };
 
-  if (error) {
+  if (storeError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Navigation user={user} />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              {error instanceof Error ? error.message : 'Error loading store'}
+              {storeError instanceof Error ? storeError.message : 'Error loading store'}
             </h2>
             <Button onClick={() => navigate('/')} variant="outline">
               Return to Home
@@ -132,7 +141,7 @@ const StoreProfile = () => {
     );
   }
 
-  if (isLoading || !store) {
+  if (isStoreLoading || !store) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Navigation user={user} />
@@ -230,9 +239,21 @@ const StoreProfile = () => {
           </TabsList>
 
           <TabsContent value="products">
-            {store.products && store.products.length > 0 ? (
+            {isProductsLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                {store.products.map((product) => (
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <div className="aspect-square bg-gray-200"></div>
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : products && products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {products.map((product) => (
                   <Card key={product.id} className="overflow-hidden">
                     <div className="aspect-square bg-gray-100"></div>
                     <CardContent className="p-4">

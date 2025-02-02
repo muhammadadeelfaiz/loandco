@@ -68,6 +68,7 @@ export type Database = {
           name: string
           price: number
           retailer_id: string | null
+          store_id: string | null
         }
         Insert: {
           availability?: boolean | null
@@ -77,6 +78,7 @@ export type Database = {
           name: string
           price: number
           retailer_id?: string | null
+          store_id?: string | null
         }
         Update: {
           availability?: boolean | null
@@ -86,6 +88,7 @@ export type Database = {
           name?: string
           price?: number
           retailer_id?: string | null
+          store_id?: string | null
         }
         Relationships: [
           {
@@ -93,6 +96,13 @@ export type Database = {
             columns: ["retailer_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
