@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Mail, Phone, MapPin, Star, MessageSquare, Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -22,21 +22,22 @@ interface Store {
   id: string;
   name: string;
   category: string;
-  description: string;
+  description: string | null;
   latitude: number;
   longitude: number;
-  phone?: string;
-  email?: string;
-  website?: string;
-  logo_url?: string;
-  owner_id?: string;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  logo_url?: string | null;
+  owner_id?: string | null;
   products?: Product[];
   is_verified?: boolean;
-  opening_hours?: Record<string, any>;
+  opening_hours?: Record<string, any> | null;
 }
 
 const StoreProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [rating] = useState(Math.floor(Math.random() * 2) + 4); // Random rating between 4-5
@@ -47,9 +48,11 @@ const StoreProfile = () => {
     });
   }, []);
 
-  const { data: store, isLoading } = useQuery({
+  const { data: store, isLoading, error } = useQuery({
     queryKey: ['store', id],
     queryFn: async () => {
+      if (!id) throw new Error('Store ID is required');
+
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select(`
@@ -63,11 +66,13 @@ const StoreProfile = () => {
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (storeError) throw storeError;
+      if (!storeData) throw new Error('Store not found');
       return storeData as Store;
-    }
+    },
+    retry: 1
   });
 
   const handleAddToWishlist = async () => {
@@ -80,10 +85,19 @@ const StoreProfile = () => {
       return;
     }
 
+    if (!store?.owner_id) {
+      toast({
+        title: "Error",
+        description: "Unable to add store to wishlist",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('retailer_wishlists')
-        .insert([{ user_id: user.id, retailer_id: store?.owner_id }]);
+        .insert([{ user_id: user.id, retailer_id: store.owner_id }]);
 
       if (error) throw error;
 
@@ -100,21 +114,41 @@ const StoreProfile = () => {
     }
   };
 
-  if (isLoading) {
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
         <Navigation user={user} />
         <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-32 bg-gray-200 rounded"></div>
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              {error instanceof Error ? error.message : 'Error loading store'}
+            </h2>
+            <Button onClick={() => navigate('/')} variant="outline">
+              Return to Home
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!store) return null;
+  if (isLoading || !store) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <Navigation user={user} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="space-y-3">
+              <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -126,7 +160,7 @@ const StoreProfile = () => {
               {store.logo_url ? (
                 <img 
                   src={store.logo_url} 
-                  alt={store.name} 
+                  alt={`${store.name} logo`}
                   className="w-24 h-24 rounded-full object-cover"
                 />
               ) : (
@@ -164,7 +198,7 @@ const StoreProfile = () => {
             </div>
           </div>
 
-          <p className="mt-6 text-gray-700">{store.description}</p>
+          <p className="mt-6 text-gray-700">{store.description || 'No description available.'}</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             {store.phone && (
@@ -179,10 +213,12 @@ const StoreProfile = () => {
                 <span>{store.email}</span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-gray-600">
-              <MapPin className="w-5 h-5" />
-              <span>View on map</span>
-            </div>
+            {(store.latitude && store.longitude) && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <MapPin className="w-5 h-5" />
+                <span>View on map</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -194,20 +230,28 @@ const StoreProfile = () => {
           </TabsList>
 
           <TabsContent value="products">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {store.products?.map((product) => (
-                <Card key={product.id} className="overflow-hidden">
-                  <div className="aspect-square bg-gray-100"></div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold">{product.name}</h3>
-                    <p className="text-sm text-gray-600">{product.category}</p>
-                    <p className="text-primary font-medium mt-2">
-                      AED {product.price}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {store.products && store.products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {store.products.map((product) => (
+                  <Card key={product.id} className="overflow-hidden">
+                    <div className="aspect-square bg-gray-100"></div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold">{product.name}</h3>
+                      <p className="text-sm text-gray-600">{product.category}</p>
+                      <p className="text-primary font-medium mt-2">
+                        AED {product.price.toFixed(2)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">
+                  No products available at the moment.
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="reviews">
@@ -219,7 +263,7 @@ const StoreProfile = () => {
                     <div>
                       <p className="font-medium">Alan Smith</p>
                       <p className="text-sm text-gray-600">
-                        "Lo&Co helped me save money by showing me the cheapest options available nearby."
+                        "Great store with excellent service!"
                       </p>
                     </div>
                   </div>
