@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Store {
@@ -12,6 +13,12 @@ interface RetailerGridProps {
 }
 
 const RetailerGrid = ({ stores, retailerImages }: RetailerGridProps) => {
+  const navigate = useNavigate();
+
+  const handleStoreClick = (storeId: string) => {
+    navigate(`/store/${storeId}`);
+  };
+
   return (
     <section>
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Top retailers in your area</h2>
@@ -20,6 +27,7 @@ const RetailerGrid = ({ stores, retailerImages }: RetailerGridProps) => {
           <div 
             key={store.id} 
             className="flex flex-col items-center gap-2 cursor-pointer group"
+            onClick={() => handleStoreClick(store.id)}
           >
             <Avatar className="w-20 h-20 border-2 border-white/20 shadow-lg group-hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm">
               {retailerImages[store.name] ? (
