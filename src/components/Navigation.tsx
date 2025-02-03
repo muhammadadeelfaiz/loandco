@@ -16,7 +16,7 @@ import {
 import { User } from "lucide-react";
 
 interface NavigationProps {
-  user: any; // You might want to define a more specific type here
+  user: any;
 }
 
 const Navigation = ({ user }: NavigationProps) => {
@@ -117,6 +117,9 @@ const Navigation = ({ user }: NavigationProps) => {
                       {user.user_metadata?.name || user.email}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/account">My Account</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/profile">Profile Settings</Link>
                     </DropdownMenuItem>
