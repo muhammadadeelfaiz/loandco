@@ -18,6 +18,7 @@ import StoreProfile from "./pages/StoreProfile";
 import ProductDetails from "./pages/ProductDetails";
 import CreateStore from "./pages/CreateStore";
 import Wishlist from "./pages/Wishlist";
+import CompareProducts from "./pages/CompareProducts";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => {
             />
             <Route path="/store/:id" element={<StoreProfile />} />
             <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/compare/:id" element={<CompareProducts />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
