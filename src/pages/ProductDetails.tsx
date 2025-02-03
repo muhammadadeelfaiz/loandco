@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
@@ -53,6 +53,7 @@ const SAMPLE_PRODUCT: Product = {
 const ProductDetails = () => {
   const { id } = useParams();
   const userLocation = useUserLocation();
+  const navigate = useNavigate(); // Add this line
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],

@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
 
+interface NavigationProps {
+  user: any; // You might want to define a more specific type here
+}
+
 const Navigation = ({ user }: NavigationProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
