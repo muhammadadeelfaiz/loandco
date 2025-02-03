@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Star, ExternalLink, MapPin } from "lucide-react";
+import { DollarSign, Star, ExternalLink, MapPin, Phone, Mail, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Retailer {
@@ -13,6 +13,10 @@ interface Retailer {
   link: string;
   location?: string;
   inStock?: boolean;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 interface Product {
@@ -20,6 +24,7 @@ interface Product {
   name: string;
   category: string;
   image: string;
+  description: string;
   retailers: Retailer[];
 }
 
@@ -29,6 +34,7 @@ const MOCK_PRODUCT: Product = {
   name: "iPhone 15 Pro Max",
   category: "Smartphones",
   image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png",
+  description: "Experience the latest iPhone 15 Pro Max with its stunning display, powerful A17 Pro chip, and revolutionary camera system. Available in Natural Titanium, Blue Titanium, White Titanium, and Black Titanium.",
   retailers: [
     {
       name: "Local Store",
@@ -37,7 +43,11 @@ const MOCK_PRODUCT: Product = {
       rating: 4.5,
       link: "#",
       location: "Dubai Mall",
-      inStock: true
+      inStock: true,
+      address: "Financial Center Road, Downtown Dubai, UAE",
+      phone: "+971 4 123 4567",
+      email: "contact@localstore.ae",
+      website: "www.localstore.ae"
     },
     {
       name: "Noon",
@@ -46,7 +56,10 @@ const MOCK_PRODUCT: Product = {
       rating: 4.2,
       link: "#",
       location: "Online Store",
-      inStock: true
+      inStock: true,
+      phone: "800 666 6",
+      email: "care@noon.com",
+      website: "www.noon.com"
     },
     {
       name: "Amazon UAE",
@@ -55,7 +68,10 @@ const MOCK_PRODUCT: Product = {
       rating: 4.8,
       link: "#",
       location: "Online Store",
-      inStock: false
+      inStock: false,
+      phone: "800 AMAZON",
+      email: "cs@amazon.ae",
+      website: "www.amazon.ae"
     }
   ]
 };
@@ -124,12 +140,22 @@ const CompareProducts = () => {
           <div className="md:col-span-3">
             <Card className="p-6">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="aspect-square bg-white rounded-lg p-4">
-                  <img 
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-contain"
-                  />
+                <div>
+                  <div className="aspect-square bg-white rounded-lg p-4 mb-4">
+                    <img 
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                      Product Information
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {product.description}
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -182,25 +208,53 @@ const CompareProducts = () => {
                             >
                               {retailer.inStock ? "In Stock" : "Out of Stock"}
                             </Badge>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="w-full"
-                              asChild
-                              disabled={!retailer.inStock}
-                            >
-                              <a 
-                                href={retailer.link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 justify-center"
-                              >
-                                Visit Store
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </Button>
                           </div>
                         </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                          {retailer.address && (
+                            <div className="flex items-start gap-2">
+                              <MapPin className="w-4 h-4 mt-1 text-gray-500" />
+                              <span className="text-gray-600 dark:text-gray-400">{retailer.address}</span>
+                            </div>
+                          )}
+                          {retailer.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-600 dark:text-gray-400">{retailer.phone}</span>
+                            </div>
+                          )}
+                          {retailer.email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-600 dark:text-gray-400">{retailer.email}</span>
+                            </div>
+                          )}
+                          {retailer.website && (
+                            <div className="flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-600 dark:text-gray-400">{retailer.website}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="w-full mt-4"
+                          asChild
+                          disabled={!retailer.inStock}
+                        >
+                          <a 
+                            href={retailer.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 justify-center"
+                          >
+                            Visit Store
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </Button>
                       </div>
                     ))}
                   </div>
