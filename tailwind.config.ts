@@ -80,7 +80,7 @@ export default {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
         'gradient-modern': 'linear-gradient(135deg, #E5DEFF 0%, #FDE1D3 50%, #D3E4FD 100%)',
-        'gradient-modern-dark': 'linear-gradient(135deg, rgba(229,222,255,0.1) 0%, rgba(253,225,211,0.1) 50%, rgba(211,228,253,0.1) 100%)',
+        'gradient-modern-dark': 'linear-gradient(135deg, rgba(229,222,255,0.05) 0%, rgba(253,225,211,0.05) 50%, rgba(211,228,253,0.05) 100%)',
       },
     },
   },

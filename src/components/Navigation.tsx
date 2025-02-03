@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -15,15 +15,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
 
-interface NavigationProps {
-  user: any;
-}
-
 const Navigation = ({ user }: NavigationProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const userRole = user?.user_metadata?.role || "customer";
+  const location = useLocation();
+
+  // Don't show search bar on auth pages
+  const isAuthPage = location.pathname === '/signin' || location.pathname === '/signup';
 
   const handleSignOut = async () => {
     try {
@@ -152,15 +152,17 @@ const Navigation = ({ user }: NavigationProps) => {
           </div>
         </div>
         
-        {/* Search Bar */}
-        <div className="max-w-2xl mx-auto w-full">
-          <SearchBar 
-            userRole={userRole}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onSubmit={handleSearch}
-          />
-        </div>
+        {/* Search Bar - Hidden on auth pages */}
+        {!isAuthPage && (
+          <div className="max-w-2xl mx-auto w-full">
+            <SearchBar 
+              userRole={userRole}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onSubmit={handleSearch}
+            />
+          </div>
+        )}
       </div>
     </nav>
   );

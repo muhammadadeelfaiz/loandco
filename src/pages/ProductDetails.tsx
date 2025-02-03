@@ -186,7 +186,7 @@ const ProductDetails = () => {
 
           {/* Main Product Display */}
           <div className="md:col-span-3 space-y-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="bg-white dark:bg-gray-800/50 backdrop-blur-lg rounded-lg p-6 shadow-sm border border-gray-100 dark:border-gray-700/50">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{product.name}</h1>
@@ -257,7 +257,11 @@ const ProductDetails = () => {
                     Store Unavailable
                   </Button>
                 )}
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate(`/compare/${product.id}`)}
+                >
                   Compare Prices
                 </Button>
               </div>
