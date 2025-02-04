@@ -2,21 +2,33 @@ import { supabase } from "@/lib/supabase";
 
 export const signInWithEmail = async (email: string, password: string) => {
   try {
-    // Try direct email login first
+    // Try direct email login
     const { data: emailData, error: emailError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (emailError) {
+      // Check if the error is due to unconfirmed email
+      if (emailError.message.includes("Email not confirmed")) {
+        throw new Error(
+          "Please verify your email before signing in. Check your inbox for the verification link."
+        );
+      }
+      
       // If email login fails, check if input might be a username
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('email')
         .eq('username', email)
-        .maybeSingle();
+        .single();
 
-      if (userError || !userData) {
+      if (userError) {
+        console.error("Error finding user by username:", userError);
+        throw new Error("Invalid email/username or password");
+      }
+
+      if (!userData) {
         throw new Error("Invalid email/username or password");
       }
 
@@ -27,11 +39,7 @@ export const signInWithEmail = async (email: string, password: string) => {
       });
 
       if (error) {
-        if (error.message.includes("Email not confirmed")) {
-          throw new Error(
-            "Please verify your email before signing in. Check your inbox for the verification link."
-          );
-        }
+        console.error("Error signing in with found email:", error);
         throw new Error("Invalid email/username or password");
       }
 
@@ -40,6 +48,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 
     return emailData;
   } catch (error) {
+    console.error("Sign in error:", error);
     if (error instanceof Error) {
       throw error;
     }
@@ -65,11 +74,17 @@ export const signUpWithEmail = async (
       .eq('username', userData.username)
       .maybeSingle();
 
+    if (checkError) {
+      console.error("Error checking existing username:", checkError);
+      throw new Error("Error checking username availability");
+    }
+
     if (existingUser) {
       throw new Error("Username already taken");
     }
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up the user
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -79,6 +94,7 @@ export const signUpWithEmail = async (
     });
 
     if (error) {
+      console.error("Signup error:", error);
       if (error.message.includes("over_email_send_rate_limit")) {
         throw new Error("Please wait 45 seconds before trying again.");
       }
@@ -99,9 +115,13 @@ export const signUpWithEmail = async (
       ]);
 
     if (insertError) {
+      console.error("Error inserting user data:", insertError);
       throw new Error("Failed to create user profile");
     }
+
+    return data;
   } catch (error) {
+    console.error("Sign up error:", error);
     if (error instanceof Error) {
       throw error;
     }
@@ -125,9 +145,14 @@ export const signInWithOAuth = async (
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("OAuth error:", error);
+      throw error;
+    }
+    
     return data;
   } catch (error) {
+    console.error("OAuth sign in error:", error);
     if (error instanceof Error) {
       throw error;
     }
