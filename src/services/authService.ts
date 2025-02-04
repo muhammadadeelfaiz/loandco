@@ -2,37 +2,51 @@ import { supabase } from "@/lib/supabase";
 
 export const signInWithEmail = async (email: string, password: string) => {
   try {
-    // First check if the input is a username
-    if (!email.includes('@')) {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('email')
-        .eq('username', email)
-        .maybeSingle();
-
-      if (userError) {
-        console.error("Error finding user by username:", userError);
-        throw new Error("Invalid username or password");
-      }
-
-      if (userData) {
-        email = userData.email;
-      }
-    }
-
-    // Try to sign in with email
+    // First try direct email login
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      // If direct email login fails and input doesn't contain @, try username lookup
+      if (!email.includes('@')) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('username', email)
+          .maybeSingle();
+
+        if (userError) {
+          console.error("Error finding user by username:", userError);
+          throw new Error("Invalid username or password");
+        }
+
+        if (userData) {
+          // Try login with found email
+          const { data: emailData, error: emailError } = await supabase.auth.signInWithPassword({
+            email: userData.email,
+            password,
+          });
+
+          if (emailError) {
+            if (emailError.message.includes("Email not confirmed")) {
+              throw new Error(
+                "Please verify your email before signing in. Check your inbox for the verification link."
+              );
+            }
+            throw new Error("Invalid username or password");
+          }
+
+          return emailData;
+        }
+      }
+
       if (error.message.includes("Email not confirmed")) {
         throw new Error(
           "Please verify your email before signing in. Check your inbox for the verification link."
         );
       }
-      console.error("Sign in error:", error);
       throw new Error("Invalid email or password");
     }
 
