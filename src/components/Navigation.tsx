@@ -86,6 +86,14 @@ const Navigation = ({ user }: NavigationProps) => {
                   Wishlist
                 </Link>
               )}
+              {user?.user_metadata?.role === "retailer" && (
+                <Link 
+                  to="/dashboard" 
+                  className="text-gray-700 dark:text-gray-200 hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
             </div>
           </div>
           
@@ -123,10 +131,15 @@ const Navigation = ({ user }: NavigationProps) => {
                     <DropdownMenuItem asChild>
                       <Link to="/profile">Profile Settings</Link>
                     </DropdownMenuItem>
-                    {userRole === "retailer" && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/create-store">Create Store</Link>
-                      </DropdownMenuItem>
+                    {user?.user_metadata?.role === "retailer" && (
+                      <>
+                        <DropdownMenuItem asChild>
+                          <Link to="/dashboard">Dashboard</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/create-store">Create Store</Link>
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuItem onClick={handleSignOut}>
                       Sign Out

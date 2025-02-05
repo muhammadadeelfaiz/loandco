@@ -20,6 +20,7 @@ import ProductDetails from "./pages/ProductDetails";
 import CreateStore from "./pages/CreateStore";
 import Wishlist from "./pages/Wishlist";
 import CompareProducts from "./pages/CompareProducts";
+import RetailerDashboard from "./pages/RetailerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -81,7 +82,22 @@ const App = () => {
             <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
             <Route path="/account" element={user ? <Account user={user} /> : <Navigate to="/signin" />} />
             <Route path="/wishlist" element={user ? <Wishlist user={user} /> : <Navigate to="/signin" />} />
-            <Route path="/products" element={user?.user_metadata?.role === "retailer" ? <Products /> : <Navigate to="/" />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                user?.user_metadata?.role === "retailer" 
+                  ? <RetailerDashboard /> 
+                  : <Navigate to="/" />
+              } 
+            />
+            <Route 
+              path="/products" 
+              element={
+                user?.user_metadata?.role === "retailer" 
+                  ? <Products /> 
+                  : <Navigate to="/" />
+              } 
+            />
             <Route 
               path="/create-store" 
               element={
