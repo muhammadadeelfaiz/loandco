@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Star } from 'lucide-react';
+import { Mail, MapPin, Star, Heart } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: {
@@ -20,6 +23,63 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCardProps) => {
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleAddToWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    setIsLoading(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to add items to your wishlist",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('product_wishlists')
+        .insert([
+          { 
+            user_id: session.user.id,
+            product_id: product.id
+          }
+        ]);
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          toast({
+            title: "Already in wishlist",
+            description: "This product is already in your wishlist",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        setIsInWishlist(true);
+        toast({
+          title: "Added to wishlist",
+          description: "Product has been added to your wishlist",
+        });
+      }
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product to wishlist",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <Link to={`/product/${product.id}`}>
@@ -39,9 +99,22 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
                     {product.category}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">4.5</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">4.5</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-2"
+                    onClick={handleAddToWishlist}
+                    disabled={isLoading}
+                  >
+                    <Heart 
+                      className={`w-4 h-4 ${isInWishlist ? 'fill-current text-red-500' : ''}`} 
+                    />
+                  </Button>
                 </div>
               </div>
               
