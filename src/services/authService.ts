@@ -15,7 +15,7 @@ export const signInWithEmail = async (email: string, password: string) => {
           .from('users')
           .select('email')
           .eq('username', email)
-          .maybeSingle();
+          .single();
 
         if (userError) {
           console.error("Error finding user by username:", userError);
@@ -30,23 +30,24 @@ export const signInWithEmail = async (email: string, password: string) => {
           });
 
           if (emailError) {
-            if (emailError.message.includes("Email not confirmed")) {
-              throw new Error(
-                "Please verify your email before signing in. Check your inbox for the verification link."
-              );
-            }
+            console.error("Login error with found email:", emailError);
             throw new Error("Invalid username or password");
           }
 
           return emailData;
+        } else {
+          throw new Error("User not found");
         }
       }
 
+      // Handle specific error cases
       if (error.message.includes("Email not confirmed")) {
         throw new Error(
           "Please verify your email before signing in. Check your inbox for the verification link."
         );
       }
+      
+      console.error("Authentication error:", error);
       throw new Error("Invalid email or password");
     }
 
