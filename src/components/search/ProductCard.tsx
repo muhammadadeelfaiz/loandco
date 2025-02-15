@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, Star, Heart } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,6 +81,28 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
     }
   };
 
+  const handleGetDirections = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (product.store_latitude && product.store_longitude) {
+      // Use HERE Maps URL scheme for navigation
+      const hereUrl = `https://share.here.com/r/${product.store_latitude},${product.store_longitude}`;
+      window.open(hereUrl, '_blank');
+      
+      // Also trigger the callback for any additional handling
+      onGetDirections(
+        product.store_latitude,
+        product.store_longitude,
+        product.retailer_name || "Store"
+      );
+    } else {
+      toast({
+        title: "Location Unavailable",
+        description: "Store location information is not available.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <Link to={`/product/${product.id}`}>
@@ -155,14 +178,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onGetDirections(
-                        product.store_latitude!,
-                        product.store_longitude!,
-                        product.retailer_name || "Store"
-                      );
-                    }}
+                    onClick={handleGetDirections}
                     className="flex items-center gap-2"
                   >
                     <MapPin className="w-4 h-4" />
