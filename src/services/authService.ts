@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 
 export const signInWithEmail = async (email: string, password: string) => {
@@ -104,24 +105,6 @@ export const signUpWithEmail = async (
         throw new Error("Please wait 45 seconds before trying again.");
       }
       throw error;
-    }
-
-    // Insert the user data into the users table
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert([
-        {
-          email,
-          name: userData.name,
-          username: userData.username,
-          role: userData.role,
-          date_of_birth: userData.date_of_birth,
-        }
-      ]);
-
-    if (insertError) {
-      console.error("Error inserting user data:", insertError);
-      throw new Error("Failed to create user profile");
     }
 
     return data;
