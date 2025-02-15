@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { toast } from "./ui/use-toast";
@@ -14,13 +15,18 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
   const [zipCode, setZipCode] = useState("");
 
   useEffect(() => {
-    const savedLocation = localStorage.getItem('userLocation');
-    if (savedLocation) {
-      onLocationReceived(JSON.parse(savedLocation));
-      return;
-    }
-    setIsPrompting(true);
-  }, [onLocationReceived]);
+    const checkSavedLocation = async () => {
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        const location = JSON.parse(savedLocation);
+        onLocationReceived(location);
+      } else {
+        setIsPrompting(true);
+      }
+    };
+
+    checkSavedLocation();
+  }, []); // Only run on mount
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -73,11 +79,10 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
 
   const handleManualLocation = async () => {
     try {
-      // For demo purposes, using a default location for NYC
-      // In production, you would want to use a geocoding service
+      // For demo purposes, using a default location for Dubai Mall
       const defaultCoords = {
-        lat: 40.7128,
-        lng: -74.0060
+        lat: 25.1972,
+        lng: 55.2744
       };
       
       localStorage.setItem('userLocation', JSON.stringify(defaultCoords));
