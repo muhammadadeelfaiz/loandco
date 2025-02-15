@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Map from "@/components/Map";
 
 interface Product {
   id: string;
@@ -134,6 +135,19 @@ const StoreProfile = () => {
     }
   };
 
+  const handleViewOnMap = () => {
+    if (store?.latitude && store?.longitude) {
+      const hereUrl = `https://share.here.com/r/${store.latitude},${store.longitude}`;
+      window.open(hereUrl, '_blank');
+    } else {
+      toast({
+        title: "Location Unavailable",
+        description: "Store location information is not available.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (storeError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -235,10 +249,14 @@ const StoreProfile = () => {
                 </div>
               )}
               {(store.latitude && store.longitude) && (
-                <div className="flex items-center gap-2 text-gray-600">
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center gap-2 text-gray-600 hover:text-primary"
+                  onClick={handleViewOnMap}
+                >
                   <MapPin className="w-5 h-5" />
                   <span>View on map</span>
-                </div>
+                </Button>
               )}
             </div>
           </div>
