@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
@@ -7,6 +8,8 @@ import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import BestSellers from "@/components/home/BestSellers";
 import RetailerGrid from "@/components/home/RetailerGrid";
+import Map from "@/components/Map";
+import { Card } from "@/components/ui/card";
 
 const CATEGORIES = [
   { name: "Tablets", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
@@ -59,6 +62,19 @@ const Index = ({ user }: IndexProps) => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
   };
 
+  const handleStoreMarkerClick = (storeId: string) => {
+    navigate(`/store/${storeId}`);
+  };
+
+  // Convert stores to map markers
+  const storeMarkers = stores.map(store => ({
+    id: store.id,
+    lat: store.latitude,
+    lng: store.longitude,
+    title: store.name,
+    description: store.description || undefined
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-loco">
       <LocationPrompt onLocationReceived={handleLocationReceived} />
@@ -68,6 +84,19 @@ const Index = ({ user }: IndexProps) => {
         <FeaturedProducts />
         <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         
+        {/* Nearby Stores Map Section */}
+        <section className="my-12">
+          <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
+          <Card className="p-4">
+            <Map 
+              location={userLocation}
+              markers={storeMarkers}
+              searchRadius={5}
+              readonly={true}
+            />
+          </Card>
+        </section>
+
         {/* Deals Section */}
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Deals & Offers</h2>
