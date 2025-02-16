@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,13 +47,13 @@
     --popover-foreground: 0 0% 98%;
 
     --primary: 199 85% 49%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 199 89% 57%;
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted-foreground: 240 5% 84.9%;
 
     --accent: 262 83% 66%;
     --accent-foreground: 0 0% 98%;
@@ -68,12 +69,23 @@
 
 @layer base {
   * {
-    @apply border-border selection:bg-white/10 selection:text-white;
+    @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  /* Ensure text is visible in dark mode for specific components */
+  .dark .text-gray-500,
+  .dark .text-gray-600,
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+
+  .dark .bg-gray-100 {
+    @apply bg-gray-800;
   }
 }
 
