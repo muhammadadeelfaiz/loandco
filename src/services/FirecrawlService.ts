@@ -40,11 +40,17 @@ export class FirecrawlService {
 
     try {
       const body = {
-        source: 'amazon_product',
+        source: 'amazon_search',
         query: searchTerm,
-        geo_location: '90210',
-        parse: true
+        parse: true,
+        context: [
+          { key: "domain", value: "com" }
+        ],
+        start_page: 1,
+        pages: 1
       };
+
+      console.log('Making request to Oxylabs with body:', body);
 
       const response = await fetch('https://realtime.oxylabs.io/v1/queries', {
         method: 'POST',
@@ -60,6 +66,7 @@ export class FirecrawlService {
       }
 
       const data = await response.json() as OxylabsResponse;
+      console.log('Raw Oxylabs response:', data);
       
       if (data.status === 'error') {
         return { 
@@ -72,20 +79,20 @@ export class FirecrawlService {
       const products = data.results.map(result => {
         try {
           const content = JSON.parse(result.content);
-          return {
-            title: content.title || 'N/A',
-            price: content.price?.current_price || 'N/A',
-            rating: content.rating || 'N/A',
-            reviews: content.reviews_count || '0',
-            image: content.image_url || content.images?.[0] || ''
-          };
+          return content.results.map((item: any) => ({
+            title: item.title || 'N/A',
+            price: item.price?.current_price || 'N/A',
+            rating: item.rating || 'N/A',
+            reviews: item.reviews_count || '0',
+            image: item.image || ''
+          }));
         } catch (error) {
           console.error('Error parsing product data:', error);
-          return null;
+          return [];
         }
-      }).filter(Boolean);
+      }).flat();
 
-      console.log('Crawl successful:', products);
+      console.log('Parsed products:', products);
       return { 
         success: true,
         data: products 
