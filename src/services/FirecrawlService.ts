@@ -1,86 +1,103 @@
 
-import FirecrawlApp from '@mendable/firecrawl-js';
 import { supabase } from '@/lib/supabase';
 
-interface ErrorResponse {
-  success: false;
-  error: string;
-}
-
-interface CrawlStatusResponse {
-  success: true;
+interface OxylabsResponse {
+  results: Array<{
+    content: string;
+    status_code: number;
+    url: string;
+  }>;
   status: string;
-  completed: number;
-  total: number;
-  creditsUsed: number;
-  expiresAt: string;
-  data: any[];
 }
-
-type CrawlResponse = CrawlStatusResponse | ErrorResponse;
 
 export class FirecrawlService {
-  private static firecrawlApp: FirecrawlApp | null = null;
+  private static username: string | null = null;
+  private static password: string | null = null;
 
   static async initialize() {
     try {
-      const { data: { secret } } = await supabase.rpc('get_secret', {
-        secret_name: 'FIRECRAWL_API_KEY'
+      const { data: credentials } = await supabase.rpc('get_secrets', {
+        secret_names: ['OXYLABS_USERNAME', 'OXYLABS_API_KEY']
       });
       
-      if (secret) {
-        this.firecrawlApp = new FirecrawlApp({ apiKey: secret });
-        console.log('FirecrawlService initialized successfully');
+      if (credentials?.OXYLABS_USERNAME && credentials?.OXYLABS_API_KEY) {
+        this.username = credentials.OXYLABS_USERNAME;
+        this.password = credentials.OXYLABS_API_KEY;
+        console.log('Oxylabs service initialized successfully');
       }
     } catch (error) {
-      console.error('Error initializing FirecrawlService:', error);
+      console.error('Error initializing Oxylabs service:', error);
     }
   }
 
   static async crawlAmazonProduct(searchTerm: string): Promise<{ success: boolean; error?: string; data?: any }> {
-    if (!this.firecrawlApp) {
+    if (!this.username || !this.password) {
       await this.initialize();
-      if (!this.firecrawlApp) {
-        return { success: false, error: 'Firecrawl not initialized' };
+      if (!this.username || !this.password) {
+        return { success: false, error: 'Oxylabs credentials not initialized' };
       }
     }
 
     try {
-      const amazonUrl = `https://www.amazon.com/s?k=${encodeURIComponent(searchTerm)}`;
-      console.log('Making crawl request to Firecrawl API for:', amazonUrl);
+      const body = {
+        source: 'amazon_search',
+        query: searchTerm,
+        parse: true,
+        context: [
+          { key: 'domain', value: 'com' },
+          { key: 'geo', value: 'Dubai,Dubai,United Arab Emirates' }
+        ]
+      };
 
-      const crawlResponse = await this.firecrawlApp.crawlUrl(amazonUrl, {
-        limit: 10,
-        scrapeOptions: {
-          selectors: {
-            title: 'h2 a.a-link-normal.a-text-normal',
-            price: 'span.a-price-whole',
-            rating: 'span.a-icon-alt',
-            reviews: 'span.a-size-base.s-underline-text',
-            image: 'img.s-image',
-          },
-          formats: ['json']
+      const response = await fetch('https://realtime.oxylabs.io/v1/queries', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa(`${this.username}:${this.password}`)
         }
-      }) as CrawlResponse;
+      });
 
-      if (!crawlResponse.success) {
-        console.error('Crawl failed:', (crawlResponse as ErrorResponse).error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json() as OxylabsResponse;
+      
+      if (data.status === 'error') {
         return { 
           success: false, 
-          error: (crawlResponse as ErrorResponse).error || 'Failed to crawl Amazon' 
+          error: 'Failed to crawl Amazon' 
         };
       }
 
-      console.log('Crawl successful:', crawlResponse);
+      // Parse the content from the response
+      const products = data.results.map(result => {
+        try {
+          const content = JSON.parse(result.content);
+          return content.results.map((item: any) => ({
+            title: item.title,
+            price: item.price?.current_price || 'N/A',
+            rating: item.rating || 'N/A',
+            reviews: item.reviews_count || '0',
+            image: item.image_url
+          }));
+        } catch (error) {
+          console.error('Error parsing product data:', error);
+          return [];
+        }
+      }).flat();
+
+      console.log('Crawl successful:', products);
       return { 
         success: true,
-        data: crawlResponse.data 
+        data: products 
       };
     } catch (error) {
       console.error('Error during crawl:', error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to connect to Firecrawl API' 
+        error: error instanceof Error ? error.message : 'Failed to connect to Oxylabs API' 
       };
     }
   }
