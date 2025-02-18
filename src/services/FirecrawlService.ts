@@ -40,13 +40,10 @@ export class FirecrawlService {
 
     try {
       const body = {
-        source: 'amazon_search',
+        source: 'amazon_product',
         query: searchTerm,
-        parse: true,
-        context: [
-          { key: 'domain', value: 'com' },
-          { key: 'geo', value: 'Dubai,Dubai,United Arab Emirates' }
-        ]
+        geo_location: '90210',
+        parse: true
       };
 
       const response = await fetch('https://realtime.oxylabs.io/v1/queries', {
@@ -75,18 +72,18 @@ export class FirecrawlService {
       const products = data.results.map(result => {
         try {
           const content = JSON.parse(result.content);
-          return content.results.map((item: any) => ({
-            title: item.title,
-            price: item.price?.current_price || 'N/A',
-            rating: item.rating || 'N/A',
-            reviews: item.reviews_count || '0',
-            image: item.image_url
-          }));
+          return {
+            title: content.title || 'N/A',
+            price: content.price?.current_price || 'N/A',
+            rating: content.rating || 'N/A',
+            reviews: content.reviews_count || '0',
+            image: content.image_url || content.images?.[0] || ''
+          };
         } catch (error) {
           console.error('Error parsing product data:', error);
-          return [];
+          return null;
         }
-      }).flat();
+      }).filter(Boolean);
 
       console.log('Crawl successful:', products);
       return { 
