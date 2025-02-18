@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -6,19 +7,31 @@ import ProductCard from "@/components/search/ProductCard";
 import SearchFilters from "@/components/search/SearchFilters";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, AlertCircle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
+import { FirecrawlService } from "@/services/FirecrawlService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
   retailer_name?: string;
   distance?: number;
 };
 
+interface AmazonProduct {
+  title: string;
+  price: string;
+  rating: string;
+  reviews: string;
+  image: string;
+}
+
 const SearchResults = () => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
+  const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
+  const [amazonProducts, setAmazonProducts] = useState<AmazonProduct[]>([]);
   const { toast } = useToast();
 
   // Get search query from URL
@@ -36,6 +49,26 @@ const SearchResults = () => {
         });
         if (error) throw error;
         query = data as ProductWithRetailer[];
+
+        // Also fetch Amazon products
+        setIsLoadingAmazon(true);
+        try {
+          const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
+          if (amazonResult.success && amazonResult.data) {
+            setAmazonProducts(amazonResult.data);
+          }
+        } catch (error) {
+          console.error('Error fetching Amazon products:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to fetch Amazon products"
+          });
+        } finally {
+          setIsLoadingAmazon(false);
+        }
+
+        return query;
       } else {
         const { data, error } = await supabase
           .from('products')
@@ -52,9 +85,9 @@ const SearchResults = () => {
           retailer_name: (product.users as { name: string } | null)?.name,
           distance: undefined
         }));
-      }
 
-      return query;
+        return query;
+      }
     },
     enabled: true
   });
@@ -187,9 +220,17 @@ const SearchResults = () => {
           </h1>
         </div>
 
-        <div className="space-y-4">
-          {filteredProducts && filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+        {/* Local Products */}
+        <div className="space-y-4 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Local Stores</h2>
+          {isLoading ? (
+            <div className="animate-pulse space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+              ))}
+            </div>
+          ) : products && products.length > 0 ? (
+            filterProducts(products).map((product) => (
               <ProductCard
                 key={product.id}
                 product={{
@@ -202,13 +243,58 @@ const SearchResults = () => {
               />
             ))
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">
-                {submittedQuery ? "No products found matching your search." : "Start searching to see products."}
-              </p>
-            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No local results</AlertTitle>
+              <AlertDescription>
+                No products found in local stores matching your search.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
+
+        {/* Amazon Products */}
+        {submittedQuery && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Amazon Products</h2>
+            {isLoadingAmazon ? (
+              <div className="animate-pulse space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                ))}
+              </div>
+            ) : amazonProducts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {amazonProducts.map((product, index) => (
+                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                    <img 
+                      src={product.image} 
+                      alt={product.title}
+                      className="w-full h-48 object-contain mb-4"
+                    />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      {product.title}
+                    </h3>
+                    <p className="text-xl font-bold text-primary mb-2">${product.price}</p>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <span>Rating: {product.rating}</span>
+                      <span>•</span>
+                      <span>{product.reviews} reviews</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Amazon results</AlertTitle>
+                <AlertDescription>
+                  No products found on Amazon matching your search.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
