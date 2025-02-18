@@ -233,6 +233,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_secrets: {
+        Args: {
+          secret_names: string[]
+        }
+        Returns: Json
+      }
       retailer_has_verified_store: {
         Args: {
           retailer_id: string
