@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, AlertCircle } from "lucide-react";
 import { Database } from "@/integrations/supabase/types";
 import { FirecrawlService } from "@/services/FirecrawlService";
+import { EbayService } from "@/services/EbayService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
@@ -25,13 +26,28 @@ interface AmazonProduct {
   image: string;
 }
 
+interface EbayProduct {
+  itemId: string;
+  title: string;
+  price: {
+    value: string;
+    currency: string;
+  };
+  image: string;
+  condition: string;
+  location: string;
+  url: string;
+}
+
 const SearchResults = () => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
   const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
+  const [isLoadingEbay, setIsLoadingEbay] = useState(false);
   const [amazonProducts, setAmazonProducts] = useState<AmazonProduct[]>([]);
+  const [ebayProducts, setEbayProducts] = useState<EbayProduct[]>([]);
   const { toast } = useToast();
 
   // Get search query from URL
@@ -50,7 +66,7 @@ const SearchResults = () => {
         if (error) throw error;
         query = data as ProductWithRetailer[];
 
-        // Also fetch Amazon products
+        // Fetch Amazon products
         setIsLoadingAmazon(true);
         try {
           const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
@@ -66,6 +82,24 @@ const SearchResults = () => {
           });
         } finally {
           setIsLoadingAmazon(false);
+        }
+
+        // Fetch eBay products
+        setIsLoadingEbay(true);
+        try {
+          const ebayResult = await EbayService.searchProducts(submittedQuery);
+          if (ebayResult.success && ebayResult.data) {
+            setEbayProducts(ebayResult.data);
+          }
+        } catch (error) {
+          console.error('Error fetching eBay products:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to fetch eBay products"
+          });
+        } finally {
+          setIsLoadingEbay(false);
         }
 
         return query;
@@ -253,6 +287,57 @@ const SearchResults = () => {
           )}
         </div>
 
+        {/* eBay Products */}
+        {submittedQuery && (
+          <div className="space-y-4 mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">eBay Products</h2>
+            {isLoadingEbay ? (
+              <div className="animate-pulse space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                ))}
+              </div>
+            ) : ebayProducts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ebayProducts.map((product) => (
+                  <div key={product.itemId} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                    <img 
+                      src={product.image} 
+                      alt={product.title}
+                      className="w-full h-48 object-contain mb-4"
+                    />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      {product.title}
+                    </h3>
+                    <p className="text-xl font-bold text-primary mb-2">
+                      {product.price.currency} {product.price.value}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
+                      <span>{product.condition}</span>
+                      <span>•</span>
+                      <span>{product.location}</span>
+                    </div>
+                    <Button 
+                      className="w-full"
+                      onClick={() => window.open(product.url, '_blank')}
+                    >
+                      View on eBay
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No eBay results</AlertTitle>
+                <AlertDescription>
+                  No products found on eBay matching your search.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        )}
+
         {/* Amazon Products */}
         {submittedQuery && (
           <div className="space-y-4">
@@ -301,3 +386,4 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
+
