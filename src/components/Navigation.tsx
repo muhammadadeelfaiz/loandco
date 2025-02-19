@@ -1,3 +1,4 @@
+
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
@@ -94,6 +95,18 @@ const Navigation = ({ user }: NavigationProps) => {
                   Dashboard
                 </Link>
               )}
+              <Link 
+                to="/privacy-policy" 
+                className="text-gray-700 dark:text-gray-200 hover:text-primary transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link 
+                to="/terms-of-service" 
+                className="text-gray-700 dark:text-gray-200 hover:text-primary transition-colors"
+              >
+                Terms of Service
+              </Link>
             </div>
           </div>
           
