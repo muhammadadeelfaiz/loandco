@@ -22,6 +22,9 @@ interface EbayProduct {
 export class EbayService {
   private static accessToken: string | null = null;
   private static tokenExpiration: number = 0;
+  // Using production URLs
+  private static readonly TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
+  private static readonly API_URL = 'https://api.ebay.com/buy/browse/v1';
 
   private static async getCredentials(): Promise<EbayCredentials | null> {
     try {
@@ -35,10 +38,6 @@ export class EbayService {
         return null;
       }
 
-      // Log the raw data for debugging
-      console.log('Raw credentials data:', data);
-
-      // Verify both credentials exist and are non-empty strings
       if (!data?.EBAY_CLIENT_ID || !data?.EBAY_CLIENT_SECRET || 
           typeof data.EBAY_CLIENT_ID !== 'string' || typeof data.EBAY_CLIENT_SECRET !== 'string') {
         console.error('eBay credentials are incomplete or invalid:', {
@@ -63,7 +62,6 @@ export class EbayService {
 
   private static async getAccessToken(): Promise<string | null> {
     try {
-      // Check if we have a valid token
       if (this.accessToken && Date.now() < this.tokenExpiration) {
         console.log('Using existing eBay access token');
         return this.accessToken;
@@ -75,10 +73,9 @@ export class EbayService {
         throw new Error('eBay credentials not found or incomplete');
       }
 
-      // Log the actual request being made (without exposing credentials)
-      console.log('Making eBay token request to:', 'https://api.ebay.com/identity/v1/oauth2/token');
+      console.log('Making eBay token request to:', this.TOKEN_URL);
 
-      const response = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+      const response = await fetch(this.TOKEN_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -122,7 +119,7 @@ export class EbayService {
         };
       }
 
-      const searchUrl = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10`;
+      const searchUrl = `${this.API_URL}/item_summary/search?q=${encodeURIComponent(query)}&limit=10`;
       console.log('Making eBay search request to:', searchUrl);
 
       const response = await fetch(searchUrl, {
