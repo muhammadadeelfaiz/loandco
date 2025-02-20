@@ -26,16 +26,22 @@ export class EbayService {
   private static async getCredentials(): Promise<EbayCredentials | null> {
     try {
       console.log('Fetching eBay credentials from Supabase...');
-      const { data: credentials } = await supabase.rpc('get_secrets', {
+      const { data: credentials, error } = await supabase.rpc('get_secrets', {
         secret_names: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET']
       });
       
-      if (credentials?.EBAY_CLIENT_ID && credentials?.EBAY_CLIENT_SECRET) {
-        console.log('eBay credentials retrieved successfully');
-        return credentials as EbayCredentials;
+      if (error) {
+        console.error('Error fetching eBay credentials:', error);
+        return null;
       }
-      console.error('eBay credentials not found in Supabase');
-      return null;
+
+      if (!credentials?.EBAY_CLIENT_ID || !credentials?.EBAY_CLIENT_SECRET) {
+        console.error('eBay credentials are incomplete or missing:', credentials);
+        return null;
+      }
+
+      console.log('eBay credentials retrieved successfully');
+      return credentials as EbayCredentials;
     } catch (error) {
       console.error('Error getting eBay credentials:', error);
       return null;
@@ -53,7 +59,7 @@ export class EbayService {
       console.log('Getting new eBay access token...');
       const credentials = await this.getCredentials();
       if (!credentials) {
-        throw new Error('eBay credentials not found');
+        throw new Error('eBay credentials not found or incomplete');
       }
 
       const response = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
@@ -65,13 +71,13 @@ export class EbayService {
         body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to get eBay access token:', errorText);
-        throw new Error('Failed to get eBay access token');
+        console.error('Failed to get eBay access token. Response:', data);
+        throw new Error(data.error_description || 'Failed to get eBay access token');
       }
 
-      const data = await response.json();
       this.accessToken = data.access_token;
       this.tokenExpiration = Date.now() + (data.expires_in * 1000);
       console.log('New eBay access token obtained successfully');
@@ -90,7 +96,7 @@ export class EbayService {
       if (!accessToken) {
         return { 
           success: false, 
-          error: 'Failed to authenticate with eBay' 
+          error: 'Unable to authenticate with eBay. Please check your API credentials.' 
         };
       }
 
@@ -102,13 +108,13 @@ export class EbayService {
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('eBay API error:', errorText);
-        throw new Error('Failed to fetch eBay products');
+        console.error('eBay API error:', data);
+        throw new Error(data.errors?.[0]?.message || 'Failed to fetch eBay products');
       }
 
-      const data = await response.json();
       console.log('eBay API response:', data);
 
       const products = data.itemSummaries?.map((item: any) => ({
