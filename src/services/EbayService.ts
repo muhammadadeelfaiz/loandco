@@ -75,6 +75,9 @@ export class EbayService {
         throw new Error('eBay credentials not found or incomplete');
       }
 
+      // Log the actual request being made (without exposing credentials)
+      console.log('Making eBay token request to:', 'https://api.ebay.com/identity/v1/oauth2/token');
+
       const response = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
         method: 'POST',
         headers: {
@@ -85,7 +88,12 @@ export class EbayService {
       });
 
       const data = await response.json();
-      console.log('eBay token response:', data); // Debug log
+      console.log('eBay token response:', {
+        status: response.status,
+        statusText: response.statusText,
+        hasAccessToken: !!data.access_token,
+        expiresIn: data.expires_in
+      });
 
       if (!response.ok) {
         console.error('Failed to get eBay access token. Response:', data);
@@ -114,7 +122,10 @@ export class EbayService {
         };
       }
 
-      const response = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10`, {
+      const searchUrl = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10`;
+      console.log('Making eBay search request to:', searchUrl);
+
+      const response = await fetch(searchUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
@@ -129,7 +140,11 @@ export class EbayService {
         throw new Error(data.errors?.[0]?.message || 'Failed to fetch eBay products');
       }
 
-      console.log('eBay API response:', data);
+      console.log('eBay API response:', {
+        status: response.status,
+        totalResults: data.total,
+        itemCount: data.itemSummaries?.length || 0
+      });
 
       const products = data.itemSummaries?.map((item: any) => ({
         itemId: item.itemId,
