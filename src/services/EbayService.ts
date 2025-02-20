@@ -22,7 +22,6 @@ interface EbayProduct {
 export class EbayService {
   private static accessToken: string | null = null;
   private static tokenExpiration: number = 0;
-  // Using production URLs
   private static readonly TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
   private static readonly API_URL = 'https://api.ebay.com/buy/browse/v1';
 
@@ -38,14 +37,20 @@ export class EbayService {
         return null;
       }
 
+      // Add more detailed logging
+      console.log('Credentials check:', {
+        hasData: !!data,
+        hasClientId: !!data?.EBAY_CLIENT_ID,
+        hasClientSecret: !!data?.EBAY_CLIENT_SECRET,
+        clientIdType: typeof data?.EBAY_CLIENT_ID,
+        clientSecretType: typeof data?.EBAY_CLIENT_SECRET,
+        clientIdLength: data?.EBAY_CLIENT_ID?.length,
+        clientSecretLength: data?.EBAY_CLIENT_SECRET?.length
+      });
+
       if (!data?.EBAY_CLIENT_ID || !data?.EBAY_CLIENT_SECRET || 
           typeof data.EBAY_CLIENT_ID !== 'string' || typeof data.EBAY_CLIENT_SECRET !== 'string') {
-        console.error('eBay credentials are incomplete or invalid:', {
-          hasClientId: !!data?.EBAY_CLIENT_ID,
-          hasClientSecret: !!data?.EBAY_CLIENT_SECRET,
-          clientIdType: typeof data?.EBAY_CLIENT_ID,
-          clientSecretType: typeof data?.EBAY_CLIENT_SECRET
-        });
+        console.error('eBay credentials are incomplete or invalid');
         return null;
       }
 
@@ -73,13 +78,15 @@ export class EbayService {
         throw new Error('eBay credentials not found or incomplete');
       }
 
+      const authString = btoa(`${credentials.EBAY_CLIENT_ID}:${credentials.EBAY_CLIENT_SECRET}`);
       console.log('Making eBay token request to:', this.TOKEN_URL);
+      console.log('Auth string length:', authString.length);
 
       const response = await fetch(this.TOKEN_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ' + btoa(`${credentials.EBAY_CLIENT_ID}:${credentials.EBAY_CLIENT_SECRET}`)
+          'Authorization': `Basic ${authString}`
         },
         body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
       });
@@ -89,11 +96,13 @@ export class EbayService {
         status: response.status,
         statusText: response.statusText,
         hasAccessToken: !!data.access_token,
-        expiresIn: data.expires_in
+        expiresIn: data.expires_in,
+        error: data.error,
+        errorDescription: data.error_description
       });
 
       if (!response.ok) {
-        console.error('Failed to get eBay access token. Response:', data);
+        console.error('Failed to get eBay access token. Full response:', data);
         throw new Error(data.error_description || 'Failed to get eBay access token');
       }
 
@@ -127,21 +136,24 @@ export class EbayService {
           'Authorization': `Bearer ${accessToken}`,
           'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
           'X-EBAY-C-ENDUSERCTX': 'contextualLocation=country=US',
+          'Content-Type': 'application/json'
         }
       });
 
       const data = await response.json();
+      console.log('eBay search response:', {
+        status: response.status,
+        statusText: response.statusText,
+        hasError: !!data.errors,
+        errorMessage: data.errors?.[0]?.message,
+        totalResults: data.total,
+        itemCount: data.itemSummaries?.length || 0
+      });
 
       if (!response.ok) {
         console.error('eBay API error:', data);
         throw new Error(data.errors?.[0]?.message || 'Failed to fetch eBay products');
       }
-
-      console.log('eBay API response:', {
-        status: response.status,
-        totalResults: data.total,
-        itemCount: data.itemSummaries?.length || 0
-      });
 
       const products = data.itemSummaries?.map((item: any) => ({
         itemId: item.itemId,
