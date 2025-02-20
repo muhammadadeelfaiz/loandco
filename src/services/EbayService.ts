@@ -26,7 +26,7 @@ export class EbayService {
   private static async getCredentials(): Promise<EbayCredentials | null> {
     try {
       console.log('Fetching eBay credentials from Supabase...');
-      const { data: credentials, error } = await supabase.rpc('get_secrets', {
+      const { data, error } = await supabase.rpc('get_secrets', {
         secret_names: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET']
       });
       
@@ -35,13 +35,26 @@ export class EbayService {
         return null;
       }
 
-      if (!credentials?.EBAY_CLIENT_ID || !credentials?.EBAY_CLIENT_SECRET) {
-        console.error('eBay credentials are incomplete or missing:', credentials);
+      // Log the raw data for debugging
+      console.log('Raw credentials data:', data);
+
+      // Verify both credentials exist and are non-empty strings
+      if (!data?.EBAY_CLIENT_ID || !data?.EBAY_CLIENT_SECRET || 
+          typeof data.EBAY_CLIENT_ID !== 'string' || typeof data.EBAY_CLIENT_SECRET !== 'string') {
+        console.error('eBay credentials are incomplete or invalid:', {
+          hasClientId: !!data?.EBAY_CLIENT_ID,
+          hasClientSecret: !!data?.EBAY_CLIENT_SECRET,
+          clientIdType: typeof data?.EBAY_CLIENT_ID,
+          clientSecretType: typeof data?.EBAY_CLIENT_SECRET
+        });
         return null;
       }
 
       console.log('eBay credentials retrieved successfully');
-      return credentials as EbayCredentials;
+      return {
+        EBAY_CLIENT_ID: data.EBAY_CLIENT_ID,
+        EBAY_CLIENT_SECRET: data.EBAY_CLIENT_SECRET
+      };
     } catch (error) {
       console.error('Error getting eBay credentials:', error);
       return null;
@@ -72,6 +85,7 @@ export class EbayService {
       });
 
       const data = await response.json();
+      console.log('eBay token response:', data); // Debug log
 
       if (!response.ok) {
         console.error('Failed to get eBay access token. Response:', data);
