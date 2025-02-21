@@ -38,17 +38,20 @@ export class EbayService {
       }
 
       // Add more detailed logging
-      console.log('Credentials check:', {
+      console.log('Credentials retrieved:', {
         hasData: !!data,
-        hasClientId: !!data?.EBAY_CLIENT_ID,
-        hasClientSecret: !!data?.EBAY_CLIENT_SECRET,
-        clientIdType: typeof data?.EBAY_CLIENT_ID,
-        clientSecretType: typeof data?.EBAY_CLIENT_SECRET,
-        clientIdLength: data?.EBAY_CLIENT_ID?.length,
-        clientSecretLength: data?.EBAY_CLIENT_SECRET?.length
+        rawData: data,
+        credentialsKeys: data ? Object.keys(data) : [],
+        clientIdExists: 'EBAY_CLIENT_ID' in (data || {}),
+        clientSecretExists: 'EBAY_CLIENT_SECRET' in (data || {})
       });
 
-      if (!data?.EBAY_CLIENT_ID || !data?.EBAY_CLIENT_SECRET || 
+      if (!data || typeof data !== 'object') {
+        console.error('Invalid data format received from get_secrets');
+        return null;
+      }
+
+      if (!data.EBAY_CLIENT_ID || !data.EBAY_CLIENT_SECRET || 
           typeof data.EBAY_CLIENT_ID !== 'string' || typeof data.EBAY_CLIENT_SECRET !== 'string') {
         console.error('eBay credentials are incomplete or invalid');
         return null;
