@@ -35,13 +35,15 @@ export class EbayService {
         success: data.success,
         hasData: !!data.data,
         itemCount: data.data?.length || 0,
-        error: data.error
+        error: data.error,
+        details: data.details
       });
 
       if (!data.success || !data.data) {
         return {
           success: false,
-          error: data.error || 'Failed to fetch eBay products'
+          error: data.error || 'Failed to fetch eBay products',
+          details: data.details
         };
       }
 

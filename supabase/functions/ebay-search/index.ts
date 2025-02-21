@@ -21,6 +21,7 @@ interface EbayProduct {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -29,26 +30,47 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Edge Function received search query:', query);
 
+    if (!query) {
+      console.error('No search query provided');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Search query is required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    console.log('Attempting to fetch eBay credentials from Supabase secrets...');
+
     // Get eBay credentials from Supabase secrets
     const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
       secret_names: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET']
     });
 
+    console.log('get_secrets response:', {
+      hasData: !!secrets,
+      hasError: !!secretsError,
+      secretsKeys: secrets ? Object.keys(secrets) : [],
+      errorMessage: secretsError?.message
+    });
+
     if (secretsError || !secrets?.EBAY_CLIENT_ID || !secrets?.EBAY_CLIENT_SECRET) {
       console.error('Error getting eBay credentials:', secretsError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to retrieve eBay credentials' }), 
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to retrieve eBay credentials',
+          details: secretsError?.message || 'Missing required credentials'
+        }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
-    console.log('Successfully retrieved eBay credentials');
+    console.log('Successfully retrieved eBay credentials, requesting access token...');
 
     // Get eBay access token
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
@@ -62,15 +84,25 @@ serve(async (req) => {
 
     const tokenData = await tokenResponse.json();
 
+    console.log('Token response status:', tokenResponse.status);
+    console.log('Token response type:', {
+      hasAccessToken: !!tokenData.access_token,
+      errorDescription: tokenData.error_description
+    });
+
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('Failed to get eBay access token:', tokenData);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to authenticate with eBay' }), 
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to authenticate with eBay',
+          details: tokenData.error_description || tokenResponse.statusText
+        }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
-    console.log('Successfully obtained eBay access token');
+    console.log('Successfully obtained eBay access token, making search request...');
 
     // Search eBay products
     const searchUrl = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10`;
@@ -87,10 +119,21 @@ serve(async (req) => {
 
     const searchData = await searchResponse.json();
 
+    console.log('Search response status:', searchResponse.status);
+    console.log('Search response type:', {
+      hasItems: !!searchData.itemSummaries,
+      itemCount: searchData.itemSummaries?.length || 0,
+      errorMessage: searchData.errors?.[0]?.message
+    });
+
     if (!searchResponse.ok) {
       console.error('eBay API error:', searchData);
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to fetch eBay products' }), 
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to fetch eBay products',
+          details: searchData.errors?.[0]?.message || searchResponse.statusText
+        }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
@@ -106,7 +149,7 @@ serve(async (req) => {
       },
       image: item.image?.imageUrl || '',
       condition: item.condition,
-      location: item.itemLocation?.country,
+      location: item.itemLocation?.country || 'Unknown',
       url: item.itemWebUrl
     })) || [];
 
@@ -120,7 +163,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in eBay search function:', error);
     return new Response(
-      JSON.stringify({ success: false, error: 'Internal server error' }), 
+      JSON.stringify({ 
+        success: false, 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error occurred'
+      }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
