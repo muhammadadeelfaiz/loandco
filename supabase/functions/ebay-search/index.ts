@@ -26,15 +26,8 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const searchQuery = url.searchParams.get('q');
-
-    if (!searchQuery) {
-      return new Response(JSON.stringify({ error: 'Search query is required' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
-      });
-    }
+    const { query } = await req.json();
+    console.log('Edge Function received search query:', query);
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -42,7 +35,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get eBay credentials from Supabase
+    // Get eBay credentials from Supabase secrets
     const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
       secret_names: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET']
     });
@@ -50,10 +43,12 @@ serve(async (req) => {
     if (secretsError || !secrets?.EBAY_CLIENT_ID || !secrets?.EBAY_CLIENT_SECRET) {
       console.error('Error getting eBay credentials:', secretsError);
       return new Response(
-        JSON.stringify({ error: 'Failed to retrieve eBay credentials' }), 
+        JSON.stringify({ success: false, error: 'Failed to retrieve eBay credentials' }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
+
+    console.log('Successfully retrieved eBay credentials');
 
     // Get eBay access token
     const tokenResponse = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
@@ -70,13 +65,17 @@ serve(async (req) => {
     if (!tokenResponse.ok || !tokenData.access_token) {
       console.error('Failed to get eBay access token:', tokenData);
       return new Response(
-        JSON.stringify({ error: 'Failed to authenticate with eBay' }), 
+        JSON.stringify({ success: false, error: 'Failed to authenticate with eBay' }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
+    console.log('Successfully obtained eBay access token');
+
     // Search eBay products
-    const searchUrl = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(searchQuery)}&limit=10`;
+    const searchUrl = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10`;
+    console.log('Making eBay API request to:', searchUrl);
+    
     const searchResponse = await fetch(searchUrl, {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
@@ -91,10 +90,12 @@ serve(async (req) => {
     if (!searchResponse.ok) {
       console.error('eBay API error:', searchData);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch eBay products' }), 
+        JSON.stringify({ success: false, error: 'Failed to fetch eBay products' }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
+
+    console.log('Successfully received eBay search results');
 
     const products: EbayProduct[] = searchData.itemSummaries?.map((item: any) => ({
       itemId: item.itemId,
@@ -109,6 +110,8 @@ serve(async (req) => {
       url: item.itemWebUrl
     })) || [];
 
+    console.log(`Found ${products.length} products from eBay`);
+
     return new Response(
       JSON.stringify({ success: true, data: products }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -117,7 +120,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in eBay search function:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }), 
+      JSON.stringify({ success: false, error: 'Internal server error' }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

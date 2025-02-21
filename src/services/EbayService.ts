@@ -27,7 +27,7 @@ export class EbayService {
         console.error('Supabase Edge Function error:', error);
         return {
           success: false,
-          error: 'Failed to search eBay products'
+          error: `Failed to search eBay products: ${error.message}`
         };
       }
 
