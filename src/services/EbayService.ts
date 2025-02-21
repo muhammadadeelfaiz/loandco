@@ -20,8 +20,7 @@ export class EbayService {
       console.log('Starting eBay product search via Edge Function for query:', query);
       
       const { data, error } = await supabase.functions.invoke('ebay-search', {
-        body: { query },
-        params: { q: query }
+        body: { query }
       });
 
       if (error) {
