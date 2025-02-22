@@ -42,19 +42,30 @@ const MapboxMap = ({
 
     const initializeMap = async () => {
       try {
+        console.log('Fetching Mapbox token from Supabase...');
         const { data: secrets, error: secretsError } = await supabase.rpc(
           'get_secrets',
           { secret_names: ['MAPBOX_PUBLIC_TOKEN'] }
         );
 
-        if (secretsError || !secrets?.MAPBOX_PUBLIC_TOKEN) {
-          throw new Error('Failed to fetch Mapbox token');
+        console.log('Supabase response:', { secrets, error: secretsError });
+
+        if (secretsError) {
+          console.error('Supabase error:', secretsError);
+          throw new Error(`Failed to fetch Mapbox token: ${secretsError.message}`);
         }
 
+        if (!secrets || !secrets.MAPBOX_PUBLIC_TOKEN) {
+          console.error('No Mapbox token found in secrets:', secrets);
+          throw new Error('Mapbox token not found in secrets');
+        }
+
+        console.log('Successfully retrieved Mapbox token');
         mapboxgl.accessToken = secrets.MAPBOX_PUBLIC_TOKEN;
 
         const initialCenter = location || defaultCenter;
         
+        console.log('Initializing Mapbox map...');
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
           style: theme === 'dark' 
@@ -76,10 +87,14 @@ const MapboxMap = ({
         }
 
         map.current.on('load', () => {
+          console.log('Map loaded successfully');
           setIsLoading(false);
         });
       } catch (error) {
-        console.error('Map initialization error:', error);
+        console.error('Detailed map initialization error:', {
+          error,
+          stack: error instanceof Error ? error.stack : undefined
+        });
         setIsLoading(false);
         toast({
           variant: "destructive",
