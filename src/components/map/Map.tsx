@@ -1,4 +1,5 @@
-import HereMap from './HereMap';
+
+import MapboxMap from './MapboxMap';
 
 interface MapProps {
   location?: { lat: number; lng: number };
@@ -15,7 +16,7 @@ interface MapProps {
 }
 
 const Map = (props: MapProps) => {
-  return <HereMap {...props} />;
+  return <MapboxMap {...props} />;
 };
 
 export default Map;
