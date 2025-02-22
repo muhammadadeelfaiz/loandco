@@ -1,10 +1,10 @@
-
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { supabase } from '@/lib/supabase';
 
 interface MapboxMapProps {
   location?: { lat: number; lng: number };
@@ -40,61 +40,62 @@ const MapboxMap = ({
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    try {
-      // Get Mapbox token from localStorage or prompt user to enter it
-      let token = localStorage.getItem('mapbox_token');
-      if (!token) {
-        token = prompt('Please enter your Mapbox public token:');
-        if (token) {
-          localStorage.setItem('mapbox_token', token);
-        } else {
-          throw new Error('Mapbox token is required');
+    const initializeMap = async () => {
+      try {
+        const { data: secrets, error: secretsError } = await supabase.rpc(
+          'get_secrets',
+          { secret_names: ['MAPBOX_PUBLIC_TOKEN'] }
+        );
+
+        if (secretsError || !secrets?.MAPBOX_PUBLIC_TOKEN) {
+          throw new Error('Failed to fetch Mapbox token');
         }
-      }
 
-      mapboxgl.accessToken = token;
+        mapboxgl.accessToken = secrets.MAPBOX_PUBLIC_TOKEN;
 
-      const initialCenter = location || defaultCenter;
-      
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: theme === 'dark' 
-          ? 'mapbox://styles/mapbox/dark-v11'
-          : 'mapbox://styles/mapbox/light-v11',
-        center: [initialCenter.lng, initialCenter.lat],
-        zoom: 13
-      });
+        const initialCenter = location || defaultCenter;
+        
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: theme === 'dark' 
+            ? 'mapbox://styles/mapbox/dark-v11'
+            : 'mapbox://styles/mapbox/light-v11',
+          center: [initialCenter.lng, initialCenter.lat],
+          zoom: 13
+        });
 
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      if (!readonly) {
-        map.current.on('click', (e) => {
-          onLocationChange?.({
-            lat: e.lngLat.lat,
-            lng: e.lngLat.lng
+        if (!readonly) {
+          map.current.on('click', (e) => {
+            onLocationChange?.({
+              lat: e.lngLat.lat,
+              lng: e.lngLat.lng
+            });
           });
+        }
+
+        map.current.on('load', () => {
+          setIsLoading(false);
+        });
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Error initializing map",
+          description: error instanceof Error ? error.message : "An unexpected error occurred"
         });
       }
+    };
 
-      map.current.on('load', () => {
-        setIsLoading(false);
-      });
+    initializeMap();
 
-      return () => {
-        map.current?.remove();
-      };
-    } catch (error) {
-      console.error('Map initialization error:', error);
-      setIsLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Error initializing map",
-        description: error instanceof Error ? error.message : "An unexpected error occurred"
-      });
-    }
+    return () => {
+      map.current?.remove();
+    };
   }, []);
 
-  // Update map style when theme changes
   useEffect(() => {
     if (!map.current) return;
 
@@ -105,7 +106,6 @@ const MapboxMap = ({
     );
   }, [theme]);
 
-  // Handle location changes and search radius
   useEffect(() => {
     if (!map.current || !location) return;
 
@@ -156,7 +156,6 @@ const MapboxMap = ({
     }
   }, [location, searchRadius]);
 
-  // Handle markers
   useEffect(() => {
     if (!map.current) return;
 
