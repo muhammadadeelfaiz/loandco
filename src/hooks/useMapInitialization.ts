@@ -14,26 +14,21 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     readonly = false
   ) => {
     try {
-      console.log('Fetching Mapbox token from Supabase...');
-      const { data: secrets, error: secretsError } = await supabase.rpc(
-        'get_secrets',
-        { secret_names: ['MAPBOX_PUBLIC_TOKEN'] }
-      );
+      console.log('Fetching Mapbox token from edge function...');
+      const { data, error } = await supabase.functions.invoke('map-service');
 
-      console.log('Supabase response:', { secrets, error: secretsError });
-
-      if (secretsError) {
-        console.error('Supabase error:', secretsError);
-        throw new Error(`Failed to fetch Mapbox token: ${secretsError.message}`);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Failed to fetch Mapbox token: ${error.message}`);
       }
 
-      if (!secrets || !secrets.MAPBOX_PUBLIC_TOKEN) {
-        console.error('No Mapbox token found in secrets:', secrets);
-        throw new Error('Mapbox token not found in secrets');
+      if (!data?.token) {
+        console.error('No Mapbox token in response:', data);
+        throw new Error('Mapbox token not found in response');
       }
 
       console.log('Successfully retrieved Mapbox token');
-      mapboxgl.accessToken = secrets.MAPBOX_PUBLIC_TOKEN;
+      mapboxgl.accessToken = data.token;
 
       console.log('Initializing Mapbox map...');
       const map = new mapboxgl.Map({
