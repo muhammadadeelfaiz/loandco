@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { toast } from "./ui/use-toast";
 import { Input } from "./ui/input";
 import { Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface LocationPromptProps {
   onLocationReceived: (coords: { lat: number; lng: number }) => void;
@@ -13,6 +14,7 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
   const [isPrompting, setIsPrompting] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [zipCode, setZipCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const checkSavedLocation = async () => {
@@ -26,7 +28,7 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
     };
 
     checkSavedLocation();
-  }, []); // Only run on mount
+  }, [onLocationReceived]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -39,6 +41,7 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
       return;
     }
 
+    setIsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = {
@@ -48,9 +51,11 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
         localStorage.setItem('userLocation', JSON.stringify(coords));
         onLocationReceived(coords);
         setIsPrompting(false);
+        setIsLoading(false);
       },
       (error) => {
-        console.log("Geolocation error:", error.message);
+        console.error("Geolocation error:", error);
+        setIsLoading(false);
         let errorMessage = "Unable to get your location. ";
         
         switch (error.code) {
@@ -73,6 +78,11 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
           description: errorMessage
         });
         setShowManualInput(true);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
       }
     );
   };
@@ -94,6 +104,7 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
         description: "Using approximate location based on your input"
       });
     } catch (error) {
+      console.error("Error setting manual location:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -106,9 +117,9 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold mb-4">Enable Location Services</h2>
-        <p className="text-gray-600 mb-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+        <h2 className="text-xl font-bold mb-4 dark:text-white">Enable Location Services</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
           To show you nearby products and stores, we need your location. 
           Your location data will only be used to show relevant results.
         </p>
@@ -139,8 +150,18 @@ const LocationPrompt = ({ onLocationReceived }: LocationPromptProps) => {
             <Button variant="outline" onClick={() => setShowManualInput(true)}>
               Enter Manually
             </Button>
-            <Button onClick={handleGetLocation}>
-              Allow Location
+            <Button 
+              onClick={handleGetLocation}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Getting Location...
+                </>
+              ) : (
+                'Allow Location'
+              )}
             </Button>
           </div>
         )}

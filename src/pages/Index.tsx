@@ -1,6 +1,5 @@
-
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
@@ -10,6 +9,8 @@ import BestSellers from "@/components/home/BestSellers";
 import RetailerGrid from "@/components/home/RetailerGrid";
 import Map from "@/components/Map";
 import { Card } from "@/components/ui/card";
+import { useLocation } from "@/hooks/useLocation";
+import { Loader2 } from "lucide-react";
 
 const CATEGORIES = [
   { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
@@ -51,11 +52,11 @@ interface IndexProps {
 const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const { userLocation, isLoading: isLoadingLocation } = useLocation();
   const { stores } = useStores(userLocation);
 
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
-    setUserLocation(coords);
+    localStorage.setItem('userLocation', JSON.stringify(coords));
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -88,12 +89,18 @@ const Index = ({ user }: IndexProps) => {
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
           <Card className="p-4">
-            <Map 
-              location={userLocation}
-              markers={storeMarkers}
-              searchRadius={5}
-              readonly={true}
-            />
+            {isLoadingLocation ? (
+              <div className="h-[400px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Map 
+                location={userLocation}
+                markers={storeMarkers}
+                searchRadius={5}
+                readonly={true}
+              />
+            )}
           </Card>
         </section>
 
