@@ -29,7 +29,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
   const { toast } = useToast();
 
   const handleAddToWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation
+    e.preventDefault();
     setIsLoading(true);
     
     try {
@@ -54,7 +54,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
         ]);
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
           toast({
             title: "Already in wishlist",
             description: "This product is already in your wishlist",
@@ -84,9 +84,9 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
   const handleGetDirections = (e: React.MouseEvent) => {
     e.preventDefault();
     if (product.store_latitude && product.store_longitude) {
-      // Use HERE Maps URL scheme for navigation
-      const hereUrl = `https://share.here.com/r/${product.store_latitude},${product.store_longitude}`;
-      window.open(hereUrl, '_blank');
+      // Open directions in Mapbox
+      const mapboxUrl = `https://www.mapbox.com/directions?route=d-${product.store_latitude},${product.store_longitude}`;
+      window.open(mapboxUrl, '_blank');
       
       // Also trigger the callback for any additional handling
       onGetDirections(
