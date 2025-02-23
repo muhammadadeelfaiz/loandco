@@ -52,8 +52,8 @@ const SAMPLE_PRODUCT: Product = {
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const userLocation = useUserLocation();
-  const navigate = useNavigate(); // Add this line
+  const { userLocation } = useUserLocation();
+  const navigate = useNavigate();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -79,7 +79,7 @@ const ProductDetails = () => {
       
       if (!productData) {
         console.log("No product found with ID:", id);
-        return SAMPLE_PRODUCT; // Return sample product when no product is found
+        return SAMPLE_PRODUCT;
       }
 
       console.log("Product data:", productData);
