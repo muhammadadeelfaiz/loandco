@@ -15,7 +15,9 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
   ) => {
     try {
       console.log('Fetching Mapbox token from edge function...');
-      const { data, error } = await supabase.functions.invoke('map-service');
+      const { data, error } = await supabase.functions.invoke('map-service', {
+        method: 'GET'
+      });
 
       if (error) {
         console.error('Edge function error:', error);
