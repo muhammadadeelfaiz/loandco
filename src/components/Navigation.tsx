@@ -27,8 +27,8 @@ const Navigation = ({ user }: NavigationProps) => {
   const userRole = user?.user_metadata?.role || "customer";
   const location = useLocation();
 
-  // Don't show search bar on auth pages
-  const isAuthPage = location.pathname === '/signin' || location.pathname === '/signup';
+  // Only show search bar on home and search results pages
+  const shouldShowSearchBar = location.pathname === '/' || location.pathname === '/search';
 
   const handleSignOut = async () => {
     try {
@@ -185,8 +185,8 @@ const Navigation = ({ user }: NavigationProps) => {
           </div>
         </div>
         
-        {/* Search Bar - Hidden on auth pages */}
-        {!isAuthPage && (
+        {/* Search Bar - Only shown on home and search pages */}
+        {shouldShowSearchBar && (
           <div className="max-w-2xl mx-auto w-full">
             <SearchBar 
               userRole={userRole}
@@ -202,3 +202,4 @@ const Navigation = ({ user }: NavigationProps) => {
 };
 
 export default Navigation;
+
