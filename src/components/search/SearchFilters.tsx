@@ -1,4 +1,20 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Ensure these match exactly with the categories in Index.tsx
+const AVAILABLE_CATEGORIES = [
+  "All Categories",
+  "Electronics",
+  "Fashion",
+  "Home & Garden",
+  "Sports",
+  "Books",
+  "Beauty",
+  "Health",
+  "Food & Beverages",
+  "Automotive",
+  "Toys"
+];
 
 interface SearchFiltersProps {
   sortBy: string;
@@ -43,17 +59,11 @@ const SearchFilters = ({
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Categories</SelectItem>
-          <SelectItem value="Electronics">Electronics</SelectItem>
-          <SelectItem value="Fashion">Fashion</SelectItem>
-          <SelectItem value="Home & Garden">Home & Garden</SelectItem>
-          <SelectItem value="Sports">Sports</SelectItem>
-          <SelectItem value="Books">Books</SelectItem>
-          <SelectItem value="Toys">Toys</SelectItem>
-          <SelectItem value="Beauty">Beauty</SelectItem>
-          <SelectItem value="Automotive">Automotive</SelectItem>
-          <SelectItem value="Health">Health</SelectItem>
-          <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
+          {AVAILABLE_CATEGORIES.map((cat) => (
+            <SelectItem key={cat} value={cat === "All Categories" ? "all" : cat}>
+              {cat}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

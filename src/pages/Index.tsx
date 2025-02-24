@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
@@ -21,6 +20,9 @@ const CATEGORIES = [
   { name: "Books", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" },
   { name: "Beauty", image: "/lovable-uploads/7ea95596-4821-4572-9437-984f0a07e449.png" },
   { name: "Health", image: "/lovable-uploads/72f9d866-4935-4e69-baf1-ffc1549c4a62.png" },
+  { name: "Food & Beverages", image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png" },
+  { name: "Automotive", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
+  { name: "Toys", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" },
 ];
 
 const RETAILER_IMAGES = {
@@ -68,7 +70,6 @@ const Index = ({ user }: IndexProps) => {
     navigate(`/store/${storeId}`);
   };
 
-  // Convert stores to map markers
   const storeMarkers = stores.map(store => ({
     id: store.id,
     lat: store.latitude,
@@ -84,9 +85,12 @@ const Index = ({ user }: IndexProps) => {
 
       <main className="container mx-auto px-4 py-8">
         <FeaturedProducts />
-        <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         
-        {/* Nearby Stores Map Section */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-8 text-center">Browse Categories</h2>
+          <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
+        </div>
+        
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
           <Card className="p-4">
@@ -105,7 +109,6 @@ const Index = ({ user }: IndexProps) => {
           </Card>
         </section>
 
-        {/* Deals Section */}
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Deals & Offers</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
