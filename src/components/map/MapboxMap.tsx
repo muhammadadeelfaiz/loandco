@@ -47,6 +47,7 @@ const MapboxMap = ({
       if (newMap) {
         map.current = newMap;
         newMap.on('load', () => {
+          console.log('Map initialized successfully');
           setIsMapInitialized(true);
         });
       }
@@ -56,10 +57,7 @@ const MapboxMap = ({
 
     return () => {
       if (map.current) {
-        // Only attempt to remove the map if it's fully loaded
-        if (map.current.loaded()) {
-          map.current.remove();
-        }
+        map.current.remove();
         map.current = null;
         setIsMapInitialized(false);
       }
@@ -76,11 +74,16 @@ const MapboxMap = ({
     );
   }, [theme, isMapInitialized]);
 
-  // Initialize markers when map is ready
-  useMapMarkers(map.current, markers);
-
-  // Initialize search radius when map is ready
-  useSearchRadius(map.current, location, searchRadius);
+  // Initialize markers and search radius when map is ready
+  useEffect(() => {
+    if (!map.current || !isMapInitialized) return;
+    
+    // Add markers
+    useMapMarkers(map.current, markers);
+    
+    // Add search radius
+    useSearchRadius(map.current, location, searchRadius);
+  }, [markers, location, searchRadius, isMapInitialized]);
 
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">

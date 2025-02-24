@@ -13,6 +13,12 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     onLocationChange?: (location: { lat: number; lng: number }) => void,
     readonly = false
   ) => {
+    if (!mapContainer.current) {
+      console.error('Map container not found');
+      setIsLoading(false);
+      return null;
+    }
+
     try {
       console.log('Fetching Mapbox token from edge function...');
       const { data, error } = await supabase.functions.invoke('map-service', {
@@ -21,12 +27,24 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(`Failed to fetch Mapbox token: ${error.message}`);
+        toast({
+          variant: "destructive",
+          title: "Map Loading Error",
+          description: "Failed to initialize map. Please try again later."
+        });
+        setIsLoading(false);
+        return null;
       }
 
       if (!data?.token) {
         console.error('No Mapbox token in response:', data);
-        throw new Error('Mapbox token not found in response');
+        toast({
+          variant: "destructive",
+          title: "Map Configuration Error",
+          description: "Map token not found. Please check your configuration."
+        });
+        setIsLoading(false);
+        return null;
       }
 
       console.log('Successfully retrieved Mapbox token');
@@ -34,7 +52,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       console.log('Initializing Mapbox map...');
       const map = new mapboxgl.Map({
-        container: mapContainer.current!,
+        container: mapContainer.current,
         style: theme === 'dark' 
           ? 'mapbox://styles/mapbox/dark-v11'
           : 'mapbox://styles/mapbox/light-v11',
@@ -70,6 +88,16 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       map.on('load', () => {
         console.log('Map loaded successfully');
+        setIsLoading(false);
+      });
+
+      map.on('error', (e) => {
+        console.error('Map error:', e);
+        toast({
+          variant: "destructive",
+          title: "Map Error",
+          description: "There was an error loading the map. Please check your internet connection."
+        });
         setIsLoading(false);
       });
 
