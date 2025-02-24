@@ -76,13 +76,11 @@ const MapboxMap = ({
     );
   }, [theme, isMapInitialized]);
 
-  // Only use markers and search radius when map is initialized
-  useEffect(() => {
-    if (!map.current || !isMapInitialized) return;
-    
-    useMapMarkers(map.current, markers);
-    useSearchRadius(map.current, location, searchRadius);
-  }, [markers, location, searchRadius, isMapInitialized]);
+  // Initialize markers when map is ready
+  useMapMarkers(map.current, markers);
+
+  // Initialize search radius when map is ready
+  useSearchRadius(map.current, location, searchRadius);
 
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
