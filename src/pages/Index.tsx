@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import LocationPrompt from "@/components/LocationPrompt";
@@ -14,16 +15,16 @@ import { Loader2 } from "lucide-react";
 import Deals from "@/components/home/Deals";
 
 const CATEGORIES = [
-  { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" }, // Electronics image showing gadgets
-  { name: "Fashion", image: "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png" }, // Fashion image showing clothing
-  { name: "Home & Garden", image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png" }, // Image of home interior
-  { name: "Sports", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" }, // Sports equipment image
-  { name: "Books", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" }, // Books/library image
-  { name: "Beauty", image: "/lovable-uploads/7ea95596-4821-4572-9437-984f0a07e449.png" }, // Beauty products image
-  { name: "Health", image: "/lovable-uploads/72f9d866-4935-4e69-baf1-ffc1549c4a62.png" }, // Health/wellness image
-  { name: "Food & Beverages", image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png" }, // Food related image
-  { name: "Automotive", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" }, // Vehicle related image
-  { name: "Toys", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" }, // Toys/games image
+  { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
+  { name: "Fashion", image: "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png" },
+  { name: "Home & Garden", image: "/lovable-uploads/a5b732da-cecd-4769-8f07-fe650aca3281.png" },
+  { name: "Sports", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
+  { name: "Books", image: "/lovable-uploads/d2e2fe4c-bdcb-43ea-8b2e-1ef01827afa4.png" },
+  { name: "Beauty", image: "/lovable-uploads/7ea95596-4821-4572-9437-984f0a07e449.png" },
+  { name: "Health", image: "/lovable-uploads/1b3c7f96-b1ac-40d2-b469-91f2eda8fcf5.png" },
+  { name: "Food & Beverages", image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png" },
+  { name: "Automotive", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
+  { name: "Toys", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" },
 ];
 
 const RETAILER_IMAGES = {
