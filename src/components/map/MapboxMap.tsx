@@ -23,6 +23,13 @@ interface MapboxMapProps {
   }>;
 }
 
+// Define a type for Mapbox error events
+interface MapboxError extends Error {
+  sourceError?: {
+    status?: number;
+  };
+}
+
 const MapboxMap = ({
   location,
   onLocationChange,
@@ -61,9 +68,10 @@ const MapboxMap = ({
           });
 
           // Add specific error handling for authentication errors
-          newMap.on('error', (e) => {
+          newMap.on('error', (e: mapboxgl.ErrorEvent) => {
             console.error('Map error:', e);
-            if (e.error?.status === 403) {
+            const mapError = e.error as MapboxError;
+            if (mapError?.sourceError?.status === 403) {
               setError('Map authentication failed. Please check your Mapbox token.');
             } else {
               setError('There was an error loading the map. Please check your internet connection.');
@@ -133,3 +141,4 @@ const MapboxMap = ({
 };
 
 export default MapboxMap;
+
