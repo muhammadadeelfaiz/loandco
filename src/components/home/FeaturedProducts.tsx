@@ -55,7 +55,7 @@ const FeaturedProducts = () => {
         {[1, 2, 3].map((item) => (
           <Card 
             key={item}
-            className="aspect-[16/9] flex items-center justify-center bg-white/90 backdrop-blur-sm"
+            className="relative aspect-[4/3] flex items-center justify-center bg-white/90 backdrop-blur-sm"
           >
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </Card>
@@ -72,12 +72,12 @@ const FeaturedProducts = () => {
         {[1, 2, 3].map((item) => (
           <Card 
             key={item}
-            className="aspect-[16/9] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
+            className="relative aspect-[4/3] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
           >
             <img 
               src={`https://images.unsplash.com/photo-148859052850${item}-98d2b5aba04b`}
               alt={`Featured Product ${item}`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
             />
           </Card>
         ))}
@@ -90,16 +90,18 @@ const FeaturedProducts = () => {
       {data.map((product) => (
         <Card 
           key={product.itemId}
-          className="aspect-[16/9] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
+          className="relative aspect-[4/3] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
           onClick={() => window.open(product.url, '_blank')}
         >
-          <div className="relative w-full h-full">
-            <img 
-              src={product.image}
-              alt={product.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-4">
+          <div className="absolute inset-0 p-4 flex flex-col">
+            <div className="relative flex-1 bg-gray-50 rounded-lg overflow-hidden">
+              <img 
+                src={product.image}
+                alt={product.title}
+                className="absolute inset-0 w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+            <div className="mt-2 p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white">
               <p className="text-sm font-medium truncate">{product.title}</p>
               <p className="text-lg font-bold">{product.price.currency} {product.price.value}</p>
             </div>
