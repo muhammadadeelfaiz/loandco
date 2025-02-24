@@ -72,7 +72,7 @@ const Index = ({ user }: IndexProps) => {
         
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">Browse Categories</h2>
+            <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-50">Browse Categories</h2>
             <p className="text-gray-600 dark:text-gray-300">Discover amazing deals across all categories</p>
           </div>
           <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
@@ -81,8 +81,8 @@ const Index = ({ user }: IndexProps) => {
         <BestSellers />
 
         <section className="my-12">
-          <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
-          <Card className="p-4">
+          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-gray-50">Stores Near You</h2>
+          <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
             {isLoadingLocation ? (
               <div className="h-[400px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
