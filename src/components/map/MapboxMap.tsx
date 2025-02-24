@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
@@ -31,6 +31,7 @@ const MapboxMap = ({
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
   const { theme } = useTheme();
   const { isLoading, initializeMap } = useMapInitialization(mapContainer, theme);
 
@@ -43,31 +44,45 @@ const MapboxMap = ({
     const initialize = async () => {
       const initialCenter = location || defaultCenter;
       const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
-      map.current = newMap;
+      if (newMap) {
+        map.current = newMap;
+        newMap.on('load', () => {
+          setIsMapInitialized(true);
+        });
+      }
     };
 
     initialize();
 
     return () => {
       if (map.current) {
-        map.current.remove();
+        // Only attempt to remove the map if it's fully loaded
+        if (map.current.loaded()) {
+          map.current.remove();
+        }
         map.current = null;
+        setIsMapInitialized(false);
       }
     };
   }, [location, onLocationChange, readonly]);
 
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !isMapInitialized) return;
 
     map.current.setStyle(
       theme === 'dark'
         ? 'mapbox://styles/mapbox/dark-v11'
         : 'mapbox://styles/mapbox/light-v11'
     );
-  }, [theme]);
+  }, [theme, isMapInitialized]);
 
-  useMapMarkers(map.current, markers);
-  useSearchRadius(map.current, location, searchRadius);
+  // Only use markers and search radius when map is initialized
+  useEffect(() => {
+    if (!map.current || !isMapInitialized) return;
+    
+    useMapMarkers(map.current, markers);
+    useSearchRadius(map.current, location, searchRadius);
+  }, [markers, location, searchRadius, isMapInitialized]);
 
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
