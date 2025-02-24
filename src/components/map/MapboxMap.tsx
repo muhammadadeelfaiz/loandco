@@ -92,10 +92,10 @@ const MapboxMap = ({
   }, [location, searchRadius, isMapInitialized]);
 
   return (
-    <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="w-full h-full">
       <div 
         ref={mapContainer} 
-        className="absolute inset-0 w-full h-full" 
+        className="w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700" 
       />
       {isLoading && (
         <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">

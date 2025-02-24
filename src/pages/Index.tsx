@@ -83,18 +83,20 @@ const Index = ({ user }: IndexProps) => {
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-gray-50">Stores Near You</h2>
           <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
-            {isLoadingLocation ? (
-              <div className="h-[400px] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <Map 
-                location={userLocation}
-                markers={storeMarkers}
-                searchRadius={5}
-                readonly={true}
-              />
-            )}
+            <div className="h-[400px] w-full">
+              {isLoadingLocation ? (
+                <div className="h-full flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Map 
+                  location={userLocation}
+                  markers={storeMarkers}
+                  searchRadius={5}
+                  readonly={true}
+                />
+              )}
+            </div>
           </Card>
         </section>
         
