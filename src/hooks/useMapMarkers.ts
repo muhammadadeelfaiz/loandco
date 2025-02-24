@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 interface Marker {
@@ -10,17 +10,15 @@ interface Marker {
   description?: string;
 }
 
-export const useMapMarkers = (map: mapboxgl.Map | null, markers: Marker[]) => {
+export const useMapMarkers = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  useEffect(() => {
-    if (!map || !map.loaded()) return;
-
+  const updateMarkers = (map: mapboxgl.Map, markers: Marker[]) => {
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Add new markers only if map is loaded
+    // Add new markers
     markers.forEach(marker => {
       try {
         const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
@@ -38,17 +36,9 @@ export const useMapMarkers = (map: mapboxgl.Map | null, markers: Marker[]) => {
         console.error('Error adding marker:', error);
       }
     });
+  };
 
-    // Cleanup function
-    return () => {
-      markersRef.current.forEach(marker => {
-        try {
-          marker.remove();
-        } catch (error) {
-          console.error('Error removing marker:', error);
-        }
-      });
-      markersRef.current = [];
-    };
-  }, [map, markers]);
+  return {
+    updateMarkers
+  };
 };

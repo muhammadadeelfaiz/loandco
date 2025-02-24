@@ -34,6 +34,10 @@ const MapboxMap = ({
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const { theme } = useTheme();
   const { isLoading, initializeMap } = useMapInitialization(mapContainer, theme);
+  
+  // Create refs for markers and search radius management
+  const markersInstance = useMapMarkers();
+  const searchRadiusInstance = useSearchRadius();
 
   // Default center coordinates (Dubai)
   const defaultCenter = { lat: 25.2048, lng: 55.2708 };
@@ -64,6 +68,7 @@ const MapboxMap = ({
     };
   }, [location, onLocationChange, readonly]);
 
+  // Update map style when theme changes
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
 
@@ -74,16 +79,17 @@ const MapboxMap = ({
     );
   }, [theme, isMapInitialized]);
 
-  // Initialize markers and search radius when map is ready
+  // Update markers when they change
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
-    
-    // Add markers
-    useMapMarkers(map.current, markers);
-    
-    // Add search radius
-    useSearchRadius(map.current, location, searchRadius);
-  }, [markers, location, searchRadius, isMapInitialized]);
+    markersInstance.updateMarkers(map.current, markers);
+  }, [markers, isMapInitialized]);
+
+  // Update search radius when location or radius changes
+  useEffect(() => {
+    if (!map.current || !isMapInitialized) return;
+    searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
+  }, [location, searchRadius, isMapInitialized]);
 
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
