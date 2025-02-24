@@ -1,8 +1,15 @@
+
 import Navigation from "@/components/Navigation";
 import { useUser } from "@/hooks/useUser";
 
 const PrivacyPolicy = () => {
-  const { user } = useUser();
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return <div className="min-h-screen bg-gradient-loco flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-loco">
