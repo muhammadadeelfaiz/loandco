@@ -50,56 +50,65 @@ const SearchResults = () => {
   const [ebayProducts, setEbayProducts] = useState<EbayProduct[]>([]);
   const { toast } = useToast();
 
-  // Get search query from URL
   const searchParams = new URLSearchParams(window.location.search);
   const submittedQuery = searchParams.get('q') || '';
+  const categoryFromUrl = searchParams.get('category');
+
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setCategory(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["search-products", submittedQuery],
+    queryKey: ["search-products", submittedQuery, category],
     queryFn: async () => {
       let query: ProductWithRetailer[];
       
-      if (submittedQuery) {
+      if (submittedQuery || category !== 'all') {
         const { data, error } = await supabase.rpc('search_products', {
-          search_term: submittedQuery
+          search_term: submittedQuery,
+          category_filter: category === 'all' ? null : category
         });
         if (error) throw error;
         query = data as ProductWithRetailer[];
 
-        // Fetch Amazon products
-        setIsLoadingAmazon(true);
-        try {
-          const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
-          if (amazonResult.success && amazonResult.data) {
-            setAmazonProducts(amazonResult.data);
+        if (submittedQuery) {
+          setIsLoadingAmazon(true);
+          try {
+            const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
+            if (amazonResult.success && amazonResult.data) {
+              setAmazonProducts(amazonResult.data);
+            }
+          } catch (error) {
+            console.error('Error fetching Amazon products:', error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to fetch Amazon products"
+            });
+          } finally {
+            setIsLoadingAmazon(false);
           }
-        } catch (error) {
-          console.error('Error fetching Amazon products:', error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to fetch Amazon products"
-          });
-        } finally {
-          setIsLoadingAmazon(false);
         }
 
-        // Fetch eBay products
-        setIsLoadingEbay(true);
-        try {
-          const ebayResult = await EbayService.searchProducts(submittedQuery);
-          if (ebayResult.success && ebayResult.data) {
-            setEbayProducts(ebayResult.data);
+        if (submittedQuery) {
+          setIsLoadingEbay(true);
+          try {
+            const ebayResult = await EbayService.searchProducts(submittedQuery);
+            if (ebayResult.success && ebayResult.data) {
+              setEbayProducts(ebayResult.data);
+            }
+          } catch (error) {
+            console.error('Error fetching eBay products:', error);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to fetch eBay products"
+            });
+          } finally {
+            setIsLoadingEbay(false);
           }
-        } catch (error) {
-          console.error('Error fetching eBay products:', error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to fetch eBay products"
-          });
-        } finally {
-          setIsLoadingEbay(false);
         }
 
         return query;
@@ -254,7 +263,6 @@ const SearchResults = () => {
           </h1>
         </div>
 
-        {/* Local Products */}
         <div className="space-y-4 mb-8">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Local Stores</h2>
           <LocalProducts
@@ -265,7 +273,6 @@ const SearchResults = () => {
           />
         </div>
 
-        {/* eBay Products */}
         {submittedQuery && (
           <div className="space-y-4 mb-8">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">eBay Products</h2>
@@ -276,7 +283,6 @@ const SearchResults = () => {
           </div>
         )}
 
-        {/* Amazon Products */}
         {submittedQuery && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Amazon Products</h2>
