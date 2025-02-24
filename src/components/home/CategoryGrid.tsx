@@ -18,7 +18,7 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 300;
+      const scrollAmount = 400; // Increased scroll amount to match larger cards
       const newScrollLeft = direction === 'left' 
         ? scrollRef.current.scrollLeft - scrollAmount
         : scrollRef.current.scrollLeft + scrollAmount;
@@ -42,7 +42,7 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
       
       <div 
         ref={scrollRef}
-        className="flex space-x-4 overflow-x-auto scrollbar-none py-4 px-2"
+        className="flex space-x-6 overflow-x-auto scrollbar-none py-6 px-2"
         style={{ scrollBehavior: 'smooth' }}
       >
         {categories.map((category) => (
@@ -51,8 +51,8 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
             className="flex-none"
             onClick={() => onCategoryClick(category.name)}
           >
-            <Card className="group cursor-pointer w-48 overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-b from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
-              <div className="aspect-[4/3] relative p-4">
+            <Card className="group cursor-pointer w-64 overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-gradient-to-b from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
+              <div className="aspect-[5/4] relative p-4">
                 <div className="w-full h-full rounded-xl overflow-hidden">
                   <img
                     src={category.image}
@@ -62,10 +62,10 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end p-4">
                   <div className="w-full">
-                    <h3 className="text-white font-semibold text-lg tracking-wide text-center">
+                    <h3 className="text-white font-semibold text-xl tracking-wide text-center">
                       {category.name}
                     </h3>
-                    <div className="mt-2 bg-primary/80 backdrop-blur-sm rounded-full py-1 px-3 mx-auto w-fit">
+                    <div className="mt-3 bg-primary/80 backdrop-blur-sm rounded-full py-2 px-4 mx-auto w-fit">
                       <p className="text-white text-sm font-medium">Shop Now</p>
                     </div>
                   </div>
@@ -88,3 +88,4 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
 };
 
 export default CategoryGrid;
+
