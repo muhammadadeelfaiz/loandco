@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -105,139 +106,141 @@ const RetailerDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation user={user} />
-      <SidebarProvider defaultOpen>
-        <div className="flex min-h-[calc(100vh-73px)]">
-          <Sidebar>
-            <SidebarHeader className="p-4">
-              <h2 className="text-lg font-semibold">Retailer Dashboard</h2>
-            </SidebarHeader>
-            <SidebarContent>
-              <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton
-                      onClick={() => navigate(item.path)}
-                      className="w-full flex items-center gap-2 px-4 py-2 hover:bg-accent rounded-md"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarContent>
-          </Sidebar>
+      <div className="pt-[73px]"> {/* Added padding-top to account for the fixed Navigation height */}
+        <SidebarProvider defaultOpen>
+          <div className="flex min-h-[calc(100vh-73px)]">
+            <Sidebar className="border-r border-border">
+              <SidebarHeader className="p-4">
+                <h2 className="text-lg font-semibold">Retailer Dashboard</h2>
+              </SidebarHeader>
+              <SidebarContent>
+                <SidebarMenu>
+                  {menuItems.map((item) => (
+                    <SidebarMenuItem key={item.label}>
+                      <SidebarMenuButton
+                        onClick={() => navigate(item.path)}
+                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-accent rounded-md"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarContent>
+            </Sidebar>
 
-          <div className="flex-1 p-6">
-            <div className="max-w-7xl mx-auto space-y-8">
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">Welcome to your retailer dashboard!</h1>
-              </div>
+            <div className="flex-1 p-6">
+              <div className="max-w-7xl mx-auto space-y-8">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-3xl font-bold">Welcome to your retailer dashboard!</h1>
+                </div>
 
-              {store && (
-                <Card className="bg-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-6">
-                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                        {store.logo_url ? (
-                          <img
-                            src={store.logo_url}
-                            alt={store.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Store className="w-12 h-12 text-gray-400" />
-                        )}
+                {store && (
+                  <Card className="bg-white dark:bg-gray-800">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-6">
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                          {store.logo_url ? (
+                            <img
+                              src={store.logo_url}
+                              alt={store.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Store className="w-12 h-12 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-semibold">{store.name}</h2>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/store/${store.id}`)}
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Store
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
+                            {store.phone && (
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                <span>{store.phone}</span>
+                              </div>
+                            )}
+                            {store.latitude && store.longitude && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                <span>Location set</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-2xl font-semibold">{store.name}</h2>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold mb-2">Total Products Listed</h3>
+                      <div className="flex items-center gap-2">
+                        <Package className="w-5 h-5 text-primary" />
+                        <span className="text-2xl font-bold">{totalProducts}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold mb-2">Customer Inquiries</h3>
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                        <span className="text-2xl font-bold">{customerInquiries}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold mb-4">Recent Products</h3>
+                    <div className="space-y-4">
+                      {recentProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
+                        >
+                          <div>
+                            <h4 className="font-medium">{product.name}</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              AED {product.price}
+                            </p>
+                          </div>
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => navigate(`/store/${store.id}`)}
+                              onClick={() => navigate(`/product/${product.id}`)}
                             >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Store
+                              Edit
                             </Button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                          {store.phone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4" />
-                              <span>{store.phone}</span>
-                            </div>
-                          )}
-                          {store.latitude && store.longitude && (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4" />
-                              <span>Location set</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-2">Total Products Listed</h3>
-                    <div className="flex items-center gap-2">
-                      <Package className="w-5 h-5 text-primary" />
-                      <span className="text-2xl font-bold">{totalProducts}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-2">Customer Inquiries</h3>
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-primary" />
-                      <span className="text-2xl font-bold">{customerInquiries}</span>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Recent Products</h3>
-                  <div className="space-y-4">
-                    {recentProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div>
-                          <h4 className="font-medium">{product.name}</h4>
-                          <p className="text-sm text-gray-600">
-                            AED {product.price}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/product/${product.id}`)}
-                          >
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </div>
     </div>
   );
 };
