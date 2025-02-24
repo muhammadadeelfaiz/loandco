@@ -61,80 +61,71 @@ const SearchResults = () => {
     }
   }, [categoryFromUrl]);
 
+  // Fetch local products
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", submittedQuery, category],
     queryFn: async () => {
-      let query: ProductWithRetailer[];
-      
-      if (submittedQuery || category !== 'all') {
-        const { data, error } = await supabase.rpc('search_products', {
-          search_term: submittedQuery,
-          category_filter: category === 'all' ? null : category
-        });
-        if (error) throw error;
-        query = data as ProductWithRetailer[];
-
-        if (submittedQuery) {
-          setIsLoadingAmazon(true);
-          try {
-            const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
-            if (amazonResult.success && amazonResult.data) {
-              setAmazonProducts(amazonResult.data);
-            }
-          } catch (error) {
-            console.error('Error fetching Amazon products:', error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to fetch Amazon products"
-            });
-          } finally {
-            setIsLoadingAmazon(false);
-          }
-        }
-
-        if (submittedQuery) {
-          setIsLoadingEbay(true);
-          try {
-            const ebayResult = await EbayService.searchProducts(submittedQuery);
-            if (ebayResult.success && ebayResult.data) {
-              setEbayProducts(ebayResult.data);
-            }
-          } catch (error) {
-            console.error('Error fetching eBay products:', error);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to fetch eBay products"
-            });
-          } finally {
-            setIsLoadingEbay(false);
-          }
-        }
-
-        return query;
-      } else {
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            *,
-            users (
-              name
-            )
-          `);
-        if (error) throw error;
-        
-        query = (data || []).map(product => ({
-          ...product,
-          retailer_name: (product.users as { name: string } | null)?.name,
-          distance: undefined
-        }));
-
-        return query;
-      }
+      const { data, error } = await supabase.rpc('search_products', {
+        search_term: submittedQuery,
+        category_filter: category === 'all' ? null : category
+      });
+      if (error) throw error;
+      return data as ProductWithRetailer[];
     },
-    enabled: true
   });
+
+  // Fetch eBay products when query or category changes
+  useEffect(() => {
+    const fetchEbayProducts = async () => {
+      setIsLoadingEbay(true);
+      try {
+        const searchQuery = category === 'all' ? submittedQuery : `${submittedQuery} ${category}`.trim();
+        if (searchQuery) {
+          const ebayResult = await EbayService.searchProducts(searchQuery);
+          if (ebayResult.success && ebayResult.data) {
+            setEbayProducts(ebayResult.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching eBay products:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch eBay products"
+        });
+      } finally {
+        setIsLoadingEbay(false);
+      }
+    };
+
+    fetchEbayProducts();
+  }, [submittedQuery, category, toast]);
+
+  // Fetch Amazon products
+  useEffect(() => {
+    const fetchAmazonProducts = async () => {
+      if (!submittedQuery) return;
+      
+      setIsLoadingAmazon(true);
+      try {
+        const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
+        if (amazonResult.success && amazonResult.data) {
+          setAmazonProducts(amazonResult.data);
+        }
+      } catch (error) {
+        console.error('Error fetching Amazon products:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch Amazon products"
+        });
+      } finally {
+        setIsLoadingAmazon(false);
+      }
+    };
+
+    fetchAmazonProducts();
+  }, [submittedQuery, toast]);
 
   const handleContactRetailer = (retailerName: string) => {
     toast({
@@ -157,62 +148,64 @@ const SearchResults = () => {
     setDistanceRange("all");
   };
 
-  const filterProducts = (products: ProductWithRetailer[] | undefined) => {
-    if (!products) return [];
+  const filterAndSortProducts = (items: any[], type: 'local' | 'ebay') => {
+    if (!items) return [];
     
-    let filteredProducts = [...products];
+    let filteredItems = [...items];
 
-    if (category !== "all") {
-      filteredProducts = filteredProducts.filter(
-        product => product.category.toLowerCase() === category.toLowerCase()
+    // Apply price range filter
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      filteredItems = filteredItems.filter(item => {
+        const price = type === 'local' ? item.price : parseFloat(item.price.value);
+        if (max) {
+          return price >= min && price <= max;
+        }
+        return price >= min;
+      });
+    }
+
+    // Apply sorting
+    filteredItems.sort((a, b) => {
+      const priceA = type === 'local' ? a.price : parseFloat(a.price.value);
+      const priceB = type === 'local' ? b.price : parseFloat(b.price.value);
+      const nameA = type === 'local' ? a.name : a.title;
+      const nameB = type === 'local' ? b.name : b.title;
+
+      switch (sortBy) {
+        case "price-asc":
+          return priceA - priceB;
+        case "price-desc":
+          return priceB - priceA;
+        case "name-asc":
+          return nameA.localeCompare(nameB);
+        case "name-desc":
+          return nameB.localeCompare(nameA);
+        case "distance":
+          if (type === 'local') {
+            const distA = a.distance ?? Infinity;
+            const distB = b.distance ?? Infinity;
+            return distA - distB;
+          }
+          return 0;
+        default:
+          return 0;
+      }
+    });
+
+    // Apply distance filter for local products
+    if (type === 'local' && distanceRange !== "all") {
+      const maxDistance = parseInt(distanceRange);
+      filteredItems = filteredItems.filter(
+        item => typeof item.distance === 'number' && item.distance <= maxDistance
       );
     }
 
-    if (priceRange !== "all") {
-      const [min, max] = priceRange.split("-").map(Number);
-      if (max) {
-        filteredProducts = filteredProducts.filter(
-          product => product.price >= min && product.price <= max
-        );
-      } else {
-        filteredProducts = filteredProducts.filter(
-          product => product.price >= min
-        );
-      }
-    }
-
-    switch (sortBy) {
-      case "price-asc":
-        filteredProducts.sort((a, b) => a.price - b.price);
-        break;
-      case "price-desc":
-        filteredProducts.sort((a, b) => b.price - a.price);
-        break;
-      case "name-asc":
-        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "name-desc":
-        filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "distance":
-        if (distanceRange !== "all") {
-          const maxDistance = parseInt(distanceRange);
-          filteredProducts = filteredProducts.filter(
-            product => typeof product.distance === 'number' && product.distance <= maxDistance
-          );
-        }
-        filteredProducts.sort((a, b) => {
-          const distA = a.distance ?? Infinity;
-          const distB = b.distance ?? Infinity;
-          return distA - distB;
-        });
-        break;
-      case "rating":
-        break;
-    }
-
-    return filteredProducts;
+    return filteredItems;
   };
+
+  const filteredLocalProducts = filterAndSortProducts(products, 'local');
+  const filteredEbayProducts = filterAndSortProducts(ebayProducts, 'ebay');
 
   if (isLoading) {
     return (
@@ -227,8 +220,6 @@ const SearchResults = () => {
       </div>
     );
   }
-
-  const filteredProducts = filterProducts(products);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -260,43 +251,47 @@ const SearchResults = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {submittedQuery ? `Search Results for "${submittedQuery}"` : "All Products"}
+            {submittedQuery 
+              ? `Search Results for "${submittedQuery}"${category !== 'all' ? ` in ${category}` : ''}`
+              : category !== 'all' 
+                ? `Browsing ${category}`
+                : "All Products"
+            }
           </h1>
         </div>
 
-        <div className="space-y-4 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Local Stores</h2>
-          <LocalProducts
-            products={filteredProducts}
-            isLoading={isLoading}
-            onContactRetailer={handleContactRetailer}
-            onGetDirections={handleGetDirections}
-          />
-        </div>
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Local Stores</h2>
+            <LocalProducts
+              products={filteredLocalProducts}
+              isLoading={isLoading}
+              onContactRetailer={handleContactRetailer}
+              onGetDirections={handleGetDirections}
+            />
+          </section>
 
-        {submittedQuery && (
-          <div className="space-y-4 mb-8">
+          <section>
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">eBay Products</h2>
             <EbayProducts 
-              products={ebayProducts}
+              products={filteredEbayProducts}
               isLoading={isLoadingEbay}
             />
-          </div>
-        )}
+          </section>
 
-        {submittedQuery && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Amazon Products</h2>
-            <AmazonProducts 
-              products={amazonProducts}
-              isLoading={isLoadingAmazon}
-            />
-          </div>
-        )}
+          {submittedQuery && (
+            <section>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Amazon Products</h2>
+              <AmazonProducts 
+                products={amazonProducts}
+                isLoading={isLoadingAmazon}
+              />
+            </section>
+          )}
+        </div>
       </main>
     </div>
   );
 };
 
 export default SearchResults;
-
