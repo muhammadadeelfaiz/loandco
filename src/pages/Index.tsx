@@ -71,7 +71,10 @@ const Index = ({ user }: IndexProps) => {
         <FeaturedProducts />
         
         <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-8 text-center">Browse Categories</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-2">Browse Categories</h2>
+            <p className="text-gray-600 dark:text-gray-300">Discover amazing deals across all categories</p>
+          </div>
           <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         </div>
         
