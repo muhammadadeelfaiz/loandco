@@ -11,6 +11,7 @@ import Map from "@/components/Map";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "@/hooks/useLocation";
 import { Loader2 } from "lucide-react";
+import Deals from "@/components/home/Deals";
 
 const CATEGORIES = [
   { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
@@ -91,6 +92,9 @@ const Index = ({ user }: IndexProps) => {
           <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         </div>
         
+        <Deals />
+        <BestSellers />
+        
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
           <Card className="p-4">
@@ -130,7 +134,6 @@ const Index = ({ user }: IndexProps) => {
           </div>
         </section>
 
-        <BestSellers />
         <RetailerGrid stores={stores} retailerImages={RETAILER_IMAGES} />
       </main>
     </div>

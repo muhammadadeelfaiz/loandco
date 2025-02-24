@@ -4,23 +4,24 @@ import { Card } from "@/components/ui/card";
 import { EbayService } from "@/services/EbayService";
 import { Loader2 } from "lucide-react";
 
-// Popular categories for best sellers
-const BEST_SELLER_TERMS = [
-  "best selling electronics",
-  "top rated phone",
-  "popular laptop",
-  "trending gadgets"
+// Deals-focused search terms
+const DEALS_TERMS = [
+  "clearance electronics",
+  "sale laptop",
+  "discount headphones",
+  "special offer phone",
+  "deal camera"
 ];
 
-const BestSellers = () => {
-  const searchTerm = BEST_SELLER_TERMS[Math.floor(Math.random() * BEST_SELLER_TERMS.length)];
+const Deals = () => {
+  const searchTerm = DEALS_TERMS[Math.floor(Math.random() * DEALS_TERMS.length)];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['ebay-best-sellers', searchTerm],
+    queryKey: ['ebay-deals', searchTerm],
     queryFn: async () => {
       const result = await EbayService.searchProducts(searchTerm);
       if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch eBay best sellers');
+        throw new Error(result.error || 'Failed to fetch eBay deals');
       }
       return result.data.slice(0, 4);
     },
@@ -31,7 +32,7 @@ const BestSellers = () => {
   if (isLoading) {
     return (
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Best Sellers</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Special Deals</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((item) => (
             <Card 
@@ -52,7 +53,7 @@ const BestSellers = () => {
 
   return (
     <section className="mb-12">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Best Sellers</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Special Deals</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {data.map((product) => (
           <Card 
@@ -80,5 +81,5 @@ const BestSellers = () => {
   );
 };
 
-export default BestSellers;
+export default Deals;
 
