@@ -4,12 +4,9 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { useMapInitialization } from '@/hooks/useMapInitialization';
-import { useMapMarkers } from '@/hooks/useMapMarkers';
-import { useSearchRadius } from '@/hooks/useSearchRadius';
 
 interface MapboxMapProps {
-  location?: { lat: number; lng: number };
+  location?: { lat: number; lng: number } | null;
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
   searchRadius?: number;
@@ -20,6 +17,7 @@ interface MapboxMapProps {
     title: string;
     description?: string;
   }>;
+  accessToken: string;
 }
 
 const MapboxMap = ({
@@ -27,56 +25,72 @@ const MapboxMap = ({
   onLocationChange,
   readonly = false,
   searchRadius = 5,
-  markers = []
+  markers = [],
+  accessToken
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
   const { theme } = useTheme();
-  const { isLoading, initializeMap } = useMapInitialization(mapContainer, theme);
 
-  // Default center coordinates (Dubai)
+  // Default center (Dubai)
   const defaultCenter = { lat: 25.2048, lng: 55.2708 };
+  const initialLocation = location || defaultCenter;
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !accessToken) return;
 
-    const initialize = async () => {
-      const initialCenter = location || defaultCenter;
-      const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
-      map.current = newMap;
-    };
+    mapboxgl.accessToken = accessToken;
 
-    initialize();
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
+      center: [initialLocation.lng, initialLocation.lat],
+      zoom: 13
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    if (!readonly) {
+      marker.current = new mapboxgl.Marker({
+        draggable: !readonly
+      })
+        .setLngLat([initialLocation.lng, initialLocation.lat])
+        .addTo(map.current);
+
+      if (marker.current && onLocationChange) {
+        marker.current.on('dragend', () => {
+          const lngLat = marker.current!.getLngLat();
+          onLocationChange({ lat: lngLat.lat, lng: lngLat.lng });
+        });
+      }
+
+      map.current.on('click', (e) => {
+        if (marker.current && onLocationChange) {
+          marker.current.setLngLat(e.lngLat);
+          onLocationChange({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+        }
+      });
+    }
 
     return () => {
       map.current?.remove();
     };
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
-    if (!map.current) return;
-
-    map.current.setStyle(
-      theme === 'dark'
-        ? 'mapbox://styles/mapbox/dark-v11'
-        : 'mapbox://styles/mapbox/light-v11'
-    );
+    if (map.current) {
+      map.current.setStyle(
+        theme === 'dark'
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : 'mapbox://styles/mapbox/light-v11'
+      );
+    }
   }, [theme]);
 
-  useMapMarkers(map.current, markers);
-  useSearchRadius(map.current, location, searchRadius);
-
   return (
-    <div className="relative w-full h-[600px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-      <div 
-        ref={mapContainer} 
-        className="absolute inset-0 w-full h-full" 
-      />
-      {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      )}
+    <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
+      <div ref={mapContainer} className="absolute inset-0" />
     </div>
   );
 };
