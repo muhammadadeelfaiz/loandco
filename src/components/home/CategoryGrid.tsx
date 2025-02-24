@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface Category {
   name: string;
@@ -15,10 +15,44 @@ interface CategoryGridProps {
 
 const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Clone categories for infinite scroll effect
+  const extendedCategories = [...categories, ...categories, ...categories];
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      // Set initial scroll position to show the middle set of items
+      const scrollToMiddle = () => {
+        const containerWidth = scrollRef.current?.scrollWidth ?? 0;
+        scrollRef.current?.scrollTo({
+          left: containerWidth / 3,
+          behavior: 'auto'
+        });
+      };
+      scrollToMiddle();
+    }
+  }, []);
+
+  const handleScroll = () => {
+    if (scrollRef.current && !isDragging) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      const containerWidth = scrollWidth / 3;
+
+      // If we've scrolled near the end, jump back to middle
+      if (scrollLeft > containerWidth * 1.8) {
+        scrollRef.current.scrollLeft = containerWidth * 0.8;
+      }
+      // If we've scrolled near the start, jump forward to middle
+      else if (scrollLeft < containerWidth * 0.2) {
+        scrollRef.current.scrollLeft = containerWidth * 1.2;
+      }
+    }
+  };
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 400; // Increased scroll amount to match larger cards
+      const scrollAmount = 400;
       const newScrollLeft = direction === 'left' 
         ? scrollRef.current.scrollLeft - scrollAmount
         : scrollRef.current.scrollLeft + scrollAmount;
@@ -44,10 +78,14 @@ const CategoryGrid = ({ categories, onCategoryClick }: CategoryGridProps) => {
         ref={scrollRef}
         className="flex space-x-6 overflow-x-auto scrollbar-none py-6 px-2"
         style={{ scrollBehavior: 'smooth' }}
+        onScroll={handleScroll}
+        onMouseDown={() => setIsDragging(true)}
+        onMouseUp={() => setIsDragging(false)}
+        onMouseLeave={() => setIsDragging(false)}
       >
-        {categories.map((category) => (
+        {extendedCategories.map((category, index) => (
           <div
-            key={category.name}
+            key={`${category.name}-${index}`}
             className="flex-none"
             onClick={() => onCategoryClick(category.name)}
           >
