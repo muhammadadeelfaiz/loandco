@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -9,7 +10,7 @@ interface StoreLocationPickerProps {
 }
 
 const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocationPickerProps) => {
-  const [location, setLocation] = useState(initialLocation);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
     setLocation(newLocation);
@@ -24,10 +25,13 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
           Click on the map to set your store's location
         </p>
       </div>
-      <Map
-        location={location}
-        onLocationChange={handleLocationChange}
-      />
+      <div className="h-[300px] rounded-lg overflow-hidden">
+        <Map
+          location={location}
+          onLocationChange={handleLocationChange}
+          readonly={false}
+        />
+      </div>
       {location && (
         <div className="text-sm text-gray-600">
           Selected location: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}

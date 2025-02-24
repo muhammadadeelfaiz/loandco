@@ -39,18 +39,33 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           ? 'mapbox://styles/mapbox/dark-v11'
           : 'mapbox://styles/mapbox/light-v11',
         center: [location.lng, location.lat],
-        zoom: 13
+        zoom: 13,
       });
 
+      // Add navigation controls
       map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
+      // Add click handler if not readonly
       if (!readonly) {
+        const marker = new mapboxgl.Marker();
+        
         map.on('click', (e) => {
-          onLocationChange?.({
+          const newLocation = {
             lat: e.lngLat.lat,
             lng: e.lngLat.lng
-          });
+          };
+          
+          // Update marker position
+          marker.setLngLat([newLocation.lng, newLocation.lat]).addTo(map);
+          
+          // Call the location change handler
+          onLocationChange?.(newLocation);
         });
+
+        // If we have an initial location, show the marker
+        if (location) {
+          marker.setLngLat([location.lng, location.lat]).addTo(map);
+        }
       }
 
       map.on('load', () => {
@@ -60,10 +75,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       return map;
     } catch (error) {
-      console.error('Detailed map initialization error:', {
-        error,
-        stack: error instanceof Error ? error.stack : undefined
-      });
+      console.error('Map initialization error:', error);
       setIsLoading(false);
       toast({
         variant: "destructive",

@@ -39,7 +39,7 @@ const MapboxMap = ({
 
   useEffect(() => {
     if (!mapContainer.current) return;
-
+    
     const initialize = async () => {
       const initialCenter = location || defaultCenter;
       const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
@@ -49,9 +49,12 @@ const MapboxMap = ({
     initialize();
 
     return () => {
-      map.current?.remove();
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
     };
-  }, []);
+  }, [location, onLocationChange, readonly]);
 
   useEffect(() => {
     if (!map.current) return;
@@ -67,7 +70,7 @@ const MapboxMap = ({
   useSearchRadius(map.current, location, searchRadius);
 
   return (
-    <div className="relative w-full h-[600px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="relative w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
       <div 
         ref={mapContainer} 
         className="absolute inset-0 w-full h-full" 
