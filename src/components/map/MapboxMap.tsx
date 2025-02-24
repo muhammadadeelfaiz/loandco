@@ -2,11 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface MapboxMapProps {
   location?: { lat: number; lng: number };
@@ -32,28 +33,46 @@ const MapboxMap = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
   const { isLoading, initializeMap } = useMapInitialization(mapContainer, theme);
   
-  // Create refs for markers and search radius management
   const markersInstance = useMapMarkers();
   const searchRadiusInstance = useSearchRadius();
 
-  // Default center coordinates (Dubai)
   const defaultCenter = { lat: 25.2048, lng: 55.2708 };
 
   useEffect(() => {
     if (!mapContainer.current) return;
     
     const initialize = async () => {
-      const initialCenter = location || defaultCenter;
-      const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
-      if (newMap) {
-        map.current = newMap;
-        newMap.on('load', () => {
-          console.log('Map initialized successfully');
-          setIsMapInitialized(true);
-        });
+      try {
+        setError(null);
+        const initialCenter = location || defaultCenter;
+        const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
+        
+        if (newMap) {
+          map.current = newMap;
+          
+          // Add error handling for map load
+          newMap.on('load', () => {
+            console.log('Map initialized successfully');
+            setIsMapInitialized(true);
+          });
+
+          // Add specific error handling for authentication errors
+          newMap.on('error', (e) => {
+            console.error('Map error:', e);
+            if (e.error?.status === 403) {
+              setError('Map authentication failed. Please check your Mapbox token.');
+            } else {
+              setError('There was an error loading the map. Please check your internet connection.');
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Map initialization error:', err);
+        setError('Failed to initialize map. Please try refreshing the page.');
       }
     };
 
@@ -68,7 +87,6 @@ const MapboxMap = ({
     };
   }, [location, onLocationChange, readonly]);
 
-  // Update map style when theme changes
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
 
@@ -79,17 +97,25 @@ const MapboxMap = ({
     );
   }, [theme, isMapInitialized]);
 
-  // Update markers when they change
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
     markersInstance.updateMarkers(map.current, markers);
   }, [markers, isMapInitialized]);
 
-  // Update search radius when location or radius changes
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
     searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
   }, [location, searchRadius, isMapInitialized]);
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="h-full flex items-center justify-center">
+        <AlertTriangle className="h-5 w-5" />
+        <AlertTitle>Map Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="w-full h-full">

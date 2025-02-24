@@ -25,23 +25,24 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         method: 'GET'
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
+      if (error || !data?.token) {
+        console.error('Failed to fetch Mapbox token:', error || 'No token returned');
         toast({
           variant: "destructive",
-          title: "Map Loading Error",
-          description: "Failed to initialize map. Please try again later."
+          title: "Map Configuration Error",
+          description: "Failed to initialize map. Please check your configuration."
         });
         setIsLoading(false);
         return null;
       }
 
-      if (!data?.token) {
-        console.error('No Mapbox token in response:', data);
+      // Validate token format
+      if (typeof data.token !== 'string' || !data.token.startsWith('pk.')) {
+        console.error('Invalid Mapbox token format:', data.token);
         toast({
           variant: "destructive",
-          title: "Map Configuration Error",
-          description: "Map token not found. Please check your configuration."
+          title: "Invalid Map Configuration",
+          description: "The map token appears to be invalid. Please check your configuration."
         });
         setIsLoading(false);
         return null;
@@ -73,14 +74,10 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
             lng: e.lngLat.lng
           };
           
-          // Update marker position
           marker.setLngLat([newLocation.lng, newLocation.lat]).addTo(map);
-          
-          // Call the location change handler
           onLocationChange?.(newLocation);
         });
 
-        // If we have an initial location, show the marker
         if (location) {
           marker.setLngLat([location.lng, location.lat]).addTo(map);
         }
@@ -88,16 +85,6 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       map.on('load', () => {
         console.log('Map loaded successfully');
-        setIsLoading(false);
-      });
-
-      map.on('error', (e) => {
-        console.error('Map error:', e);
-        toast({
-          variant: "destructive",
-          title: "Map Error",
-          description: "There was an error loading the map. Please check your internet connection."
-        });
         setIsLoading(false);
       });
 
