@@ -78,9 +78,8 @@ const Index = ({ user }: IndexProps) => {
           <CategoryGrid categories={CATEGORIES} onCategoryClick={handleCategoryClick} />
         </div>
         
-        <Deals />
         <BestSellers />
-        
+
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Stores Near You</h2>
           <Card className="p-4">
@@ -98,7 +97,9 @@ const Index = ({ user }: IndexProps) => {
             )}
           </Card>
         </section>
-
+        
+        <Deals />
+        
         <RetailerGrid stores={stores} retailerImages={RETAILER_IMAGES} />
       </main>
     </div>
