@@ -18,13 +18,13 @@ const CATEGORIES = [
   { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
   { name: "Fashion", image: "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png" },
   { name: "Home & Garden", image: "/lovable-uploads/a5b732da-cecd-4769-8f07-fe650aca3281.png" },
-  { name: "Sports", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
+  { name: "Sports", image: "/lovable-uploads/88a4569e-4f6d-4939-ac15-0c6ac7b6e3fc.png" },
   { name: "Books", image: "/lovable-uploads/d2e2fe4c-bdcb-43ea-8b2e-1ef01827afa4.png" },
-  { name: "Beauty", image: "/lovable-uploads/7ea95596-4821-4572-9437-984f0a07e449.png" },
+  { name: "Beauty", image: "/lovable-uploads/b3c74228-0324-4ed4-8a4d-887008bf51db.png" },
   { name: "Health", image: "/lovable-uploads/1b3c7f96-b1ac-40d2-b469-91f2eda8fcf5.png" },
-  { name: "Food & Beverages", image: "/lovable-uploads/cd2fc49a-fed6-46ed-935e-b78f5ad77b00.png" },
-  { name: "Automotive", image: "/lovable-uploads/b3e64fee-6c53-46f8-90b9-923245bc5c55.png" },
-  { name: "Toys", image: "/lovable-uploads/8329be5b-30dc-4556-a352-afbcba4c2b08.png" },
+  { name: "Food & Beverages", image: "/lovable-uploads/7a857710-4bc6-47a1-9dda-465ae2d7e3bd.png" },
+  { name: "Automotive", image: "/lovable-uploads/a355fe90-4a24-48a1-aece-9efbe0db417a.png" },
+  { name: "Toys", image: "/lovable-uploads/a4efafee-7622-4ccc-9b02-9ea93d5e4e3e.png" },
 ];
 
 const RETAILER_IMAGES = {
