@@ -1,52 +1,46 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    const body = await req.json()
-    const { action } = body
-
-    if (action === 'get-token') {
-      const { data: secrets, error: secretsError } = await supabaseClient.rpc(
-        'get_secrets',
-        { secret_names: ['MAPBOX_PUBLIC_TOKEN'] }
-      )
-
-      if (secretsError) {
-        throw secretsError
-      }
-
+    const mapboxToken = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
+    
+    if (!mapboxToken) {
+      console.error('Mapbox token not found in environment');
       return new Response(
-        JSON.stringify({
-          token: secrets.MAPBOX_PUBLIC_TOKEN
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+        JSON.stringify({ success: false, error: 'Mapbox token not configured' }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 500 
+        }
+      );
     }
 
-    throw new Error('Invalid action')
-  } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ success: true, token: mapboxToken }), 
       { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    )
+    );
+
+  } catch (error) {
+    console.error('Error in map-service function:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }), 
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
+    );
   }
-})
+});
