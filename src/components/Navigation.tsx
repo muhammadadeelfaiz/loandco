@@ -27,8 +27,8 @@ const Navigation = ({ user }: NavigationProps) => {
   const userRole = user?.user_metadata?.role || "customer";
   const location = useLocation();
 
-  // Only show search bar on home and search results pages
-  const shouldShowSearchBar = location.pathname === '/' || location.pathname === '/search';
+  // Show search bar on home, search, and search results pages
+  const shouldShowSearchBar = ['/', '/search'].includes(location.pathname) || location.pathname.startsWith('/search');
 
   const handleSignOut = async () => {
     try {
@@ -185,7 +185,7 @@ const Navigation = ({ user }: NavigationProps) => {
           </div>
         </div>
         
-        {/* Search Bar - Only shown on home and search pages */}
+        {/* Search Bar */}
         {shouldShowSearchBar && (
           <div className="max-w-2xl mx-auto w-full">
             <SearchBar 
