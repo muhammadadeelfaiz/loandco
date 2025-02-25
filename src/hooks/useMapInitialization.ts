@@ -36,20 +36,10 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         return null;
       }
 
-      // Validate token format
-      if (typeof data.token !== 'string' || !data.token.startsWith('pk.')) {
-        console.error('Invalid Mapbox token format:', data.token);
-        toast({
-          variant: "destructive",
-          title: "Invalid Map Configuration",
-          description: "The map token appears to be invalid. Please check your configuration."
-        });
-        setIsLoading(false);
-        return null;
-      }
-
       console.log('Successfully retrieved Mapbox token');
       mapboxgl.accessToken = data.token;
+
+      const defaultLocation = location || { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
       console.log('Initializing Mapbox map...');
       const map = new mapboxgl.Map({
@@ -57,7 +47,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         style: theme === 'dark' 
           ? 'mapbox://styles/mapbox/dark-v11'
           : 'mapbox://styles/mapbox/light-v11',
-        center: [location.lng, location.lat],
+        center: [defaultLocation.lng, defaultLocation.lat],
         zoom: 13,
       });
 

@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,10 +14,19 @@ serve(async (req) => {
   }
 
   try {
-    const token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
-    
-    if (!token) {
-      console.error('Mapbox token not found in environment');
+    // Create a Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get the Mapbox token from secrets
+    const { data, error } = await supabaseClient.rpc('get_secrets', {
+      secret_names: ['MAPBOX_PUBLIC_TOKEN']
+    });
+
+    if (error || !data?.MAPBOX_PUBLIC_TOKEN) {
+      console.error('Failed to fetch Mapbox token:', error || 'No token found');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -30,7 +40,9 @@ serve(async (req) => {
       );
     }
 
+    const token = data.MAPBOX_PUBLIC_TOKEN;
     console.log('Successfully retrieved Mapbox token');
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
