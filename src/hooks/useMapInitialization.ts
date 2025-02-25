@@ -78,6 +78,15 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         setIsLoading(false);
       });
 
+      map.on('error', (e) => {
+        console.error('Map error:', e);
+        toast({
+          variant: "destructive",
+          title: "Map Error",
+          description: "There was an error loading the map. Please try again."
+        });
+      });
+
       return map;
     } catch (error) {
       console.error('Map initialization error:', error);

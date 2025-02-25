@@ -14,19 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Get the Mapbox token from secrets
-    const { data, error } = await supabaseClient.rpc('get_secrets', {
-      secret_names: ['MAPBOX_PUBLIC_TOKEN']
-    });
-
-    if (error || !data?.MAPBOX_PUBLIC_TOKEN) {
-      console.error('Failed to fetch Mapbox token:', error || 'No token found');
+    const token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
+    console.log('Retrieved token from env:', !!token); // Log if token exists
+    
+    if (!token) {
+      console.error('Mapbox token not found in environment');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -40,16 +32,14 @@ serve(async (req) => {
       );
     }
 
-    const token = data.MAPBOX_PUBLIC_TOKEN;
-    console.log('Successfully retrieved Mapbox token');
-    
     return new Response(
       JSON.stringify({ 
         success: true, 
         token 
       }), 
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
       }
     );
 
