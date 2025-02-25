@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -14,7 +15,7 @@ const SearchBar = ({ userRole, searchTerm, onSearchChange, onSubmit }: SearchBar
     <form onSubmit={onSubmit} className="w-full max-w-3xl mx-auto relative">
       <Input 
         type="search" 
-        placeholder={userRole === "customer" ? "Search for products..." : "Search your inventory..."}
+        placeholder="Search products..."
         className="w-full pl-12 h-12 bg-white shadow-sm hover:shadow-md transition-shadow"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
