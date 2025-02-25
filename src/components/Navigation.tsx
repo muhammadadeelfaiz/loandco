@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import SearchBar from "@/components/home/SearchBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,15 @@ const Navigation = ({ user }: NavigationProps) => {
   // Show search bar on home, search, and search results pages
   const shouldShowSearchBar = ['/', '/search'].includes(location.pathname) || location.pathname.startsWith('/search');
 
+  // Update search term when URL changes
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const queryParam = searchParams.get('q');
+    if (queryParam) {
+      setSearchTerm(queryParam);
+    }
+  }, [location.search]);
+
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -50,8 +59,19 @@ const Navigation = ({ user }: NavigationProps) => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm("");
+      const searchQuery = encodeURIComponent(searchTerm.trim());
+      const newSearchPath = `/search?q=${searchQuery}`;
+      
+      if (location.pathname.startsWith('/search')) {
+        // Force a reload of the search results by navigating to a different path first
+        navigate('/', { replace: true });
+        // Then immediately navigate to the search results
+        setTimeout(() => {
+          navigate(newSearchPath);
+        }, 0);
+      } else {
+        navigate(newSearchPath);
+      }
     }
   };
 
