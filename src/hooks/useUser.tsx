@@ -23,12 +23,14 @@ export function useUser() {
 
     getInitialSession();
 
-    // Listen for auth changes
+    // Set up real-time subscription to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session?.user?.id);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
+    // Clean up subscription
     return () => {
       subscription.unsubscribe();
     };

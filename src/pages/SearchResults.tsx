@@ -6,7 +6,11 @@ import { SearchHeader } from "@/components/search/SearchHeader";
 import { ProductResults } from "@/components/search/ProductResults";
 import { useProductSearch } from "@/hooks/useProductSearch";
 
-const SearchResults = () => {
+interface SearchResultsProps {
+  user: any;
+}
+
+const SearchResults = ({ user }: SearchResultsProps) => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
@@ -117,7 +121,7 @@ const SearchResults = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Navigation user={null} />
+        <Navigation user={user} />
         <main className="container mx-auto px-4 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
@@ -130,7 +134,7 @@ const SearchResults = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navigation user={null} />
+      <Navigation user={user} />
       
       <main className="container mx-auto px-4 py-8">
         <SearchHeader

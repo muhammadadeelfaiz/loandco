@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,51 +22,40 @@ import CreateStore from "./pages/CreateStore";
 import Wishlist from "./pages/Wishlist";
 import CompareProducts from "./pages/CompareProducts";
 import RetailerDashboard from "./pages/RetailerDashboard";
+import { useUser } from "@/hooks/useUser";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useUser();
+  const [theme, setTheme] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check active sessions and subscribe to auth changes
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-        setLoading(false);
-
-        // Set up real-time subscription to auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-          setUser(session?.user ?? null);
-        });
-
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Error checking auth state:", error);
-        setLoading(false);
-      }
-    };
-
     // Initialize theme from localStorage or system preference
-    const initializeTheme = () => {
-      if (typeof window !== 'undefined') {
-        const root = window.document.documentElement;
-        const initialTheme = localStorage.getItem('theme') || 
-          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        root.classList.add(initialTheme);
-      }
-    };
-
-    checkUser();
-    initializeTheme();
+    if (typeof window !== 'undefined') {
+      const root = window.document.documentElement;
+      const initialTheme = localStorage.getItem('theme') || 
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      root.classList.add(initialTheme);
+      setTheme(initialTheme);
+    }
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
@@ -76,7 +66,7 @@ const App = () => {
           <Sonner />
           <Routes>
             <Route path="/" element={<Index user={user} />} />
-            <Route path="/search" element={<SearchResults />} />
+            <Route path="/search" element={<SearchResults user={user} />} />
             <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
             <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
             <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
@@ -106,9 +96,9 @@ const App = () => {
                   : <Navigate to="/" />
               } 
             />
-            <Route path="/store/:id" element={<StoreProfile />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/compare/:id" element={<CompareProducts />} />
+            <Route path="/store/:id" element={<StoreProfile user={user} />} />
+            <Route path="/product/:id" element={<ProductDetails user={user} />} />
+            <Route path="/compare/:id" element={<CompareProducts user={user} />} />
             <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
