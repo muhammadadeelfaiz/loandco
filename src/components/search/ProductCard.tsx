@@ -18,6 +18,14 @@ interface ProductCardProps {
     distance?: number;
     store_latitude?: number;
     store_longitude?: number;
+    stores?: {
+      latitude: number;
+      longitude: number;
+      name: string;
+    };
+    retailers?: {
+      name: string;
+    };
   };
   onContactRetailer: (retailerName: string) => void;
   onGetDirections: (lat: number, lng: number, storeName: string) => void;

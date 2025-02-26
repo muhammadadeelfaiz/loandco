@@ -15,7 +15,7 @@ export interface Store {
 export const useStores = (userLocation: { lat: number; lng: number } | null, selectedCategory: string | null = null) => {
   const [stores, setStores] = useState<Store[]>([]);
 
-  const { data: initialStores } = useQuery({
+  const { data: initialStores, isLoading } = useQuery({
     queryKey: ['stores', selectedCategory],
     queryFn: async () => {
       let query = supabase.from('stores').select('*');
@@ -25,7 +25,11 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
       }
       
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching stores:', error);
+        throw error;
+      }
+      console.log('Fetched stores:', data);
       return data as Store[];
     }
   });
@@ -68,7 +72,7 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
   }, []);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Earth's radius in km
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -89,6 +93,8 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
   return {
     stores: storesWithDistance.sort((a, b) => 
       (a.distance && b.distance) ? a.distance - b.distance : 0
-    )
+    ),
+    isLoading
   };
 };
+

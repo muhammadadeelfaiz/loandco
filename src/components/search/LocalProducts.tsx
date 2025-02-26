@@ -2,15 +2,11 @@
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ProductCard from "./ProductCard";
-import { Database } from "@/integrations/supabase/types";
-
-type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
-  retailer_name?: string;
-  distance?: number;
-};
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 interface LocalProductsProps {
-  products: ProductWithRetailer[] | undefined;
+  products: any[] | undefined;
   isLoading: boolean;
   onContactRetailer: (retailerName: string) => void;
   onGetDirections: (lat: number, lng: number, storeName: string) => void;
@@ -22,7 +18,34 @@ export const LocalProducts = ({
   onContactRetailer,
   onGetDirections
 }: LocalProductsProps) => {
-  if (isLoading) {
+  const { data: storeProducts, isLoading: isLoadingStoreProducts } = useQuery({
+    queryKey: ["store-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          stores:store_id (
+            latitude,
+            longitude,
+            name
+          ),
+          retailers:retailer_id (
+            name
+          )
+        `);
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+
+      console.log('Fetched local products:', data);
+      return data;
+    },
+  });
+
+  if (isLoading || isLoadingStoreProducts) {
     return (
       <div className="animate-pulse space-y-4">
         {[1, 2, 3].map((i) => (
@@ -32,7 +55,9 @@ export const LocalProducts = ({
     );
   }
 
-  if (!products || products.length === 0) {
+  const allProducts = [...(products || []), ...(storeProducts || [])];
+
+  if (!allProducts || allProducts.length === 0) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -45,19 +70,21 @@ export const LocalProducts = ({
   }
 
   return (
-    <>
-      {products.map((product) => (
+    <div className="space-y-4">
+      {allProducts.map((product) => (
         <ProductCard
           key={product.id}
           product={{
             ...product,
-            store_latitude: null,
-            store_longitude: null
+            store_latitude: product.stores?.latitude,
+            store_longitude: product.stores?.longitude,
+            retailer_name: product.retailers?.name || product.stores?.name
           }}
           onContactRetailer={onContactRetailer}
           onGetDirections={onGetDirections}
         />
       ))}
-    </>
+    </div>
   );
 };
+
