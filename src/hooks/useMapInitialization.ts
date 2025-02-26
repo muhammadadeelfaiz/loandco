@@ -13,17 +13,15 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     const fetchToken = async () => {
       try {
         console.log('Fetching Mapbox token...');
-        const { data, error } = await supabase.functions.invoke('map-service', {
-          method: 'GET'
-        });
+        const { data, error } = await supabase.functions.invoke('map-service');
 
         if (error) {
           console.error('Supabase function error:', error);
-          throw new Error('Failed to fetch map configuration');
+          throw error;
         }
 
         if (!data?.token) {
-          console.error('No token received from map service');
+          console.error('No token received:', data);
           throw new Error('Invalid map configuration');
         }
 
@@ -34,7 +32,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         toast({
           variant: "destructive",
           title: "Map Error",
-          description: error instanceof Error ? error.message : "Failed to initialize map"
+          description: error instanceof Error ? error.message : "Failed to fetch map configuration"
         });
         setIsLoading(false);
       }
