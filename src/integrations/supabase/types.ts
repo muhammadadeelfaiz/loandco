@@ -245,21 +245,40 @@ export type Database = {
         }
         Returns: boolean
       }
-      search_products: {
-        Args: {
-          search_term: string
-        }
-        Returns: {
-          id: string
-          name: string
-          price: number
-          category: string
-          availability: boolean
-          retailer_id: string
-          created_at: string
-          retailer_name: string
-        }[]
-      }
+      search_products:
+        | {
+            Args: {
+              search_term: string
+            }
+            Returns: {
+              id: string
+              name: string
+              price: number
+              category: string
+              availability: boolean
+              retailer_id: string
+              created_at: string
+              retailer_name: string
+            }[]
+          }
+        | {
+            Args: {
+              search_term: string
+              category_filter: string
+            }
+            Returns: {
+              id: string
+              name: string
+              price: number
+              category: string
+              availability: boolean
+              retailer_id: string
+              created_at: string
+              store_id: string
+              stores: Json
+              retailers: Json
+            }[]
+          }
     }
     Enums: {
       [_ in never]: never

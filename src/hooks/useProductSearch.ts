@@ -34,15 +34,23 @@ export const useProductSearch = (query: string, category: string) => {
   const [isLoadingEbay, setIsLoadingEbay] = useState(false);
   const { toast } = useToast();
 
-  // Fetch local products
+  // Fetch local products with category filter
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", query, category],
     queryFn: async () => {
+      console.log('Fetching products with query:', query, 'and category:', category);
+      const categoryFilter = category === 'all' ? null : category;
       const { data, error } = await supabase.rpc('search_products', {
         search_term: query,
-        category_filter: category === 'all' ? null : category
+        category_filter: categoryFilter
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
+      
+      console.log('Fetched products:', data);
       return data;
     },
   });
@@ -109,3 +117,4 @@ export const useProductSearch = (query: string, category: string) => {
     isLoadingEbay
   };
 };
+

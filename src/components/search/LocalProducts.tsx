@@ -2,8 +2,6 @@
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ProductCard from "./ProductCard";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 
 interface LocalProductsProps {
   products: any[] | undefined;
@@ -18,35 +16,7 @@ export const LocalProducts = ({
   onContactRetailer,
   onGetDirections
 }: LocalProductsProps) => {
-  const { data: storeProducts, isLoading: isLoadingStoreProducts } = useQuery({
-    queryKey: ["store-products"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          stores:store_id (
-            latitude,
-            longitude,
-            name
-          ),
-          retailers:retailer_id (
-            name
-          )
-        `)
-        .not('store_id', 'is', null); // Only get products that belong to stores
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
-
-      console.log('Fetched store products:', data);
-      return data;
-    },
-  });
-
-  if (isLoading || isLoadingStoreProducts) {
+  if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
         {[1, 2, 3].map((i) => (
@@ -56,10 +26,7 @@ export const LocalProducts = ({
     );
   }
 
-  // Combine products from search results and store-specific products
-  const allProducts = [...(products || []), ...(storeProducts || [])];
-
-  if (!allProducts || allProducts.length === 0) {
+  if (!products || products.length === 0) {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -73,19 +40,29 @@ export const LocalProducts = ({
 
   return (
     <div className="space-y-4">
-      {allProducts.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={{
-            ...product,
-            store_latitude: product.stores?.latitude,
-            store_longitude: product.stores?.longitude,
-            retailer_name: product.retailers?.name || product.stores?.name
-          }}
-          onContactRetailer={onContactRetailer}
-          onGetDirections={onGetDirections}
-        />
-      ))}
+      {products.map((product) => {
+        const stores = typeof product.stores === 'string' 
+          ? JSON.parse(product.stores)
+          : product.stores;
+        
+        const retailers = typeof product.retailers === 'string'
+          ? JSON.parse(product.retailers)
+          : product.retailers;
+
+        return (
+          <ProductCard
+            key={product.id}
+            product={{
+              ...product,
+              store_latitude: stores?.latitude,
+              store_longitude: stores?.longitude,
+              retailer_name: retailers?.name || stores?.name
+            }}
+            onContactRetailer={onContactRetailer}
+            onGetDirections={onGetDirections}
+          />
+        );
+      })}
     </div>
   );
 };
