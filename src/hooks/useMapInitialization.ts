@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -7,6 +7,41 @@ import { supabase } from '@/lib/supabase';
 export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElement>, theme: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        console.log('Fetching Mapbox token...');
+        const { data, error } = await supabase.functions.invoke('map-service', {
+          method: 'GET'
+        });
+
+        if (error) {
+          console.error('Supabase function error:', error);
+          throw new Error('Failed to fetch map configuration');
+        }
+
+        if (!data?.token) {
+          console.error('No token received from map service');
+          throw new Error('Invalid map configuration');
+        }
+
+        console.log('Successfully received Mapbox token');
+        setToken(data.token);
+      } catch (error) {
+        console.error('Token fetch error:', error);
+        toast({
+          variant: "destructive",
+          title: "Map Error",
+          description: error instanceof Error ? error.message : "Failed to initialize map"
+        });
+        setIsLoading(false);
+      }
+    };
+
+    fetchToken();
+  }, [toast]);
 
   const initializeMap = async (
     location: { lat: number; lng: number },
@@ -19,28 +54,19 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
       return null;
     }
 
+    if (!token) {
+      console.error('No Mapbox token available');
+      setIsLoading(false);
+      return null;
+    }
+
     try {
-      console.log('Fetching Mapbox token...');
-      const { data, error } = await supabase.functions.invoke('map-service', {
-        method: 'GET'
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error('Failed to fetch map configuration');
-      }
-
-      if (!data?.token) {
-        console.error('No token received from map service');
-        throw new Error('Invalid map configuration');
-      }
-
-      console.log('Setting Mapbox token...');
-      mapboxgl.accessToken = data.token;
+      console.log('Initializing map with token...');
+      mapboxgl.accessToken = token;
 
       const defaultLocation = location || { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-      console.log('Initializing map...');
+      console.log('Creating map instance...');
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: theme === 'dark' 
