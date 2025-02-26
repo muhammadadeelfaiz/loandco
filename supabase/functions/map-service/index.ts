@@ -16,24 +16,32 @@ serve(async (req) => {
   try {
     console.log('Map service function called');
     
-    // Direct access to the Mapbox token from environment variables
-    const mapboxToken = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
-    
-    if (!mapboxToken) {
-      console.error('MAPBOX_PUBLIC_TOKEN not found in environment variables');
-      return new Response(
-        JSON.stringify({ error: 'Mapbox token not found' }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404 
-        }
-      );
+    // Initialize Supabase client with Edge Function's environment variables
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch the secret using Supabase's get_secrets RPC function
+    const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
+      secret_names: ['MAPBOX_PUBLIC_TOKEN']
+    });
+
+    if (secretsError) {
+      console.error('Error fetching secret:', secretsError);
+      throw new Error('Failed to fetch Mapbox token');
+    }
+
+    const token = secrets?.MAPBOX_PUBLIC_TOKEN;
+    if (!token) {
+      console.error('MAPBOX_PUBLIC_TOKEN not found in secrets');
+      throw new Error('Mapbox token not found');
     }
 
     console.log('Successfully retrieved Mapbox token');
     
     return new Response(
-      JSON.stringify({ token: mapboxToken }), 
+      JSON.stringify({ token }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
@@ -41,10 +49,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Map service error:', error);
+    console.error('Error in map service:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'An unknown error occurred'
+        error: error instanceof Error ? error.message : 'An unknown error occurred' 
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
