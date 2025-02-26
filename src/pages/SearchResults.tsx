@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { User } from "@supabase/supabase-js";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchHeader } from "@/components/search/SearchHeader";
@@ -7,7 +8,7 @@ import { ProductResults } from "@/components/search/ProductResults";
 import { useProductSearch } from "@/hooks/useProductSearch";
 
 interface SearchResultsProps {
-  user: any;
+  user: User | null;
 }
 
 const SearchResults = ({ user }: SearchResultsProps) => {

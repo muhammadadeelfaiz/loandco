@@ -1,6 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { User } from "@supabase/supabase-js";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
 import { useStores } from "@/hooks/useStores";
@@ -13,6 +13,10 @@ import { Card } from "@/components/ui/card";
 import { useLocation } from "@/hooks/useLocation";
 import { Loader2 } from "lucide-react";
 import Deals from "@/components/home/Deals";
+
+interface IndexProps {
+  user: User | null;
+}
 
 const CATEGORIES = [
   { name: "Electronics", image: "/lovable-uploads/1bf98cbb-1c1f-446b-af92-f18c1969ee44.png" },
@@ -31,10 +35,6 @@ const RETAILER_IMAGES = {
   "Digital Store": "/lovable-uploads/5a3d5e73-5f21-4d64-8954-5684bbd5a3bb.png",
   "Fashion Hub": "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png",
 };
-
-interface IndexProps {
-  user: any;
-}
 
 const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
