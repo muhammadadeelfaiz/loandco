@@ -1,131 +1,38 @@
 
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
-import SearchFilters from "@/components/search/SearchFilters";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
-import { Database } from "@/integrations/supabase/types";
-import { FirecrawlService } from "@/services/FirecrawlService";
-import { EbayService } from "@/services/EbayService";
-import { LocalProducts } from "@/components/search/LocalProducts";
-import { EbayProducts } from "@/components/search/EbayProducts";
-import { AmazonProducts } from "@/components/search/AmazonProducts";
-
-type ProductWithRetailer = Database['public']['Tables']['products']['Row'] & {
-  retailer_name?: string;
-  distance?: number;
-};
-
-interface AmazonProduct {
-  title: string;
-  price: string;
-  rating: string;
-  reviews: string;
-  image: string;
-}
-
-interface EbayProduct {
-  itemId: string;
-  title: string;
-  price: {
-    value: string;
-    currency: string;
-  };
-  image: string;
-  condition: string;
-  location: string;
-  url: string;
-}
+import { SearchHeader } from "@/components/search/SearchHeader";
+import { ProductResults } from "@/components/search/ProductResults";
+import { useProductSearch } from "@/hooks/useProductSearch";
 
 const SearchResults = () => {
   const [sortBy, setSortBy] = useState("default");
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
-  const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
-  const [isLoadingEbay, setIsLoadingEbay] = useState(false);
-  const [amazonProducts, setAmazonProducts] = useState<AmazonProduct[]>([]);
-  const [ebayProducts, setEbayProducts] = useState<EbayProduct[]>([]);
   const { toast } = useToast();
 
   const searchParams = new URLSearchParams(window.location.search);
   const submittedQuery = searchParams.get('q') || '';
   const categoryFromUrl = searchParams.get('category');
 
-  useEffect(() => {
+  // Initialize category from URL if present
+  useState(() => {
     if (categoryFromUrl) {
       setCategory(categoryFromUrl);
     }
-  }, [categoryFromUrl]);
-
-  // Fetch local products
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["search-products", submittedQuery, category],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('search_products', {
-        search_term: submittedQuery,
-        category_filter: category === 'all' ? null : category
-      });
-      if (error) throw error;
-      return data as ProductWithRetailer[];
-    },
   });
 
-  // Fetch eBay products when query or category changes
-  useEffect(() => {
-    const fetchEbayProducts = async () => {
-      setIsLoadingEbay(true);
-      try {
-        const searchQuery = category === 'all' ? submittedQuery : `${submittedQuery} ${category}`.trim();
-        if (searchQuery) {
-          const ebayResult = await EbayService.searchProducts(searchQuery);
-          if (ebayResult.success && ebayResult.data) {
-            setEbayProducts(ebayResult.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching eBay products:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch eBay products"
-        });
-      } finally {
-        setIsLoadingEbay(false);
-      }
-    };
-
-    fetchEbayProducts();
-  }, [submittedQuery, category, toast]);
-
-  // Fetch Amazon products
-  useEffect(() => {
-    const fetchAmazonProducts = async () => {
-      if (!submittedQuery) return;
-      
-      setIsLoadingAmazon(true);
-      try {
-        const amazonResult = await FirecrawlService.crawlAmazonProduct(submittedQuery);
-        if (amazonResult.success && amazonResult.data) {
-          setAmazonProducts(amazonResult.data);
-        }
-      } catch (error) {
-        console.error('Error fetching Amazon products:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch Amazon products"
-        });
-      } finally {
-        setIsLoadingAmazon(false);
-      }
-    };
-
-    fetchAmazonProducts();
-  }, [submittedQuery, toast]);
+  // Fetch products using custom hook
+  const {
+    products,
+    isLoading,
+    amazonProducts,
+    isLoadingAmazon,
+    ebayProducts,
+    isLoadingEbay
+  } = useProductSearch(submittedQuery, category);
 
   const handleContactRetailer = (retailerName: string) => {
     toast({
@@ -226,69 +133,30 @@ const SearchResults = () => {
       <Navigation user={null} />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4 md:items-center mb-6">
-            <div className="flex-1">
-              <SearchFilters
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-                category={category}
-                setCategory={setCategory}
-                distanceRange={distanceRange}
-                setDistanceRange={setDistanceRange}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={resetFilters}
-              className="w-full md:w-auto"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Filters
-            </Button>
-          </div>
+        <SearchHeader
+          query={submittedQuery}
+          category={category}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          setCategory={setCategory}
+          distanceRange={distanceRange}
+          setDistanceRange={setDistanceRange}
+          onResetFilters={resetFilters}
+        />
 
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {submittedQuery 
-              ? `Search Results for "${submittedQuery}"${category !== 'all' ? ` in ${category}` : ''}`
-              : category !== 'all' 
-                ? `Browsing ${category}`
-                : "All Products"
-            }
-          </h1>
-        </div>
-
-        <div className="space-y-8">
-          <section>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Local Stores</h2>
-            <LocalProducts
-              products={filteredLocalProducts}
-              isLoading={isLoading}
-              onContactRetailer={handleContactRetailer}
-              onGetDirections={handleGetDirections}
-            />
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">eBay Products</h2>
-            <EbayProducts 
-              products={filteredEbayProducts}
-              isLoading={isLoadingEbay}
-            />
-          </section>
-
-          {submittedQuery && (
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Amazon Products</h2>
-              <AmazonProducts 
-                products={amazonProducts}
-                isLoading={isLoadingAmazon}
-              />
-            </section>
-          )}
-        </div>
+        <ProductResults
+          filteredLocalProducts={filteredLocalProducts}
+          filteredEbayProducts={filteredEbayProducts}
+          amazonProducts={amazonProducts}
+          isLoading={isLoading}
+          isLoadingEbay={isLoadingEbay}
+          isLoadingAmazon={isLoadingAmazon}
+          query={submittedQuery}
+          onContactRetailer={handleContactRetailer}
+          onGetDirections={handleGetDirections}
+        />
       </main>
     </div>
   );
