@@ -33,14 +33,15 @@ export const LocalProducts = ({
           retailers:retailer_id (
             name
           )
-        `);
+        `)
+        .not('store_id', 'is', null); // Only get products that belong to stores
 
       if (error) {
         console.error('Error fetching products:', error);
         throw error;
       }
 
-      console.log('Fetched local products:', data);
+      console.log('Fetched store products:', data);
       return data;
     },
   });
@@ -55,6 +56,7 @@ export const LocalProducts = ({
     );
   }
 
+  // Combine products from search results and store-specific products
   const allProducts = [...(products || []), ...(storeProducts || [])];
 
   if (!allProducts || allProducts.length === 0) {
