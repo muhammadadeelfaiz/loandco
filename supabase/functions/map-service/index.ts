@@ -13,13 +13,19 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Get required environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    console.log('Fetching Mapbox token from secrets...');
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing required environment variables');
+      throw new Error('Server configuration error');
+    }
+
+    // Initialize Supabase client
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    console.log('Attempting to fetch Mapbox token from secrets...');
     
     const { data: secrets, error: secretsError } = await supabase.rpc('get_secrets', {
       secret_names: ['MAPBOX_PUBLIC_TOKEN']
