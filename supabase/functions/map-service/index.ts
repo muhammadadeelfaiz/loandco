@@ -10,48 +10,22 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders, status: 200 });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     console.log('Map service function called');
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing required environment variables');
-      throw new Error('Server configuration error');
-    }
-
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    console.log('Fetching Mapbox token...');
-    const { data: secrets, error: secretsError } = await supabase.rpc('get_secrets', {
-      secret_names: ['MAPBOX_PUBLIC_TOKEN']
-    });
-
-    if (secretsError) {
-      console.error('Error fetching secrets:', secretsError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch Mapbox token from secrets' }), 
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500
-        }
-      );
-    }
-
-    const token = secrets?.MAPBOX_PUBLIC_TOKEN;
+    // Direct access to the Mapbox token from environment variables
+    const mapboxToken = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
     
-    if (!token) {
-      console.error('MAPBOX_PUBLIC_TOKEN not found in secrets');
+    if (!mapboxToken) {
+      console.error('MAPBOX_PUBLIC_TOKEN not found in environment variables');
       return new Response(
-        JSON.stringify({ error: 'Mapbox token not found in secrets' }), 
+        JSON.stringify({ error: 'Mapbox token not found' }), 
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404
+          status: 404 
         }
       );
     }
@@ -59,7 +33,7 @@ serve(async (req) => {
     console.log('Successfully retrieved Mapbox token');
     
     return new Response(
-      JSON.stringify({ token }), 
+      JSON.stringify({ token: mapboxToken }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200

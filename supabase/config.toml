@@ -3,4 +3,3 @@ project_id = "svdgniviotecguehvtig"
 
 [functions.map-service]
 verify_jwt = false
-
