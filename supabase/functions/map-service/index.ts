@@ -8,18 +8,24 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders, status: 200 });
   }
 
   try {
     console.log('Map service function called');
     
-    // Initialize Supabase client directly with environment variables
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing required environment variables');
+      throw new Error('Server configuration error');
+    }
+
+    // Initialize Supabase client
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     console.log('Fetching Mapbox token...');
     const { data: secrets, error: secretsError } = await supabase.rpc('get_secrets', {
@@ -28,14 +34,26 @@ serve(async (req) => {
 
     if (secretsError) {
       console.error('Error fetching secrets:', secretsError);
-      throw new Error('Failed to fetch secrets');
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch Mapbox token from secrets' }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      );
     }
 
     const token = secrets?.MAPBOX_PUBLIC_TOKEN;
     
     if (!token) {
       console.error('MAPBOX_PUBLIC_TOKEN not found in secrets');
-      throw new Error('Mapbox token not found');
+      return new Response(
+        JSON.stringify({ error: 'Mapbox token not found in secrets' }), 
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404
+        }
+      );
     }
 
     console.log('Successfully retrieved Mapbox token');
@@ -43,10 +61,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ token }), 
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
     );
@@ -55,13 +70,10 @@ serve(async (req) => {
     console.error('Map service error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
       }), 
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
     );
