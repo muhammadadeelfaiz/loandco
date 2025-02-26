@@ -13,48 +13,37 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     onLocationChange?: (location: { lat: number; lng: number }) => void,
     readonly = false
   ) => {
-    if (!mapContainer.current) {
-      console.error('Map container not found');
-      setIsLoading(false);
-      return null;
-    }
+    if (!mapContainer.current) return null;
 
     try {
-      console.log('Fetching Mapbox token from edge function...');
       const { data, error } = await supabase.functions.invoke('map-service', {
         method: 'GET'
       });
 
       if (error || !data?.token) {
-        console.error('Failed to fetch Mapbox token:', error || 'No token returned');
+        console.error('Failed to fetch Mapbox token:', error);
         toast({
           variant: "destructive",
-          title: "Map Configuration Error",
-          description: "Failed to initialize map. Please check your configuration."
+          title: "Map Error",
+          description: "Failed to initialize map. Please try again."
         });
         setIsLoading(false);
         return null;
       }
 
-      console.log('Successfully retrieved Mapbox token');
       mapboxgl.accessToken = data.token;
 
-      const defaultLocation = location || { lat: 25.2048, lng: 55.2708 }; // Dubai as default
-
-      console.log('Initializing Mapbox map...');
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: theme === 'dark' 
           ? 'mapbox://styles/mapbox/dark-v11'
           : 'mapbox://styles/mapbox/light-v11',
-        center: [defaultLocation.lng, defaultLocation.lat],
+        center: [location.lng, location.lat],
         zoom: 13,
       });
 
-      // Add navigation controls
       map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-      // Add click handler if not readonly
       if (!readonly) {
         const marker = new mapboxgl.Marker();
         
@@ -68,13 +57,13 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           onLocationChange?.(newLocation);
         });
 
+        // Add initial marker if location is provided
         if (location) {
           marker.setLngLat([location.lng, location.lat]).addTo(map);
         }
       }
 
       map.on('load', () => {
-        console.log('Map loaded successfully');
         setIsLoading(false);
       });
 
@@ -88,14 +77,15 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
       });
 
       return map;
+
     } catch (error) {
       console.error('Map initialization error:', error);
-      setIsLoading(false);
       toast({
         variant: "destructive",
-        title: "Error initializing map",
-        description: error instanceof Error ? error.message : "An unexpected error occurred"
+        title: "Error",
+        description: "Failed to initialize map. Please try again."
       });
+      setIsLoading(false);
       return null;
     }
   };
