@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User } from "lucide-react";
+import { Heart, User } from "lucide-react";
 
 interface NavigationProps {
   user: any;
@@ -153,7 +153,7 @@ const Navigation = ({ user }: NavigationProps) => {
                       Account
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
                       {user.user_metadata?.name || user.email}
                     </DropdownMenuLabel>
@@ -164,6 +164,14 @@ const Navigation = ({ user }: NavigationProps) => {
                     <DropdownMenuItem asChild>
                       <Link to="/profile">Profile Settings</Link>
                     </DropdownMenuItem>
+                    {user?.user_metadata?.role === "customer" && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/wishlist" className="flex items-center">
+                          <Heart className="h-4 w-4 mr-2" />
+                          My Wishlist
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {user?.user_metadata?.role === "retailer" && (
                       <>
                         <DropdownMenuItem asChild>
@@ -174,7 +182,8 @@ const Navigation = ({ user }: NavigationProps) => {
                         </DropdownMenuItem>
                       </>
                     )}
-                    <DropdownMenuItem onClick={handleSignOut}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-500 hover:text-red-600">
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
