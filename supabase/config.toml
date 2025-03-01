@@ -1,6 +1,4 @@
 
 project_id = "svdgniviotecguehvtig"
-
-[functions.map-service]
+[functions.get-rapidapi-key]
 verify_jwt = false
-

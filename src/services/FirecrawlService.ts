@@ -34,22 +34,25 @@ export class FirecrawlService {
       console.info("Initializing RapidAPI service, fetching key from Supabase secrets...");
       
       // Fetch the RapidAPI key from Supabase Edge Functions
-      const { data, error } = await supabase.rpc('get_secrets', {
-        secret_names: ['RAPIDAPI_KEY']
+      const { data, error } = await supabase.functions.invoke('get-rapidapi-key', {
+        method: 'GET',
       });
 
       if (error) {
-        console.error("Error fetching RapidAPI key from Supabase:", error);
+        console.error("Error invoking get-rapidapi-key function:", error);
         return false;
       }
 
-      const rapidApiKey = data?.RAPIDAPI_KEY;
+      console.log("API key response:", data); // This will help debug the response format
+
+      const rapidApiKey = data?.rapidApiKey;
 
       if (!rapidApiKey) {
-        console.error("RapidAPI key not found in Supabase secrets. Make sure the key is set with name \"RAPIDAPI_KEY\"");
+        console.error("RapidAPI key not found in response. Response:", data);
         return false;
       }
 
+      console.info("Successfully retrieved RapidAPI key");
       this.firecrawlClient = new FirecrawlAPI(rapidApiKey);
       return true;
     } catch (error) {
@@ -70,7 +73,7 @@ export class FirecrawlService {
         };
       }
 
-      // Use the searchAmazon method instead of crawlAmazonSearch
+      // Use the searchAmazon method
       const response = await this.firecrawlClient.searchAmazon(query, "US", 10);
       return {
         success: true,
