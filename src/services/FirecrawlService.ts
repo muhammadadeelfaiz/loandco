@@ -19,6 +19,7 @@ export class FirecrawlService {
   static async initialize(): Promise<boolean> {
     // If we already have a key, return true
     if (this.rapidApiKey) {
+      console.log("Using cached RapidAPI key with length:", this.rapidApiKey.length);
       return true;
     }
 
@@ -40,6 +41,7 @@ export class FirecrawlService {
       this.rapidApiKey = null;
       
       // Fetch the RapidAPI key from Supabase Edge Functions with explicit timeout
+      console.log("Calling get-rapidapi-key edge function...");
       const response = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'GET',
         headers: {
@@ -47,12 +49,14 @@ export class FirecrawlService {
         },
       });
 
+      console.log("Edge function response received:", response);
+
       // Check for errors in the response
       if (response.error) {
         console.error("Error invoking get-rapidapi-key function:", response.error);
         toast({
           title: "API Key Error",
-          description: "Failed to retrieve RapidAPI key. Please check Supabase Edge Function.",
+          description: `Failed to retrieve RapidAPI key: ${response.error.message}`,
           variant: "destructive"
         });
         
@@ -64,6 +68,7 @@ export class FirecrawlService {
       }
 
       const data = response.data;
+      console.log("Edge function data:", data);
 
       // Check if we have data and it contains rapidApiKey
       if (!data || typeof data.rapidApiKey !== 'string') {
@@ -77,12 +82,13 @@ export class FirecrawlService {
       }
 
       const rapidApiKey = data.rapidApiKey;
+      console.log("Key length from edge function:", data.keyLength || 'unknown');
 
       if (!rapidApiKey || rapidApiKey.length < 10) { // Basic validation - API keys are typically longer than 10 chars
         console.error("RapidAPI key appears to be invalid or missing. Length:", rapidApiKey ? rapidApiKey.length : 0);
         toast({
           title: "API Key Error",
-          description: "RapidAPI key appears to be invalid or missing.",
+          description: "RapidAPI key appears to be invalid or missing. Please check Supabase Edge Function Secrets.",
           variant: "destructive"
         });
         return false;

@@ -1,5 +1,5 @@
 
-import { AlertCircle, ExternalLink } from "lucide-react";
+import { AlertCircle, ExternalLink, Key } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +30,31 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
   }
 
   if (error) {
+    // Special handling for API key errors
+    if (error.includes('RapidAPI credentials not initialized') || error.includes('API key')) {
+      return (
+        <Alert variant="destructive">
+          <Key className="h-4 w-4" />
+          <AlertTitle>RapidAPI Key Required</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p>{error}</p>
+            <p className="text-sm">
+              Go to Supabase Edge Function Secrets and verify the RAPIDAPI_KEY is set correctly, 
+              then refresh this page.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
+            >
+              <Key className="mr-2 h-4 w-4" />
+              Open Supabase Function Secrets
+            </Button>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />

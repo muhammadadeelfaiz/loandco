@@ -7,8 +7,9 @@ import { SearchHeader } from "@/components/search/SearchHeader";
 import { ProductResults } from "@/components/search/ProductResults";
 import { useProductSearch } from "@/hooks/useProductSearch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Key } from "lucide-react";
 import { FirecrawlService } from "@/services/FirecrawlService";
+import { Button } from "@/components/ui/button";
 
 interface SearchResultsProps {
   user: User | null;
@@ -47,7 +48,8 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     amazonError,
     isLoadingAmazon,
     ebayProducts,
-    isLoadingEbay
+    isLoadingEbay,
+    apiKeyInitialized
   } = useProductSearch(submittedQuery, category);
 
   const handleContactRetailer = (retailerName: string) => {
@@ -127,6 +129,35 @@ const SearchResults = ({ user }: SearchResultsProps) => {
   const filteredLocalProducts = filterAndSortProducts(products, 'local');
   const filteredEbayProducts = filterAndSortProducts(ebayProducts, 'ebay');
 
+  // Handle manual API key refresh
+  const handleRefreshApiKey = async () => {
+    toast({
+      title: "Refreshing API Key",
+      description: "Attempting to retrieve the RapidAPI key again..."
+    });
+    
+    // Clear any cached key
+    FirecrawlService.rapidApiKey = null; 
+    
+    const initialized = await FirecrawlService.initialize();
+    setApiKeySet(initialized);
+    
+    if (initialized) {
+      toast({
+        title: "Success",
+        description: "Successfully retrieved the RapidAPI key. Refreshing products..."
+      });
+      // Refresh the page to trigger a new search
+      window.location.reload();
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to retrieve the RapidAPI key. Please check the Supabase Edge Function Secrets.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -147,11 +178,27 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       
       <main className="container mx-auto px-4 py-8">
         {apiKeySet === false && (
-          <Alert className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>API Key Required</AlertTitle>
-            <AlertDescription>
-              To view Amazon product results, please set up your RapidAPI key in the Supabase dashboard.
+          <Alert className="mb-6" variant="destructive">
+            <Key className="h-4 w-4" />
+            <AlertTitle>RapidAPI Key Required</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2">
+              <p>To view Amazon product results, please set up your RapidAPI key in the Supabase dashboard.</p>
+              <div className="flex gap-2 mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
+                >
+                  Open Supabase Function Secrets
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRefreshApiKey}
+                >
+                  Refresh API Key
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}

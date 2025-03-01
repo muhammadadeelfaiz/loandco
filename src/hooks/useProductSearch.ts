@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -34,6 +33,7 @@ export const useProductSearch = (query: string, category: string) => {
   const [ebayProducts, setEbayProducts] = useState<EbayProduct[]>([]);
   const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
   const [isLoadingEbay, setIsLoadingEbay] = useState(false);
+  const [apiKeyInitialized, setApiKeyInitialized] = useState(false);
   const { toast } = useToast();
 
   // Fetch local products with category filter
@@ -56,6 +56,20 @@ export const useProductSearch = (query: string, category: string) => {
       return data;
     },
   });
+
+  // Initial check to see if API key is available
+  useEffect(() => {
+    const checkApiKey = async () => {
+      const initialized = await FirecrawlService.initialize();
+      setApiKeyInitialized(initialized);
+      if (!initialized) {
+        console.warn('RapidAPI key not initialized');
+        setAmazonError('RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase Edge Function Secrets.');
+      }
+    };
+    
+    checkApiKey();
+  }, []);
 
   // Fetch eBay products
   useEffect(() => {
@@ -87,14 +101,17 @@ export const useProductSearch = (query: string, category: string) => {
   // Fetch Amazon products
   useEffect(() => {
     const fetchAmazonProducts = async () => {
-      if (!query) return;
+      if (!query || !apiKeyInitialized) return;
       
       setIsLoadingAmazon(true);
       setAmazonError(undefined);
       
       try {
+        console.log('Starting Amazon product search with query:', query);
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
+        
         if (amazonResult.success && amazonResult.data) {
+          console.log('Amazon search successful, formatting products');
           // Ensure all Amazon products have properly formatted URLs
           const formattedProducts = amazonResult.data.map(product => ({
             ...product,
@@ -104,6 +121,13 @@ export const useProductSearch = (query: string, category: string) => {
         } else {
           console.error('Error from Amazon API:', amazonResult.error);
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
+          
+          // Try reinitializing the API key if we get an error
+          if (amazonResult.error?.includes('credentials not initialized')) {
+            console.log('Attempting to reinitialize RapidAPI key...');
+            const reinitialized = await FirecrawlService.initialize();
+            setApiKeyInitialized(reinitialized);
+          }
         }
       } catch (error) {
         console.error('Error fetching Amazon products:', error);
@@ -114,7 +138,7 @@ export const useProductSearch = (query: string, category: string) => {
     };
 
     fetchAmazonProducts();
-  }, [query]);
+  }, [query, apiKeyInitialized]);
 
   return {
     products,
@@ -123,6 +147,7 @@ export const useProductSearch = (query: string, category: string) => {
     amazonError,
     isLoadingAmazon,
     ebayProducts,
-    isLoadingEbay
+    isLoadingEbay,
+    apiKeyInitialized
   };
 };
