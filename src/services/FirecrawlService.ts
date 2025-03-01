@@ -1,5 +1,4 @@
 
-import FirecrawlAPI from '@mendable/firecrawl-js';
 import { supabase } from '@/lib/supabase';
 
 interface CrawlResponse {
@@ -9,14 +8,14 @@ interface CrawlResponse {
 }
 
 export class FirecrawlService {
-  private static firecrawlClient: FirecrawlAPI | null = null;
+  private static rapidApiKey: string | null = null;
   private static initializationInProgress = false;
   private static lastInitAttempt = 0;
   private static INIT_COOLDOWN = 5000; // 5 seconds cooldown between init attempts
 
   static async initialize(): Promise<boolean> {
-    // If we already have a client, return true
-    if (this.firecrawlClient) {
+    // If we already have a key, return true
+    if (this.rapidApiKey) {
       return true;
     }
 
@@ -51,10 +50,10 @@ export class FirecrawlService {
       }
 
       console.info("Successfully retrieved RapidAPI key");
-      this.firecrawlClient = new FirecrawlAPI(rapidApiKey);
+      this.rapidApiKey = rapidApiKey;
       return true;
     } catch (error) {
-      console.error("Error initializing FirecrawlAPI:", error);
+      console.error("Error initializing RapidAPI:", error);
       return false;
     } finally {
       this.initializationInProgress = false;
@@ -64,28 +63,38 @@ export class FirecrawlService {
   static async crawlAmazonProduct(query: string): Promise<CrawlResponse> {
     try {
       const isInitialized = await this.initialize();
-      if (!isInitialized || !this.firecrawlClient) {
+      if (!isInitialized || !this.rapidApiKey) {
         return {
           success: false,
           error: "RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase."
         };
       }
 
-      // Check if the search method is available
-      if (typeof this.firecrawlClient.search !== 'function') {
-        console.error("FirecrawlAPI method 'search' not available. Available methods:", 
-          Object.getOwnPropertyNames(Object.getPrototypeOf(this.firecrawlClient)));
-        return {
-          success: false,
-          error: "The search method is not available in the FirecrawlAPI instance."
-        };
+      // Make a direct API call to RapidAPI's Amazon Search endpoint
+      const response = await fetch('https://amazon-web-scraper-api.p.rapidapi.com/products/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RapidAPI-Key': this.rapidApiKey,
+          'X-RapidAPI-Host': 'amazon-web-scraper-api.p.rapidapi.com'
+        },
+        body: JSON.stringify({
+          query: query,
+          region: 'US',
+          page: 1
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`RapidAPI request failed with status: ${response.status}`);
       }
 
-      // Use the generic search method instead of amazon.search
-      const response = await this.firecrawlClient.search(query, "amazon", "US");
+      const data = await response.json();
+      console.log("Amazon search results:", data);
+
       return {
         success: true,
-        data: response.data
+        data: data.results || []
       };
     } catch (error) {
       console.error("Error crawling Amazon product:", error);
