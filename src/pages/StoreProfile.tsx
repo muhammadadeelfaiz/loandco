@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Map from "@/components/Map";
+import { User } from "@supabase/supabase-js";
 
 interface Product {
   id: string;
@@ -35,18 +36,15 @@ interface Store {
   opening_hours?: Record<string, any> | null;
 }
 
-const StoreProfile = () => {
+interface StoreProfileProps {
+  user: User | null;
+}
+
+const StoreProfile = ({ user }: StoreProfileProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
   const [rating] = useState(Math.floor(Math.random() * 2) + 4);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-  }, []);
 
   const { data: store, isLoading: isStoreLoading, error: storeError } = useQuery({
     queryKey: ['store', id],
