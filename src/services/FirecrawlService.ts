@@ -85,19 +85,21 @@ export class FirecrawlService {
       }
 
       console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
+      console.log("Using host: real-time-amazon-data.p.rapidapi.com");
       
-      // Make a direct API call to RapidAPI's Amazon Search endpoint
-      const response = await fetch('https://amazon-web-scraper-api.p.rapidapi.com/products/search', {
+      // Make a direct API call to RapidAPI's Amazon Search endpoint with the correct host
+      const response = await fetch('https://real-time-amazon-data.p.rapidapi.com/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-RapidAPI-Key': this.rapidApiKey,
-          'X-RapidAPI-Host': 'amazon-web-scraper-api.p.rapidapi.com'
+          'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
         },
         body: JSON.stringify({
           query: query,
-          region: 'US',
-          page: 1
+          page: 1,
+          country: 'US',
+          category_id: 'aps'
         })
       });
 
@@ -114,29 +116,29 @@ export class FirecrawlService {
             this.rapidApiKey = null;
             return {
               success: false,
-              error: "You need to subscribe to the Amazon Web Scraper API on RapidAPI. Please visit RapidAPI and subscribe to the service."
+              error: "You need to subscribe to the Real Time Amazon Data API on RapidAPI. Please visit RapidAPI and subscribe to the service."
             };
           } else if (errorText.includes("exceeded the MONTHLY quota")) {
             return {
               success: false,
-              error: "You have exceeded your monthly quota for the Amazon Web Scraper API on RapidAPI."
+              error: "You have exceeded your monthly quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the DAILY quota")) {
             return {
               success: false,
-              error: "You have exceeded your daily quota for the Amazon Web Scraper API on RapidAPI."
+              error: "You have exceeded your daily quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the rate limit")) {
             return {
               success: false,
-              error: "You have exceeded the rate limit for the Amazon Web Scraper API on RapidAPI. Please try again later."
+              error: "You have exceeded the rate limit for the Real Time Amazon Data API on RapidAPI. Please try again later."
             };
           }
           
           // Generic access denied message
           return {
             success: false,
-            error: "Access denied by RapidAPI. Please check your subscription status for the Amazon Web Scraper API."
+            error: "Access denied by RapidAPI. Please check your subscription status for the Real Time Amazon Data API."
           };
         }
         
@@ -149,9 +151,21 @@ export class FirecrawlService {
       const data = await response.json();
       console.log("Amazon search results:", data);
 
+      // Map the response structure to our expected format
+      const formattedResults = Array.isArray(data.data?.products) 
+        ? data.data.products.map((product: any) => ({
+            title: product.title || product.name || 'Unknown Product',
+            price: product.price?.current_price || product.price || 'N/A',
+            rating: product.rating || 'N/A',
+            reviews: product.reviews_count || '0',
+            image: product.thumbnail || product.image || '',
+            url: product.url || ''
+          }))
+        : [];
+
       return {
         success: true,
-        data: data.results || []
+        data: formattedResults
       };
     } catch (error) {
       console.error("Error crawling Amazon product:", error);
