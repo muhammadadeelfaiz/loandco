@@ -1,89 +1,73 @@
 
-import { corsHeaders } from '../_shared/cors.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
-Deno.serve(async (req) => {
-  // Handle CORS
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Retrieving RAPIDAPI_KEY from Supabase secrets...')
+    console.log("Edge function invoked: get-rapidapi-key");
     
-    // Create a Supabase client with the Admin key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase URL or Service Role Key')
+    // Get the RapidAPI key from Supabase secrets
+    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    console.log("Retrieved RapidAPI key from environment, length:", rapidApiKey ? rapidApiKey.length : 0);
+
+    if (!rapidApiKey) {
+      console.error("RAPIDAPI_KEY not found in Supabase Edge Function Secrets");
       return new Response(
         JSON.stringify({ 
-          error: 'Server configuration error - missing Supabase credentials' 
+          error: "RAPIDAPI_KEY not found in Supabase Edge Function Secrets",
+          keyFound: false 
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
         }
-      )
+      );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    
-    // Get the API key from Supabase secrets
-    const { data, error } = await supabase.functions.secret.get('RAPIDAPI_KEY')
-    
-    if (error) {
-      console.error('Error retrieving RAPIDAPI_KEY:', error)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to retrieve RAPIDAPI_KEY from secrets',
-          details: error.message 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
-    
-    if (!data || !data.value) {
-      console.error('RAPIDAPI_KEY not found in secrets or is empty')
-      return new Response(
-        JSON.stringify({ 
-          error: 'RAPIDAPI_KEY not found in Supabase secrets or is empty' 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 404 
-        }
-      )
-    }
-    
-    console.log('RAPIDAPI_KEY retrieved successfully with length:', data.value.length)
-    
-    // Return the API key
+    // Return the API key and its length for debugging
     return new Response(
       JSON.stringify({ 
-        rapidApiKey: data.value,
-        keyLength: data.value.length 
+        rapidApiKey,
+        keyLength: rapidApiKey.length,
+        keyFound: true,
+        timestamp: new Date().toISOString()
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
-    )
-  } catch (err) {
-    console.error('Unexpected error in get-rapidapi-key function:', err)
+    );
+  } catch (error) {
+    console.error("Error in get-rapidapi-key function:", error);
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Server error',
-        details: err.message 
+        error: error.message,
+        keyFound: false 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
-    )
+    );
   }
 })

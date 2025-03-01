@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +36,6 @@ export const useProductSearch = (query: string, category: string) => {
   const [apiKeyInitialized, setApiKeyInitialized] = useState(false);
   const { toast } = useToast();
 
-  // Fetch local products with category filter
   const { data: products, isLoading } = useQuery({
     queryKey: ["search-products", query, category],
     queryFn: async () => {
@@ -58,21 +56,33 @@ export const useProductSearch = (query: string, category: string) => {
     },
   });
 
-  // Initial check to see if API key is available
   useEffect(() => {
     const checkApiKey = async () => {
+      await FirecrawlService.resetApiKeyCache();
       const initialized = await FirecrawlService.initialize();
+      console.log("API key initialization check result:", initialized);
       setApiKeyInitialized(initialized);
+      
       if (!initialized) {
         console.warn('RapidAPI key not initialized');
         setAmazonError('RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase Edge Function Secrets.');
+        toast({
+          title: "API Key Required",
+          description: "RapidAPI key is missing or invalid. Check Supabase Edge Function Secrets.",
+          variant: "destructive"
+        });
+      } else {
+        console.log('RapidAPI key successfully initialized');
+        toast({
+          title: "API Key Initialized",
+          description: "RapidAPI key was successfully retrieved.",
+        });
       }
     };
     
     checkApiKey();
-  }, []);
+  }, [toast]);
 
-  // Fetch eBay products
   useEffect(() => {
     const fetchEbayProducts = async () => {
       setIsLoadingEbay(true);
@@ -99,7 +109,6 @@ export const useProductSearch = (query: string, category: string) => {
     fetchEbayProducts();
   }, [query, category, toast]);
 
-  // Fetch Amazon products
   useEffect(() => {
     const fetchAmazonProducts = async () => {
       if (!query || !apiKeyInitialized) return;
@@ -108,12 +117,11 @@ export const useProductSearch = (query: string, category: string) => {
       setAmazonError(undefined);
       
       try {
-        console.log('Starting Amazon product search with query:', query);
+        console.log('Starting Amazon product search with query:', query, 'API key initialized:', apiKeyInitialized);
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
         
         if (amazonResult.success && amazonResult.data) {
           console.log('Amazon search successful, formatting products');
-          // Ensure all Amazon products have properly formatted URLs
           const formattedProducts = amazonResult.data.map(product => ({
             ...product,
             url: product.url ? (product.url.startsWith('http') ? product.url : `https://${product.url}`) : undefined
@@ -123,12 +131,18 @@ export const useProductSearch = (query: string, category: string) => {
           console.error('Error from Amazon API:', amazonResult.error);
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
           
-          // Try reinitializing the API key if we get an error
           if (amazonResult.error?.includes('credentials not initialized')) {
             console.log('Attempting to reinitialize RapidAPI key...');
             await FirecrawlService.resetApiKeyCache();
             const reinitialized = await FirecrawlService.initialize();
             setApiKeyInitialized(reinitialized);
+            
+            if (reinitialized) {
+              toast({
+                title: "API Key Refreshed",
+                description: "RapidAPI key was successfully refreshed. Try searching again.",
+              });
+            }
           }
         }
       } catch (error) {
@@ -140,7 +154,7 @@ export const useProductSearch = (query: string, category: string) => {
     };
 
     fetchAmazonProducts();
-  }, [query, apiKeyInitialized]);
+  }, [query, apiKeyInitialized, toast]);
 
   return {
     products,

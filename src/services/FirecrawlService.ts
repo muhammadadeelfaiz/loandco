@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from "@/components/ui/use-toast";
 
@@ -75,8 +76,40 @@ export class FirecrawlService {
       const data = response.data;
       console.log("Edge function data:", data);
 
+      // Enhanced error checking for the response
+      if (!data) {
+        console.error("Null or undefined response from edge function");
+        toast({
+          title: "API Key Error",
+          description: "Empty response from RapidAPI key endpoint.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (data.error) {
+        console.error("Error in edge function response:", data.error);
+        toast({
+          title: "API Key Error",
+          description: data.error,
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Explicitly check if keyFound is false
+      if (data.keyFound === false) {
+        console.error("Edge function reported key not found");
+        toast({
+          title: "API Key Missing",
+          description: "RAPIDAPI_KEY is not set in Supabase Edge Function Secrets",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       // Check if we have data and it contains rapidApiKey
-      if (!data || typeof data.rapidApiKey !== 'string') {
+      if (typeof data.rapidApiKey !== 'string') {
         console.error("Invalid response from edge function. Response:", data);
         toast({
           title: "API Key Error",

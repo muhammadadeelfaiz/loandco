@@ -1,7 +1,10 @@
 
-import { AlertCircle, ExternalLink, Key } from "lucide-react";
+import { AlertCircle, ExternalLink, Key, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { FirecrawlService } from "@/services/FirecrawlService";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AmazonProduct {
   title: string;
@@ -19,6 +22,43 @@ interface AmazonProductsProps {
 }
 
 export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsProps) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
+  
+  const handleRefreshApiKey = async () => {
+    setRefreshing(true);
+    toast({
+      title: "Refreshing API Key",
+      description: "Attempting to retrieve the RapidAPI key again..."
+    });
+    
+    try {
+      await FirecrawlService.resetApiKeyCache();
+      const initialized = await FirecrawlService.initialize();
+      
+      if (initialized) {
+        toast({
+          title: "Success",
+          description: "Successfully retrieved the RapidAPI key. Refresh the page to see results."
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to retrieve the RapidAPI key. Please verify it's set in Supabase Edge Function Secrets.",
+          variant: "destructive"
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while refreshing the API key.",
+        variant: "destructive"
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -42,14 +82,25 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
               Go to Supabase Edge Function Secrets and verify the RAPIDAPI_KEY is set correctly, 
               then refresh this page.
             </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
-            >
-              <Key className="mr-2 h-4 w-4" />
-              Open Supabase Function Secrets
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 mt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
+              >
+                <Key className="mr-2 h-4 w-4" />
+                Open Supabase Function Secrets
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRefreshApiKey}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh API Key'}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       );
