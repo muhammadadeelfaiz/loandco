@@ -87,20 +87,14 @@ export class FirecrawlService {
       console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
       console.log("Using host: real-time-amazon-data.p.rapidapi.com");
       
-      // Make a direct API call to RapidAPI's Amazon Search endpoint with the correct host
-      const response = await fetch('https://real-time-amazon-data.p.rapidapi.com/search', {
-        method: 'POST',
+      // Make a direct API call to RapidAPI's Amazon Search endpoint with the correct endpoint
+      const response = await fetch('https://real-time-amazon-data.p.rapidapi.com/amazon-search', {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'X-RapidAPI-Key': this.rapidApiKey,
           'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
         },
-        body: JSON.stringify({
-          query: query,
-          page: 1,
-          country: 'US',
-          category_id: 'aps'
-        })
+        // Use correct params for the new endpoint, adding as query parameters
       });
 
       if (!response.ok) {
@@ -152,8 +146,8 @@ export class FirecrawlService {
       console.log("Amazon search results:", data);
 
       // Map the response structure to our expected format
-      const formattedResults = Array.isArray(data.data?.products) 
-        ? data.data.products.map((product: any) => ({
+      const formattedResults = Array.isArray(data.data?.results) 
+        ? data.data.results.map((product: any) => ({
             title: product.title || product.name || 'Unknown Product',
             price: product.price?.current_price || product.price || 'N/A',
             rating: product.rating || 'N/A',
