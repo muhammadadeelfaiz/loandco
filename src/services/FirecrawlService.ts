@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 interface CrawlResponse {
@@ -159,7 +158,11 @@ export class FirecrawlService {
           rating: product.product_star_rating || 'N/A',
           reviews: product.product_num_ratings ? product.product_num_ratings.toString() : '0',
           image: product.product_photo || '',
-          url: product.product_url ? `https://www.amazon.com${product.product_url}` : ''
+          url: product.product_url ? 
+                (product.product_url.startsWith('http') ? 
+                  product.product_url : 
+                  `https://www.amazon.com${product.product_url}`) : 
+                undefined
         }));
 
         return {

@@ -75,7 +75,19 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
             <span>{product.reviews} reviews</span>
           </div>
           {product.url && (
-            <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(product.url, '_blank')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full" 
+              onClick={() => {
+                // Ensure URL has proper format before opening
+                let url = product.url;
+                if (url && !url.startsWith('http')) {
+                  url = `https://${url}`;
+                }
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }}
+            >
               <ExternalLink className="mr-2 h-4 w-4" />
               View on Amazon
             </Button>

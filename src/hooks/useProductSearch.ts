@@ -95,7 +95,12 @@ export const useProductSearch = (query: string, category: string) => {
       try {
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
         if (amazonResult.success && amazonResult.data) {
-          setAmazonProducts(amazonResult.data);
+          // Ensure all Amazon products have properly formatted URLs
+          const formattedProducts = amazonResult.data.map(product => ({
+            ...product,
+            url: product.url ? (product.url.startsWith('http') ? product.url : `https://${product.url}`) : undefined
+          }));
+          setAmazonProducts(formattedProducts);
         } else {
           console.error('Error from Amazon API:', amazonResult.error);
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
