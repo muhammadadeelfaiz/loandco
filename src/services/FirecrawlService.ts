@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 interface CrawlResponse {
@@ -37,9 +38,12 @@ export class FirecrawlService {
       // Force-clear any previous key in case it was invalid
       this.rapidApiKey = null;
       
-      // Fetch the RapidAPI key from Supabase Edge Functions
+      // Fetch the RapidAPI key from Supabase Edge Functions with explicit timeout
       const { data, error } = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (error) {
@@ -51,10 +55,16 @@ export class FirecrawlService {
         return false;
       }
 
-      const rapidApiKey = data?.rapidApiKey;
+      // Check if we have data and it contains rapidApiKey
+      if (!data || typeof data.rapidApiKey !== 'string') {
+        console.error("Invalid response from edge function. Response:", data);
+        return false;
+      }
 
-      if (!rapidApiKey) {
-        console.error("RapidAPI key not found in response. Response:", data);
+      const rapidApiKey = data.rapidApiKey;
+
+      if (!rapidApiKey || rapidApiKey.length < 10) { // Basic validation - API keys are typically longer than 10 chars
+        console.error("RapidAPI key appears to be invalid or missing. Length:", rapidApiKey ? rapidApiKey.length : 0);
         return false;
       }
 

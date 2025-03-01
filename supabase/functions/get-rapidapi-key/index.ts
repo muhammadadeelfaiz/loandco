@@ -1,56 +1,58 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// Follow this setup guide to integrate the Deno runtime into your application:
+// https://deno.land/manual/examples/deploy_node_server
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+console.log("Get RapidAPI Key Function Starting");
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+  // This is needed if you're planning to invoke your function from a browser.
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    console.log('Fetching RAPIDAPI_KEY from environment variables')
-    
-    // Retrieve the RAPIDAPI_KEY directly from environment variables
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
+    // Get RAPIDAPI_KEY from environment
+    const rapidApiKey = Deno.env.get("RAPIDAPI_KEY");
     
     if (!rapidApiKey) {
-      console.error('RAPIDAPI_KEY not found in environment variables')
+      console.error("RAPIDAPI_KEY environment variable is not set");
       return new Response(
         JSON.stringify({ 
-          error: 'RAPIDAPI_KEY not found', 
-          message: 'Please add the RAPIDAPI_KEY in Supabase Edge Function Secrets'
+          error: "RAPIDAPI_KEY not configured in Supabase Edge Function Secrets" 
         }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-          status: 404 
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
         }
-      )
+      );
     }
 
-    console.log('Successfully retrieved RAPIDAPI_KEY with length:', rapidApiKey.length)
+    console.log(`Successfully retrieved RAPIDAPI_KEY (length: ${rapidApiKey.length})`);
     
     return new Response(
-      JSON.stringify({ rapidApiKey: rapidApiKey }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      JSON.stringify({ 
+        rapidApiKey,
+        message: "RapidAPI key retrieved successfully" 
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
       }
-    )
-  } catch (err) {
-    console.error('Unexpected error:', err)
+    );
+  } catch (error) {
+    console.error("Error retrieving RAPIDAPI_KEY:", error.message);
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Unexpected error occurred', 
-        message: err instanceof Error ? err.message : String(err)
+        error: "Failed to retrieve RAPIDAPI_KEY",
+        details: error.message 
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
       }
-    )
+    );
   }
-})
+});
