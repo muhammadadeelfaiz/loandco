@@ -1,11 +1,13 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import Navigation from "@/components/Navigation";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchHeader } from "@/components/search/SearchHeader";
 import { ProductResults } from "@/components/search/ProductResults";
 import { useProductSearch } from "@/hooks/useProductSearch";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { FirecrawlService } from "@/services/FirecrawlService";
 
 interface SearchResultsProps {
   user: User | null;
@@ -16,20 +18,27 @@ const SearchResults = ({ user }: SearchResultsProps) => {
   const [priceRange, setPriceRange] = useState("all");
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
+  const [apiKeySet, setApiKeySet] = useState<boolean | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      const initialized = await FirecrawlService.initialize();
+      setApiKeySet(initialized);
+    };
+    checkApiKey();
+  }, []);
 
   const searchParams = new URLSearchParams(window.location.search);
   const submittedQuery = searchParams.get('q') || '';
   const categoryFromUrl = searchParams.get('category');
 
-  // Initialize category from URL if present
   useState(() => {
     if (categoryFromUrl) {
       setCategory(categoryFromUrl);
     }
   });
 
-  // Fetch products using custom hook
   const {
     products,
     isLoading,
@@ -65,7 +74,6 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     
     let filteredItems = [...items];
 
-    // Apply price range filter
     if (priceRange !== "all") {
       const [min, max] = priceRange.split("-").map(Number);
       filteredItems = filteredItems.filter(item => {
@@ -77,7 +85,6 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       });
     }
 
-    // Apply sorting
     filteredItems.sort((a, b) => {
       const priceA = type === 'local' ? a.price : parseFloat(a.price.value);
       const priceB = type === 'local' ? b.price : parseFloat(b.price.value);
@@ -105,7 +112,6 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       }
     });
 
-    // Apply distance filter for local products
     if (type === 'local' && distanceRange !== "all") {
       const maxDistance = parseInt(distanceRange);
       filteredItems = filteredItems.filter(
@@ -138,6 +144,16 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       <Navigation user={user} />
       
       <main className="container mx-auto px-4 py-8">
+        {apiKeySet === false && (
+          <Alert className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>API Key Required</AlertTitle>
+            <AlertDescription>
+              To view Amazon product results, please set up your RapidAPI key in the Supabase dashboard.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <SearchHeader
           query={submittedQuery}
           category={category}

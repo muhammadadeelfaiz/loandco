@@ -1,63 +1,58 @@
 
 import { supabase } from '@/lib/supabase';
 
-interface OxylabsResponse {
-  results: Array<{
-    content: string;
-    status_code: number;
-    url: string;
-  }>;
-  status: string;
+interface AmazonProduct {
+  title: string;
+  price: string;
+  rating: string;
+  reviews: string;
+  image: string;
 }
 
 export class FirecrawlService {
-  private static username: string | null = null;
-  private static password: string | null = null;
+  private static rapidApiKey: string | null = null;
+  private static rapidApiHost: string = 'real-time-amazon-data.p.rapidapi.com';
 
   static async initialize() {
     try {
       const { data: credentials } = await supabase.rpc('get_secrets', {
-        secret_names: ['OXYLABS_USERNAME', 'OXYLABS_API_KEY']
+        secret_names: ['RAPIDAPI_KEY']
       });
       
-      if (credentials?.OXYLABS_USERNAME && credentials?.OXYLABS_API_KEY) {
-        this.username = credentials.OXYLABS_USERNAME;
-        this.password = credentials.OXYLABS_API_KEY;
-        console.log('Oxylabs service initialized successfully');
+      if (credentials?.RAPIDAPI_KEY) {
+        this.rapidApiKey = credentials.RAPIDAPI_KEY;
+        console.log('RapidAPI service initialized successfully');
+        return true;
       }
+      return false;
     } catch (error) {
-      console.error('Error initializing Oxylabs service:', error);
+      console.error('Error initializing RapidAPI service:', error);
+      return false;
     }
   }
 
-  static async crawlAmazonProduct(searchTerm: string): Promise<{ success: boolean; error?: string; data?: any }> {
-    if (!this.username || !this.password) {
-      await this.initialize();
-      if (!this.username || !this.password) {
-        return { success: false, error: 'Oxylabs credentials not initialized' };
+  static async crawlAmazonProduct(searchTerm: string): Promise<{ success: boolean; error?: string; data?: AmazonProduct[] }> {
+    if (!this.rapidApiKey) {
+      const initialized = await this.initialize();
+      if (!initialized) {
+        return { success: false, error: 'RapidAPI credentials not initialized' };
       }
     }
 
     try {
-      const body = {
-        source: 'amazon_search',
-        query: searchTerm,
-        parse: true,
-        context: [
-          { key: "domain", value: "com" }
-        ],
-        start_page: 1,
-        pages: 1
-      };
+      // Format the search term for the URL
+      const formattedSearchTerm = encodeURIComponent(searchTerm);
+      
+      // Use search endpoint instead of product details
+      const url = `https://${this.rapidApiHost}/search?query=${formattedSearchTerm}&country=US`;
+      
+      console.log('Making request to RapidAPI:', url);
 
-      console.log('Making request to Oxylabs with body:', body);
-
-      const response = await fetch('https://realtime.oxylabs.io/v1/queries', {
-        method: 'POST',
-        body: JSON.stringify(body),
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa(`${this.username}:${this.password}`)
+          'X-RapidAPI-Key': this.rapidApiKey!,
+          'X-RapidAPI-Host': this.rapidApiHost
         }
       });
 
@@ -65,32 +60,24 @@ export class FirecrawlService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json() as OxylabsResponse;
-      console.log('Raw Oxylabs response:', data);
+      const data = await response.json();
+      console.log('Raw RapidAPI response:', data);
       
-      if (data.status === 'error') {
+      if (!data.data || !data.data.products) {
         return { 
           success: false, 
-          error: 'Failed to crawl Amazon' 
+          error: 'Failed to fetch Amazon products' 
         };
       }
 
-      // Parse the content from the response
-      const products = data.results.map(result => {
-        try {
-          const content = JSON.parse(result.content);
-          return content.results.map((item: any) => ({
-            title: item.title || 'N/A',
-            price: item.price?.current_price || 'N/A',
-            rating: item.rating || 'N/A',
-            reviews: item.reviews_count || '0',
-            image: item.image || ''
-          }));
-        } catch (error) {
-          console.error('Error parsing product data:', error);
-          return [];
-        }
-      }).flat();
+      // Parse the products from the response
+      const products: AmazonProduct[] = data.data.products.map((item: any) => ({
+        title: item.title || 'N/A',
+        price: item.price?.current_price || item.price || 'N/A',
+        rating: item.rating || 'N/A',
+        reviews: item.reviews_count || '0',
+        image: item.thumbnail || item.image || ''
+      }));
 
       console.log('Parsed products:', products);
       return { 
@@ -98,10 +85,10 @@ export class FirecrawlService {
         data: products 
       };
     } catch (error) {
-      console.error('Error during crawl:', error);
+      console.error('Error during Amazon search:', error);
       return { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Failed to connect to Oxylabs API' 
+        error: error instanceof Error ? error.message : 'Failed to connect to RapidAPI' 
       };
     }
   }

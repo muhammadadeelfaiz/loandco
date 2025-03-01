@@ -92,6 +92,13 @@ export const useProductSearch = (query: string, category: string) => {
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
         if (amazonResult.success && amazonResult.data) {
           setAmazonProducts(amazonResult.data);
+        } else {
+          console.error('Error from Amazon API:', amazonResult.error);
+          toast({
+            variant: "destructive",
+            title: "Amazon API Error",
+            description: amazonResult.error || "Failed to fetch Amazon products"
+          });
         }
       } catch (error) {
         console.error('Error fetching Amazon products:', error);
@@ -117,4 +124,3 @@ export const useProductSearch = (query: string, category: string) => {
     isLoadingEbay
   };
 };
-
