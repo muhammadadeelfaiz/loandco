@@ -91,17 +91,42 @@ export class FirecrawlService {
         const errorText = await response.text();
         console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
         
-        // Check for subscription-related errors (403 Forbidden)
+        // Check for common API errors
         if (response.status === 403) {
+          console.warn("Received 403 Forbidden from RapidAPI. Full error:", errorText);
+          
           if (errorText.includes("not subscribed")) {
             return {
               success: false,
               error: "You need to subscribe to the Amazon Web Scraper API on RapidAPI. Please visit RapidAPI and subscribe to the service."
             };
+          } else if (errorText.includes("exceeded the MONTHLY quota")) {
+            return {
+              success: false,
+              error: "You have exceeded your monthly quota for the Amazon Web Scraper API on RapidAPI."
+            };
+          } else if (errorText.includes("exceeded the DAILY quota")) {
+            return {
+              success: false,
+              error: "You have exceeded your daily quota for the Amazon Web Scraper API on RapidAPI."
+            };
+          } else if (errorText.includes("exceeded the rate limit")) {
+            return {
+              success: false,
+              error: "You have exceeded the rate limit for the Amazon Web Scraper API on RapidAPI. Please try again later."
+            };
           }
+          
+          return {
+            success: false,
+            error: "Access denied by RapidAPI. Please check your subscription status for the Amazon Web Scraper API."
+          };
         }
         
-        throw new Error(`RapidAPI request failed with status: ${response.status}`);
+        return {
+          success: false,
+          error: `RapidAPI request failed with status: ${response.status}`
+        };
       }
 
       const data = await response.json();
