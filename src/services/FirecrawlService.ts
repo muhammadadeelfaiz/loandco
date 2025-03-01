@@ -73,8 +73,8 @@ export class FirecrawlService {
         };
       }
 
-      // Use the searchAmazon method
-      const response = await this.firecrawlClient.searchAmazon(query, "US", 10);
+      // Using the correct method from FirecrawlAPI
+      const response = await this.firecrawlClient.amazon.search(query, "US", 10);
       return {
         success: true,
         data: response.data
