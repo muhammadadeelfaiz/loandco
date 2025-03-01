@@ -70,6 +70,8 @@ export class FirecrawlService {
         };
       }
 
+      console.log("Sending Amazon product search request with query:", query);
+
       // Make a direct API call to RapidAPI's Amazon Search endpoint
       const response = await fetch('https://amazon-web-scraper-api.p.rapidapi.com/products/search', {
         method: 'POST',
@@ -86,6 +88,8 @@ export class FirecrawlService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
         throw new Error(`RapidAPI request failed with status: ${response.status}`);
       }
 
