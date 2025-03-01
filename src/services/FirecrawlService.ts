@@ -12,6 +12,8 @@ export class FirecrawlService {
   private static initializationInProgress = false;
   private static lastInitAttempt = 0;
   private static INIT_COOLDOWN = 5000; // 5 seconds cooldown between init attempts
+  private static MAX_RETRIES = 3;
+  private static retryCount = 0;
 
   static async initialize(): Promise<boolean> {
     // If we already have a key, return true
@@ -21,16 +23,17 @@ export class FirecrawlService {
 
     // Don't try to initialize too frequently
     const now = Date.now();
-    if (this.initializationInProgress || now - this.lastInitAttempt < this.INIT_COOLDOWN) {
+    if (this.initializationInProgress || (now - this.lastInitAttempt < this.INIT_COOLDOWN && this.retryCount > 0)) {
       console.info("Initialization already in progress or attempted recently");
       return false;
     }
 
     this.initializationInProgress = true;
     this.lastInitAttempt = now;
+    this.retryCount++;
 
     try {
-      console.info("Initializing RapidAPI service, fetching key from Supabase edge function...");
+      console.info(`Initializing RapidAPI service, fetching key from Supabase edge function... (Attempt ${this.retryCount}/${this.MAX_RETRIES})`);
       
       // Fetch the RapidAPI key from Supabase Edge Functions
       const { data, error } = await supabase.functions.invoke('get-rapidapi-key', {
@@ -39,6 +42,10 @@ export class FirecrawlService {
 
       if (error) {
         console.error("Error invoking get-rapidapi-key function:", error);
+        if (this.retryCount < this.MAX_RETRIES) {
+          console.info(`Will retry in ${this.INIT_COOLDOWN/1000} seconds...`);
+          setTimeout(() => this.retryCount--, this.INIT_COOLDOWN); // Reset retry counter after cooldown
+        }
         return false;
       }
 
@@ -51,6 +58,7 @@ export class FirecrawlService {
 
       console.info("Successfully retrieved RapidAPI key");
       this.rapidApiKey = rapidApiKey;
+      this.retryCount = 0; // Reset retry counter on success
       return true;
     } catch (error) {
       console.error("Error initializing RapidAPI:", error);
@@ -66,7 +74,7 @@ export class FirecrawlService {
       if (!isInitialized || !this.rapidApiKey) {
         return {
           success: false,
-          error: "RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase."
+          error: "RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase Edge Function Secrets."
         };
       }
 
