@@ -7,6 +7,7 @@ interface AmazonProduct {
   rating: string;
   reviews: string;
   image: string;
+  url?: string; // Adding URL to the product model
 }
 
 export class FirecrawlService {
@@ -58,26 +59,30 @@ export class FirecrawlService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}, body:`, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Raw RapidAPI response status:', data.status || 'Unknown');
+      console.log('Raw RapidAPI response:', data);
       
       if (!data.data || !data.data.products) {
+        console.error('Invalid response format:', data);
         return { 
           success: false, 
-          error: 'Failed to fetch Amazon products' 
+          error: 'Invalid response format from Amazon API' 
         };
       }
 
-      // Parse the products from the response
+      // Parse the products from the response with more detailed info
       const products: AmazonProduct[] = data.data.products.map((item: any) => ({
         title: item.title || 'N/A',
         price: item.price?.current_price || item.price || 'N/A',
         rating: item.rating || 'N/A',
         reviews: item.reviews_count || '0',
-        image: item.thumbnail || item.image || ''
+        image: item.thumbnail || item.image || '',
+        url: item.url || `https://www.amazon.com/dp/${item.asin}`
       }));
 
       console.log('Parsed Amazon products:', products.length);

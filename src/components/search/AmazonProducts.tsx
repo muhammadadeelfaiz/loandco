@@ -73,4 +73,4 @@ export const AmazonProducts = ({ products, isLoading }: AmazonProductsProps) => 
       ))}
     </div>
   );
-};
+}
