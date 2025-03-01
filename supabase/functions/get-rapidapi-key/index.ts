@@ -31,6 +31,20 @@ serve(async (req) => {
 
     console.log(`Successfully retrieved RAPIDAPI_KEY (length: ${rapidApiKey.length})`);
     
+    // Additional validation to ensure the key is properly formatted
+    if (rapidApiKey.length < 20) {
+      console.error("RAPIDAPI_KEY appears to be malformed (too short)");
+      return new Response(
+        JSON.stringify({ 
+          error: "RAPIDAPI_KEY appears to be invalid (too short)" 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         rapidApiKey,
