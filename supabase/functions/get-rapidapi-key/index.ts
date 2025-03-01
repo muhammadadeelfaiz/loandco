@@ -1,6 +1,5 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,20 +13,18 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    console.log('Fetching RAPIDAPI_KEY from secrets')
+    console.log('Fetching RAPIDAPI_KEY from environment variables')
     
-    // Retrieve the RAPIDAPI_KEY from Supabase secrets
+    // Retrieve the RAPIDAPI_KEY directly from environment variables
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY')
     
     if (!rapidApiKey) {
       console.error('RAPIDAPI_KEY not found in environment variables')
       return new Response(
-        JSON.stringify({ error: 'RAPIDAPI_KEY not found' }),
+        JSON.stringify({ 
+          error: 'RAPIDAPI_KEY not found', 
+          message: 'Please add the RAPIDAPI_KEY in Supabase Edge Function Secrets'
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
           status: 404 
@@ -45,7 +42,10 @@ serve(async (req) => {
   } catch (err) {
     console.error('Unexpected error:', err)
     return new Response(
-      JSON.stringify({ error: 'Unexpected error occurred' }),
+      JSON.stringify({ 
+        error: 'Unexpected error occurred', 
+        message: err instanceof Error ? err.message : String(err)
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 500 

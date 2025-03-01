@@ -30,7 +30,7 @@ export class FirecrawlService {
     this.lastInitAttempt = now;
 
     try {
-      console.info("Initializing RapidAPI service, fetching key from Supabase secrets...");
+      console.info("Initializing RapidAPI service, fetching key from Supabase edge function...");
       
       // Fetch the RapidAPI key from Supabase Edge Functions
       const { data, error } = await supabase.functions.invoke('get-rapidapi-key', {
@@ -70,6 +70,8 @@ export class FirecrawlService {
         };
       }
 
+      console.log("Making request to Amazon API with key:", this.rapidApiKey.substring(0, 5) + "...");
+      
       // Make a direct API call to RapidAPI's Amazon Search endpoint
       const response = await fetch('https://amazon-web-scraper-api.p.rapidapi.com/products/search', {
         method: 'POST',
@@ -86,6 +88,8 @@ export class FirecrawlService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
         throw new Error(`RapidAPI request failed with status: ${response.status}`);
       }
 
