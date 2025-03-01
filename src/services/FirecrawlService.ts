@@ -87,8 +87,7 @@ export class FirecrawlService {
       console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
       console.log("Using host: real-time-amazon-data.p.rapidapi.com");
       
-      // Make a direct API call to RapidAPI's Amazon Search endpoint with the correct endpoint
-      // The correct endpoint is "search" not "amazon-search"
+      // Make a direct API call to RapidAPI's Amazon Search endpoint
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', query);
       url.searchParams.append('page', '1');
