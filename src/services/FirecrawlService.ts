@@ -1,6 +1,6 @@
 
+import FirecrawlAPI from '@mendable/firecrawl-js';
 import { supabase } from '@/lib/supabase';
-import { FirecrawlAPI } from '@mendable/firecrawl-js';
 
 interface CrawlResponse {
   success: boolean;
