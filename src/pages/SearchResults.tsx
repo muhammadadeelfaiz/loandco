@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import Navigation from "@/components/Navigation";
@@ -129,15 +128,13 @@ const SearchResults = ({ user }: SearchResultsProps) => {
   const filteredLocalProducts = filterAndSortProducts(products, 'local');
   const filteredEbayProducts = filterAndSortProducts(ebayProducts, 'ebay');
 
-  // Handle manual API key refresh
   const handleRefreshApiKey = async () => {
     toast({
       title: "Refreshing API Key",
       description: "Attempting to retrieve the RapidAPI key again..."
     });
     
-    // Clear any cached key
-    FirecrawlService.rapidApiKey = null; 
+    await FirecrawlService.resetApiKeyCache(); 
     
     const initialized = await FirecrawlService.initialize();
     setApiKeySet(initialized);
@@ -147,7 +144,6 @@ const SearchResults = ({ user }: SearchResultsProps) => {
         title: "Success",
         description: "Successfully retrieved the RapidAPI key. Refreshing products..."
       });
-      // Refresh the page to trigger a new search
       window.location.reload();
     } else {
       toast({

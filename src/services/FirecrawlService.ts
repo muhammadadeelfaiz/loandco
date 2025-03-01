@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from "@/components/ui/use-toast";
 
@@ -15,6 +14,12 @@ export class FirecrawlService {
   private static INIT_COOLDOWN = 5000; // 5 seconds cooldown between init attempts
   private static MAX_RETRIES = 3;
   private static retryCount = 0;
+
+  static async resetApiKeyCache(): Promise<void> {
+    console.log("Resetting RapidAPI key cache");
+    this.rapidApiKey = null;
+    this.retryCount = 0;
+  }
 
   static async initialize(): Promise<boolean> {
     // If we already have a key, return true
@@ -113,8 +118,8 @@ export class FirecrawlService {
 
   static async crawlAmazonProduct(query: string): Promise<CrawlResponse> {
     try {
-      // Force re-initialization every time to ensure we have the latest key
-      this.rapidApiKey = null;
+      // Instead of directly setting the rapidApiKey to null, use our new method
+      await this.resetApiKeyCache();
       const isInitialized = await this.initialize();
       
       if (!isInitialized || !this.rapidApiKey) {

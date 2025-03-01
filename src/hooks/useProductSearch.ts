@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -125,6 +126,7 @@ export const useProductSearch = (query: string, category: string) => {
           // Try reinitializing the API key if we get an error
           if (amazonResult.error?.includes('credentials not initialized')) {
             console.log('Attempting to reinitialize RapidAPI key...');
+            await FirecrawlService.resetApiKeyCache();
             const reinitialized = await FirecrawlService.initialize();
             setApiKeyInitialized(reinitialized);
           }
