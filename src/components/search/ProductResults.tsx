@@ -7,6 +7,7 @@ interface ProductResultsProps {
   filteredLocalProducts: any[];
   filteredEbayProducts: any[];
   amazonProducts: any[];
+  amazonError?: string;
   isLoading: boolean;
   isLoadingEbay: boolean;
   isLoadingAmazon: boolean;
@@ -19,6 +20,7 @@ export const ProductResults = ({
   filteredLocalProducts,
   filteredEbayProducts,
   amazonProducts,
+  amazonError,
   isLoading,
   isLoadingEbay,
   isLoadingAmazon,
@@ -52,6 +54,7 @@ export const ProductResults = ({
           <AmazonProducts 
             products={amazonProducts}
             isLoading={isLoadingAmazon}
+            error={amazonError}
           />
         </section>
       )}

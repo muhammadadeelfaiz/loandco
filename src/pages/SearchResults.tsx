@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import Navigation from "@/components/Navigation";
@@ -43,6 +44,7 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     products,
     isLoading,
     amazonProducts,
+    amazonError,
     isLoadingAmazon,
     ebayProducts,
     isLoadingEbay
@@ -171,6 +173,7 @@ const SearchResults = ({ user }: SearchResultsProps) => {
           filteredLocalProducts={filteredLocalProducts}
           filteredEbayProducts={filteredEbayProducts}
           amazonProducts={amazonProducts}
+          amazonError={amazonError}
           isLoading={isLoading}
           isLoadingEbay={isLoadingEbay}
           isLoadingAmazon={isLoadingAmazon}

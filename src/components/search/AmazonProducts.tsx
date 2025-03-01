@@ -15,9 +15,10 @@ interface AmazonProduct {
 interface AmazonProductsProps {
   products: AmazonProduct[];
   isLoading: boolean;
+  error?: string;
 }
 
-export const AmazonProducts = ({ products, isLoading }: AmazonProductsProps) => {
+export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsProps) => {
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -25,6 +26,16 @@ export const AmazonProducts = ({ products, isLoading }: AmazonProductsProps) => 
           <div key={i} className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error loading Amazon products</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 

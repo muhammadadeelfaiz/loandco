@@ -13,31 +13,59 @@ interface AmazonProduct {
 export class FirecrawlService {
   private static rapidApiKey: string | null = null;
   private static rapidApiHost: string = 'real-time-amazon-data.p.rapidapi.com';
+  private static isInitializing: boolean = false;
+  private static lastInitAttempt: number = 0;
 
   static async initialize() {
     try {
-      const { data: credentials } = await supabase.rpc('get_secrets', {
+      // Don't attempt to initialize more than once every 5 seconds
+      const now = Date.now();
+      if (this.isInitializing || (now - this.lastInitAttempt < 5000 && this.lastInitAttempt > 0)) {
+        console.log('Initialization already in progress or attempted recently');
+        return !!this.rapidApiKey;
+      }
+
+      this.isInitializing = true;
+      this.lastInitAttempt = now;
+      
+      console.log('Initializing RapidAPI service, fetching key from Supabase secrets...');
+      
+      const { data: credentials, error } = await supabase.rpc('get_secrets', {
         secret_names: ['RAPIDAPI_KEY']
       });
       
-      if (credentials?.RAPIDAPI_KEY) {
-        this.rapidApiKey = credentials.RAPIDAPI_KEY;
-        console.log('RapidAPI service initialized successfully with key:', this.rapidApiKey.substring(0, 4) + '...');
-        return true;
+      if (error) {
+        console.error('Error retrieving RapidAPI key from Supabase:', error);
+        this.isInitializing = false;
+        return false;
       }
-      console.warn('RapidAPI key not found in Supabase secrets');
-      return false;
+      
+      if (!credentials || !credentials.RAPIDAPI_KEY) {
+        console.error('RapidAPI key not found in Supabase secrets. Make sure the key is set with name "RAPIDAPI_KEY"');
+        this.isInitializing = false;
+        return false;
+      }
+      
+      this.rapidApiKey = credentials.RAPIDAPI_KEY;
+      console.log('RapidAPI service initialized successfully with key:', this.rapidApiKey.substring(0, 4) + '...');
+      this.isInitializing = false;
+      return true;
     } catch (error) {
       console.error('Error initializing RapidAPI service:', error);
+      this.isInitializing = false;
       return false;
     }
   }
 
   static async crawlAmazonProduct(searchTerm: string): Promise<{ success: boolean; error?: string; data?: AmazonProduct[] }> {
     if (!this.rapidApiKey) {
+      console.log('No API key found, attempting to initialize...');
       const initialized = await this.initialize();
       if (!initialized) {
-        return { success: false, error: 'RapidAPI credentials not initialized' };
+        return { 
+          success: false, 
+          error: 'RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase.' 
+        };
       }
     }
 
@@ -61,7 +89,10 @@ export class FirecrawlService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`HTTP error! status: ${response.status}, body:`, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        return { 
+          success: false, 
+          error: `API Error (${response.status}): ${errorText || 'Unknown error'}` 
+        };
       }
 
       const data = await response.json();

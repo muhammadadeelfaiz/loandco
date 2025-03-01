@@ -12,6 +12,7 @@ interface AmazonProduct {
   rating: string;
   reviews: string;
   image: string;
+  url?: string;
 }
 
 interface EbayProduct {
@@ -29,6 +30,7 @@ interface EbayProduct {
 
 export const useProductSearch = (query: string, category: string) => {
   const [amazonProducts, setAmazonProducts] = useState<AmazonProduct[]>([]);
+  const [amazonError, setAmazonError] = useState<string | undefined>(undefined);
   const [ebayProducts, setEbayProducts] = useState<EbayProduct[]>([]);
   const [isLoadingAmazon, setIsLoadingAmazon] = useState(false);
   const [isLoadingEbay, setIsLoadingEbay] = useState(false);
@@ -88,37 +90,32 @@ export const useProductSearch = (query: string, category: string) => {
       if (!query) return;
       
       setIsLoadingAmazon(true);
+      setAmazonError(undefined);
+      
       try {
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
         if (amazonResult.success && amazonResult.data) {
           setAmazonProducts(amazonResult.data);
         } else {
           console.error('Error from Amazon API:', amazonResult.error);
-          toast({
-            variant: "destructive",
-            title: "Amazon API Error",
-            description: amazonResult.error || "Failed to fetch Amazon products"
-          });
+          setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
         }
       } catch (error) {
         console.error('Error fetching Amazon products:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch Amazon products"
-        });
+        setAmazonError(error instanceof Error ? error.message : "Failed to fetch Amazon products");
       } finally {
         setIsLoadingAmazon(false);
       }
     };
 
     fetchAmazonProducts();
-  }, [query, toast]);
+  }, [query]);
 
   return {
     products,
     isLoading,
     amazonProducts,
+    amazonError,
     isLoadingAmazon,
     ebayProducts,
     isLoadingEbay
