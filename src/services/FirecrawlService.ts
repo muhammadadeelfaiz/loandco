@@ -181,4 +181,22 @@ export class FirecrawlService {
       };
     }
   }
+
+  // New method for searching Amazon products for homepage
+  static async getAmazonProductsForHomepage(searchTerm: string): Promise<any[]> {
+    try {
+      console.log('Fetching Amazon products for homepage with term:', searchTerm);
+      const result = await this.crawlAmazonProduct(searchTerm);
+      
+      if (!result.success || !result.data) {
+        console.warn('Failed to fetch Amazon products for homepage:', result.error);
+        return [];
+      }
+      
+      return result.data.slice(0, 4); // Limit to 4 products for homepage
+    } catch (error) {
+      console.error('Error fetching Amazon products for homepage:', error);
+      return [];
+    }
+  }
 }
