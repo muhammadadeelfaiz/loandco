@@ -35,6 +35,9 @@ export class FirecrawlService {
     try {
       console.info(`Initializing RapidAPI service, fetching key from Supabase edge function... (Attempt ${this.retryCount}/${this.MAX_RETRIES})`);
       
+      // Force-clear any previous key in case it was invalid
+      this.rapidApiKey = null;
+      
       // Fetch the RapidAPI key from Supabase Edge Functions
       const { data, error } = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'GET',
@@ -56,7 +59,7 @@ export class FirecrawlService {
         return false;
       }
 
-      console.info("Successfully retrieved RapidAPI key");
+      console.info("Successfully retrieved RapidAPI key with length:", rapidApiKey.length);
       this.rapidApiKey = rapidApiKey;
       this.retryCount = 0; // Reset retry counter on success
       return true;
@@ -70,7 +73,10 @@ export class FirecrawlService {
 
   static async crawlAmazonProduct(query: string): Promise<CrawlResponse> {
     try {
+      // Force re-initialization every time to ensure we have the latest key
+      this.rapidApiKey = null;
       const isInitialized = await this.initialize();
+      
       if (!isInitialized || !this.rapidApiKey) {
         return {
           success: false,
@@ -78,7 +84,7 @@ export class FirecrawlService {
         };
       }
 
-      console.log("Making request to Amazon API with key:", this.rapidApiKey.substring(0, 5) + "...");
+      console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
       
       // Make a direct API call to RapidAPI's Amazon Search endpoint
       const response = await fetch('https://amazon-web-scraper-api.p.rapidapi.com/products/search', {
@@ -104,6 +110,8 @@ export class FirecrawlService {
           console.warn("Received 403 Forbidden from RapidAPI. Full error:", errorText);
           
           if (errorText.includes("not subscribed")) {
+            // Clear the key as it's not valid for this API
+            this.rapidApiKey = null;
             return {
               success: false,
               error: "You need to subscribe to the Amazon Web Scraper API on RapidAPI. Please visit RapidAPI and subscribe to the service."
@@ -125,6 +133,7 @@ export class FirecrawlService {
             };
           }
           
+          // Generic access denied message
           return {
             success: false,
             error: "Access denied by RapidAPI. Please check your subscription status for the Amazon Web Scraper API."

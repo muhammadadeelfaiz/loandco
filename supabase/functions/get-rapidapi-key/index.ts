@@ -32,7 +32,12 @@ serve(async (req) => {
       )
     }
 
-    console.log('Successfully retrieved RAPIDAPI_KEY with first chars:', rapidApiKey.substring(0, 3) + '...')
+    console.log('Successfully retrieved RAPIDAPI_KEY with length:', rapidApiKey.length)
+    // Print the first few characters of the key for debugging
+    if (rapidApiKey.length > 10) {
+      console.log('Key starts with:', rapidApiKey.substring(0, 5) + '...')
+    }
+
     return new Response(
       JSON.stringify({ rapidApiKey: rapidApiKey }),
       { 
