@@ -43,8 +43,6 @@ export class FirecrawlService {
         return false;
       }
 
-      console.log("API key response:", data); // This will help debug the response format
-
       const rapidApiKey = data?.rapidApiKey;
 
       if (!rapidApiKey) {
