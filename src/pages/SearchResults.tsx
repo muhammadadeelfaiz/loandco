@@ -130,8 +130,8 @@ const SearchResults = ({ user }: SearchResultsProps) => {
 
   const handleRefreshApiKey = async () => {
     toast({
-      title: "Refreshing API Key",
-      description: "Attempting to retrieve the RapidAPI key again..."
+      title: "Reconnecting",
+      description: "Attempting to reconnect to the product search service..."
     });
     
     await FirecrawlService.resetApiKeyCache(); 
@@ -142,13 +142,13 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     if (initialized) {
       toast({
         title: "Success",
-        description: "Successfully retrieved the RapidAPI key. Refreshing products..."
+        description: "Successfully connected to the product search service. Refreshing products..."
       });
       window.location.reload();
     } else {
       toast({
-        title: "Error",
-        description: "Failed to retrieve the RapidAPI key. Please check the Supabase Edge Function Secrets.",
+        title: "Connection Error",
+        description: "Failed to connect to the product search service. Please try again later.",
         variant: "destructive"
       });
     }
@@ -176,23 +176,16 @@ const SearchResults = ({ user }: SearchResultsProps) => {
         {apiKeySet === false && (
           <Alert className="mb-6" variant="destructive">
             <Key className="h-4 w-4" />
-            <AlertTitle>RapidAPI Key Required</AlertTitle>
+            <AlertTitle>Product Search Service Unavailable</AlertTitle>
             <AlertDescription className="flex flex-col gap-2">
-              <p>To view Amazon product results, please set up your RapidAPI key in the Supabase dashboard.</p>
+              <p>We're currently experiencing difficulties connecting to our Amazon product search service.</p>
               <div className="flex gap-2 mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
-                >
-                  Open Supabase Function Secrets
-                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={handleRefreshApiKey}
                 >
-                  Refresh API Key
+                  Refresh Connection
                 </Button>
               </div>
             </AlertDescription>

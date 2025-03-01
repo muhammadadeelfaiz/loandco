@@ -1,4 +1,3 @@
-
 import { AlertCircle, ExternalLink, Key, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,8 +27,8 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
   const handleRefreshApiKey = async () => {
     setRefreshing(true);
     toast({
-      title: "Refreshing API Key",
-      description: "Attempting to retrieve the RapidAPI key again..."
+      title: "Refreshing API Connection",
+      description: "Attempting to reconnect to the product search service..."
     });
     
     try {
@@ -39,19 +38,19 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
       if (initialized) {
         toast({
           title: "Success",
-          description: "Successfully retrieved the RapidAPI key. Refresh the page to see results."
+          description: "Successfully connected to the product search service. Refresh the page to see results."
         });
       } else {
         toast({
-          title: "Error",
-          description: "Failed to retrieve the RapidAPI key. Please verify it's set in Supabase Edge Function Secrets.",
+          title: "Connection Error",
+          description: "Failed to connect to the product search service. Please try again later.",
           variant: "destructive"
         });
       }
     } catch (e) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred while refreshing the API key.",
+        description: "An unexpected error occurred while refreshing the connection.",
         variant: "destructive"
       });
     } finally {
@@ -70,27 +69,18 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
   }
 
   if (error) {
-    // Special handling for API key errors
+    // Special handling for API key errors with more user-friendly messaging
     if (error.includes('RapidAPI credentials not initialized') || error.includes('API key')) {
       return (
         <Alert variant="destructive">
           <Key className="h-4 w-4" />
-          <AlertTitle>RapidAPI Key Required</AlertTitle>
+          <AlertTitle>Product Search Service Unavailable</AlertTitle>
           <AlertDescription className="space-y-3">
-            <p>{error}</p>
+            <p>We're having trouble connecting to our product search service.</p>
             <p className="text-sm">
-              Go to Supabase Edge Function Secrets and verify the RAPIDAPI_KEY is set correctly, 
-              then refresh this page.
+              This is usually a temporary issue. Please try refreshing the connection or try again later.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open('https://supabase.com/dashboard/project/svdgniviotecguehvtig/settings/functions', '_blank')}
-              >
-                <Key className="mr-2 h-4 w-4" />
-                Open Supabase Function Secrets
-              </Button>
               <Button 
                 variant="outline" 
                 size="sm"
@@ -98,7 +88,7 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
                 disabled={refreshing}
               >
                 <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Refreshing...' : 'Refresh API Key'}
+                {refreshing ? 'Connecting...' : 'Refresh Connection'}
               </Button>
             </div>
           </AlertDescription>

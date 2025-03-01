@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -64,18 +65,18 @@ export const useProductSearch = (query: string, category: string) => {
       setApiKeyInitialized(initialized);
       
       if (!initialized) {
-        console.warn('RapidAPI key not initialized');
-        setAmazonError('RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase Edge Function Secrets.');
+        console.warn('Product search service not initialized');
+        setAmazonError('Unable to connect to the product search service. Please try refreshing the connection.');
         toast({
-          title: "API Key Required",
-          description: "RapidAPI key is missing or invalid. Check Supabase Edge Function Secrets.",
+          title: "Connection Issue",
+          description: "We're having trouble connecting to our product search service.",
           variant: "destructive"
         });
       } else {
-        console.log('RapidAPI key successfully initialized');
+        console.log('Product search service successfully initialized');
         toast({
-          title: "API Key Initialized",
-          description: "RapidAPI key was successfully retrieved.",
+          title: "Search Ready",
+          description: "Connected to all product search services.",
         });
       }
     };
@@ -132,15 +133,15 @@ export const useProductSearch = (query: string, category: string) => {
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
           
           if (amazonResult.error?.includes('credentials not initialized')) {
-            console.log('Attempting to reinitialize RapidAPI key...');
+            console.log('Attempting to reconnect to product search service...');
             await FirecrawlService.resetApiKeyCache();
             const reinitialized = await FirecrawlService.initialize();
             setApiKeyInitialized(reinitialized);
             
             if (reinitialized) {
               toast({
-                title: "API Key Refreshed",
-                description: "RapidAPI key was successfully refreshed. Try searching again.",
+                title: "Connection Restored",
+                description: "Product search service reconnected. Try searching again.",
               });
             }
           }
