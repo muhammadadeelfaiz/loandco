@@ -21,9 +21,10 @@ export class FirecrawlService {
       
       if (credentials?.RAPIDAPI_KEY) {
         this.rapidApiKey = credentials.RAPIDAPI_KEY;
-        console.log('RapidAPI service initialized successfully');
+        console.log('RapidAPI service initialized successfully with key:', this.rapidApiKey.substring(0, 4) + '...');
         return true;
       }
+      console.warn('RapidAPI key not found in Supabase secrets');
       return false;
     } catch (error) {
       console.error('Error initializing RapidAPI service:', error);
@@ -61,7 +62,7 @@ export class FirecrawlService {
       }
 
       const data = await response.json();
-      console.log('Raw RapidAPI response:', data);
+      console.log('Raw RapidAPI response status:', data.status || 'Unknown');
       
       if (!data.data || !data.data.products) {
         return { 
@@ -79,7 +80,7 @@ export class FirecrawlService {
         image: item.thumbnail || item.image || ''
       }));
 
-      console.log('Parsed products:', products);
+      console.log('Parsed Amazon products:', products.length);
       return { 
         success: true,
         data: products 
