@@ -70,7 +70,8 @@ export class FirecrawlService {
         };
       }
 
-      const response = await this.firecrawlClient.crawlAmazonSearch(query, true, "US", 10);
+      // Use the searchAmazon method instead of crawlAmazonSearch
+      const response = await this.firecrawlClient.searchAmazon(query, "US", 10);
       return {
         success: true,
         data: response.data
