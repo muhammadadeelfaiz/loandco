@@ -71,8 +71,18 @@ export class FirecrawlService {
         };
       }
 
-      // Using the correct method from FirecrawlAPI
-      const response = await this.firecrawlClient.amazon.search(query, "US", 10);
+      // Check if the search method is available
+      if (typeof this.firecrawlClient.search !== 'function') {
+        console.error("FirecrawlAPI method 'search' not available. Available methods:", 
+          Object.getOwnPropertyNames(Object.getPrototypeOf(this.firecrawlClient)));
+        return {
+          success: false,
+          error: "The search method is not available in the FirecrawlAPI instance."
+        };
+      }
+
+      // Use the generic search method instead of amazon.search
+      const response = await this.firecrawlClient.search(query, "amazon", "US");
       return {
         success: true,
         data: response.data
