@@ -152,20 +152,27 @@ export class FirecrawlService {
       console.log("Amazon search results:", data);
 
       // Map the response structure to our expected format
-      const formattedResults = Array.isArray(data.data?.results) 
-        ? data.data.results.map((product: any) => ({
-            title: product.title || product.name || 'Unknown Product',
-            price: product.price?.current_price || product.price || 'N/A',
-            rating: product.rating || 'N/A',
-            reviews: product.reviews_count || '0',
-            image: product.thumbnail || product.image || '',
-            url: product.url || ''
-          }))
-        : [];
+      // Updated to correctly handle the API response structure
+      if (data.status === "OK" && data.data && data.data.products && Array.isArray(data.data.products)) {
+        const formattedResults = data.data.products.map((product: any) => ({
+          title: product.product_title || 'Unknown Product',
+          price: product.product_price || product.product_original_price || 'N/A',
+          rating: product.product_star_rating || 'N/A',
+          reviews: product.product_num_ratings ? product.product_num_ratings.toString() : '0',
+          image: product.product_photo || '',
+          url: product.product_url ? `https://www.amazon.com${product.product_url}` : ''
+        }));
 
+        return {
+          success: true,
+          data: formattedResults
+        };
+      }
+
+      // If we reached here, the API returned a successful response but with no products
       return {
         success: true,
-        data: formattedResults
+        data: [] // Return empty array instead of error
       };
     } catch (error) {
       console.error("Error crawling Amazon product:", error);
