@@ -1,131 +1,85 @@
 
 import { supabase } from '@/lib/supabase';
+import { FirecrawlAPI } from '@mendable/firecrawl-js';
 
-interface AmazonProduct {
-  title: string;
-  price: string;
-  rating: string;
-  reviews: string;
-  image: string;
-  url?: string; // Adding URL to the product model
+interface CrawlResponse {
+  success: boolean;
+  data?: any[];
+  error?: string;
 }
 
 export class FirecrawlService {
-  private static rapidApiKey: string | null = null;
-  private static rapidApiHost: string = 'real-time-amazon-data.p.rapidapi.com';
-  private static isInitializing: boolean = false;
-  private static lastInitAttempt: number = 0;
+  private static firecrawlClient: FirecrawlAPI | null = null;
+  private static initializationInProgress = false;
+  private static lastInitAttempt = 0;
+  private static INIT_COOLDOWN = 5000; // 5 seconds cooldown between init attempts
 
-  static async initialize() {
+  static async initialize(): Promise<boolean> {
+    // If we already have a client, return true
+    if (this.firecrawlClient) {
+      return true;
+    }
+
+    // Don't try to initialize too frequently
+    const now = Date.now();
+    if (this.initializationInProgress || now - this.lastInitAttempt < this.INIT_COOLDOWN) {
+      console.info("Initialization already in progress or attempted recently");
+      return false;
+    }
+
+    this.initializationInProgress = true;
+    this.lastInitAttempt = now;
+
     try {
-      // Don't attempt to initialize more than once every 5 seconds
-      const now = Date.now();
-      if (this.isInitializing || (now - this.lastInitAttempt < 5000 && this.lastInitAttempt > 0)) {
-        console.log('Initialization already in progress or attempted recently');
-        return !!this.rapidApiKey;
-      }
-
-      this.isInitializing = true;
-      this.lastInitAttempt = now;
+      console.info("Initializing RapidAPI service, fetching key from Supabase secrets...");
       
-      console.log('Initializing RapidAPI service, fetching key from Supabase secrets...');
-      
-      const { data: credentials, error } = await supabase.rpc('get_secrets', {
+      // Fetch the RapidAPI key from Supabase Edge Functions
+      const { data, error } = await supabase.rpc('get_secrets', {
         secret_names: ['RAPIDAPI_KEY']
       });
-      
+
       if (error) {
-        console.error('Error retrieving RapidAPI key from Supabase:', error);
-        this.isInitializing = false;
+        console.error("Error fetching RapidAPI key from Supabase:", error);
         return false;
       }
-      
-      if (!credentials || !credentials.RAPIDAPI_KEY) {
-        console.error('RapidAPI key not found in Supabase secrets. Make sure the key is set with name "RAPIDAPI_KEY"');
-        this.isInitializing = false;
+
+      const rapidApiKey = data?.RAPIDAPI_KEY;
+
+      if (!rapidApiKey) {
+        console.error("RapidAPI key not found in Supabase secrets. Make sure the key is set with name \"RAPIDAPI_KEY\"");
         return false;
       }
-      
-      this.rapidApiKey = credentials.RAPIDAPI_KEY;
-      console.log('RapidAPI service initialized successfully with key:', this.rapidApiKey.substring(0, 4) + '...');
-      this.isInitializing = false;
+
+      this.firecrawlClient = new FirecrawlAPI(rapidApiKey);
       return true;
     } catch (error) {
-      console.error('Error initializing RapidAPI service:', error);
-      this.isInitializing = false;
+      console.error("Error initializing FirecrawlAPI:", error);
       return false;
+    } finally {
+      this.initializationInProgress = false;
     }
   }
 
-  static async crawlAmazonProduct(searchTerm: string): Promise<{ success: boolean; error?: string; data?: AmazonProduct[] }> {
-    if (!this.rapidApiKey) {
-      console.log('No API key found, attempting to initialize...');
-      const initialized = await this.initialize();
-      if (!initialized) {
-        return { 
-          success: false, 
-          error: 'RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase.' 
-        };
-      }
-    }
-
+  static async crawlAmazonProduct(query: string): Promise<CrawlResponse> {
     try {
-      // Format the search term for the URL
-      const formattedSearchTerm = encodeURIComponent(searchTerm);
-      
-      // Use search endpoint instead of product details
-      const url = `https://${this.rapidApiHost}/search?query=${formattedSearchTerm}&country=US`;
-      
-      console.log('Making request to RapidAPI:', url);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': this.rapidApiKey!,
-          'X-RapidAPI-Host': this.rapidApiHost
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP error! status: ${response.status}, body:`, errorText);
-        return { 
-          success: false, 
-          error: `API Error (${response.status}): ${errorText || 'Unknown error'}` 
+      const isInitialized = await this.initialize();
+      if (!isInitialized || !this.firecrawlClient) {
+        return {
+          success: false,
+          error: "RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase."
         };
       }
 
-      const data = await response.json();
-      console.log('Raw RapidAPI response:', data);
-      
-      if (!data.data || !data.data.products) {
-        console.error('Invalid response format:', data);
-        return { 
-          success: false, 
-          error: 'Invalid response format from Amazon API' 
-        };
-      }
-
-      // Parse the products from the response with more detailed info
-      const products: AmazonProduct[] = data.data.products.map((item: any) => ({
-        title: item.title || 'N/A',
-        price: item.price?.current_price || item.price || 'N/A',
-        rating: item.rating || 'N/A',
-        reviews: item.reviews_count || '0',
-        image: item.thumbnail || item.image || '',
-        url: item.url || `https://www.amazon.com/dp/${item.asin}`
-      }));
-
-      console.log('Parsed Amazon products:', products.length);
-      return { 
+      const response = await this.firecrawlClient.crawlAmazonSearch(query, true, "US", 10);
+      return {
         success: true,
-        data: products 
+        data: response.data
       };
     } catch (error) {
-      console.error('Error during Amazon search:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to connect to RapidAPI' 
+      console.error("Error crawling Amazon product:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
       };
     }
   }
