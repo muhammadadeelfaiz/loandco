@@ -88,13 +88,18 @@ export class FirecrawlService {
       console.log("Using host: real-time-amazon-data.p.rapidapi.com");
       
       // Make a direct API call to RapidAPI's Amazon Search endpoint with the correct endpoint
-      const response = await fetch('https://real-time-amazon-data.p.rapidapi.com/amazon-search', {
+      const url = new URL('https://real-time-amazon-data.p.rapidapi.com/amazon-search');
+      url.searchParams.append('query', query);
+      url.searchParams.append('page', '1');
+      url.searchParams.append('country', 'US');
+      url.searchParams.append('category_id', 'aps');
+      
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'X-RapidAPI-Key': this.rapidApiKey,
           'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
-        },
-        // Use correct params for the new endpoint, adding as query parameters
+        }
       });
 
       if (!response.ok) {
