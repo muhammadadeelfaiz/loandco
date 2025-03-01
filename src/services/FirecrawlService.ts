@@ -90,6 +90,17 @@ export class FirecrawlService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
+        
+        // Check for subscription-related errors (403 Forbidden)
+        if (response.status === 403) {
+          if (errorText.includes("not subscribed")) {
+            return {
+              success: false,
+              error: "You need to subscribe to the Amazon Web Scraper API on RapidAPI. Please visit RapidAPI and subscribe to the service."
+            };
+          }
+        }
+        
         throw new Error(`RapidAPI request failed with status: ${response.status}`);
       }
 
