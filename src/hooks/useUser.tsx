@@ -3,7 +3,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
-export function useUser() {
+export interface UserState {
+  user: User | null;
+  loading: boolean;
+}
+
+export function useUser(): UserState {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
