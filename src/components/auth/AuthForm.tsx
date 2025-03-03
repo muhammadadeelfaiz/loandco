@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,12 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Calendar } from "lucide-react";
+import { Mail, Lock, User, Calendar, Check } from "lucide-react";
 import { OAuthButtons } from "./OAuthButtons";
 import { RegisterFields } from "./RegisterFields";
 import { validatePassword } from "@/utils/passwordValidation";
 import { signInWithEmail, signUpWithEmail, signInWithOAuth } from "@/services/authService";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type AuthMode = "login" | "register";
 
@@ -30,6 +32,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [role, setRole] = useState("customer");
   const [loading, setLoading] = useState(false);
   const [signupCooldown, setSignupCooldown] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -85,6 +88,15 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
           variant: "destructive",
           title: "Date of birth required",
           description: "Please enter your date of birth.",
+        });
+        return;
+      }
+
+      if (!termsAccepted) {
+        toast({
+          variant: "destructive",
+          title: "Terms of Service",
+          description: "You must accept the Terms of Service to create an account.",
         });
         return;
       }
@@ -268,6 +280,30 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
                   <Label htmlFor="retailer" className="cursor-pointer">Retailer</Label>
                 </div>
               </RadioGroup>
+            </div>
+
+            <div className="flex items-start space-x-2 pt-2">
+              <Checkbox 
+                id="terms" 
+                checked={termsAccepted}
+                onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                className="mt-1"
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label 
+                  htmlFor="terms" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I accept the{" "}
+                  <Link to="/terms-of-service" className="text-primary hover:underline" target="_blank">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy-policy" className="text-primary hover:underline" target="_blank">
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
             </div>
           </>
         )}
