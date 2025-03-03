@@ -1,3 +1,4 @@
+
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export const EbayProducts = ({ products, isLoading }: EbayProductsProps) => {
   // Function to convert price to AED
   const convertToAED = (value: string, currency: string): string => {
     const numericValue = parseFloat(value);
-    if (isNaN(numericValue)) return `${currency} ${value}`;
+    if (isNaN(numericValue)) return `AED 0.00`;
     
     let rate = 3.67; // Default USD to AED rate
     
@@ -60,6 +61,22 @@ export const EbayProducts = ({ products, isLoading }: EbayProductsProps) => {
         break;
       case 'GBP':
         rate = 4.73;
+        break;
+      case 'JPY':
+        rate = 0.025;
+        break;
+      case 'CAD':
+        rate = 2.73;
+        break;
+      case 'AUD':
+        rate = 2.45;
+        break;
+      case 'CHF':
+        rate = 4.20;
+        break;
+      // For AED, no conversion needed
+      case 'AED':
+        rate = 1;
         break;
       // Add more currencies as needed
       default:

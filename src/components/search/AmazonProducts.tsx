@@ -120,13 +120,16 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
 
   // Function to convert price to AED format
   const convertToAED = (priceString: string): string => {
+    // Check if the price string already contains AED
+    if (priceString.includes('AED')) return priceString;
+    
     // Extract numeric value from price string
     const numericValue = parseFloat(priceString.replace(/[^0-9.]/g, ''));
     
     // If not a valid number, return original price
-    if (isNaN(numericValue)) return priceString;
+    if (isNaN(numericValue)) return `AED 0.00`;
     
-    // Convert to AED (approximation - using 3.67 AED per USD)
+    // Assume price is in USD if not specified and convert to AED (approximation - using 3.67 AED per USD)
     const aedValue = numericValue * 3.67;
     
     // Format with AED currency
