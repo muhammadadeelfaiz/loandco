@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,7 +162,7 @@ export const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
     }
   };
 
-  const handleOAuthSignIn = async (provider: 'facebook' | 'google') => {
+  const handleOAuthSignIn = async (provider: 'google') => {
     try {
       await signInWithOAuth(provider, mode, role);
     } catch (error) {

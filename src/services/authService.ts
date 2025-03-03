@@ -118,7 +118,7 @@ export const signUpWithEmail = async (
 };
 
 export const signInWithOAuth = async (
-  provider: 'facebook' | 'google',
+  provider: 'google',
   mode: 'login' | 'register',
   role?: string
 ) => {
