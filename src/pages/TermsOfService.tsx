@@ -1,4 +1,3 @@
-
 import Navigation from "@/components/Navigation";
 import { useUser } from "@/hooks/useUser";
 
@@ -12,10 +11,10 @@ const TermsOfService = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-loco">
+    <div className="flex flex-col min-h-[calc(100vh-53px)]">
       <Navigation user={user} />
       
-      <div className="container mx-auto px-4 py-16">
+      <div className="flex-1 container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
           <h1 className="text-3xl font-bold mb-6">Terms of Service</h1>
           

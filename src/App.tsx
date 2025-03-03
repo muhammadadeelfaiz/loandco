@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ import Wishlist from "./pages/Wishlist";
 import CompareProducts from "./pages/CompareProducts";
 import RetailerDashboard from "./pages/RetailerDashboard";
 import { useUser } from "@/hooks/useUser";
+import { Footer } from "@/components/ui/Footer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,47 +62,52 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index user={user} />} />
-            <Route path="/search" element={<SearchResults user={user} />} />
-            <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
-            <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
-            <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
-            <Route path="/account" element={user ? <Account user={user} /> : <Navigate to="/signin" />} />
-            <Route path="/wishlist" element={user ? <Wishlist user={user} /> : <Navigate to="/signin" />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                user?.user_metadata?.role === "retailer" 
-                  ? <RetailerDashboard /> 
-                  : <Navigate to="/" />
-              } 
-            />
-            <Route 
-              path="/products" 
-              element={
-                user?.user_metadata?.role === "retailer" 
-                  ? <Products /> 
-                  : <Navigate to="/" />
-              } 
-            />
-            <Route 
-              path="/create-store" 
-              element={
-                user?.user_metadata?.role === "retailer" 
-                  ? <CreateStore /> 
-                  : <Navigate to="/" />
-              } 
-            />
-            <Route path="/store/:id" element={<StoreProfile user={user} />} />
-            <Route path="/product/:id" element={<ProductDetails user={user} />} />
-            <Route path="/compare/:id" element={<CompareProducts user={user} />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-          </Routes>
+          <div className="flex flex-col min-h-screen">
+            <Toaster />
+            <Sonner />
+            <div className="flex-1">
+              <Routes>
+                <Route path="/" element={<Index user={user} />} />
+                <Route path="/search" element={<SearchResults user={user} />} />
+                <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" />} />
+                <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" />} />
+                <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
+                <Route path="/account" element={user ? <Account user={user} /> : <Navigate to="/signin" />} />
+                <Route path="/wishlist" element={user ? <Wishlist user={user} /> : <Navigate to="/signin" />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    user?.user_metadata?.role === "retailer" 
+                      ? <RetailerDashboard /> 
+                      : <Navigate to="/" />
+                  } 
+                />
+                <Route 
+                  path="/products" 
+                  element={
+                    user?.user_metadata?.role === "retailer" 
+                      ? <Products /> 
+                      : <Navigate to="/" />
+                  } 
+                />
+                <Route 
+                  path="/create-store" 
+                  element={
+                    user?.user_metadata?.role === "retailer" 
+                      ? <CreateStore /> 
+                      : <Navigate to="/" />
+                  } 
+                />
+                <Route path="/store/:id" element={<StoreProfile user={user} />} />
+                <Route path="/product/:id" element={<ProductDetails user={user} />} />
+                <Route path="/compare/:id" element={<CompareProducts user={user} />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+              </Routes>
+            </div>
+            <Footer />
+          </div>
         </TooltipProvider>
       </BrowserRouter>
     </QueryClientProvider>
