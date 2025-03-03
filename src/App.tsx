@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
@@ -23,6 +23,7 @@ import CompareProducts from "./pages/CompareProducts";
 import RetailerDashboard from "./pages/RetailerDashboard";
 import { useUser } from "@/hooks/useUser";
 import { Footer } from "@/components/ui/Footer";
+import { supabase } from "@/lib/supabase";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,24 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Component to handle OAuth redirect
+const AuthRedirectHandler = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if we have a hash with an access token (OAuth redirect)
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      console.log('Detected OAuth redirect with hash');
+      
+      // The hash will be processed by Supabase's auth state change listener
+      // Navigate to home page after detection
+      navigate('/');
+    }
+  }, [navigate]);
+  
+  return null;
+};
 
 const App = () => {
   const { user, loading } = useUser();
@@ -65,6 +84,7 @@ const App = () => {
           <div className="flex flex-col min-h-screen">
             <Toaster />
             <Sonner />
+            <AuthRedirectHandler />
             <div className="flex-1">
               <Routes>
                 <Route path="/" element={<Index user={user} />} />

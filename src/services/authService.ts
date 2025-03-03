@@ -123,10 +123,17 @@ export const signInWithOAuth = async (
   role?: string
 ) => {
   try {
+    // Get the current URL and use it for redirection
+    const currentUrl = window.location.origin;
+    const redirectPath = mode === 'login' ? '/signin' : '/signup';
+    const redirectTo = `${currentUrl}${redirectPath}`;
+    
+    console.log("OAuth redirect URL:", redirectTo);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo,
         queryParams: mode === 'register' ? {
           default_role: role
         } : undefined
