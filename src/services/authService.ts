@@ -125,8 +125,9 @@ export const signInWithOAuth = async (
   try {
     // Get the current URL and use it for redirection
     const currentUrl = window.location.origin;
-    const redirectPath = mode === 'login' ? '/signin' : '/signup';
-    const redirectTo = `${currentUrl}${redirectPath}`;
+    
+    // We'll redirect directly to the home page after authentication
+    const redirectTo = `${currentUrl}`;
     
     console.log("OAuth redirect URL:", redirectTo);
     
