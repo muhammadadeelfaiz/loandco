@@ -27,6 +27,62 @@ const SEARCH_TERMS = [
   "gaming console"
 ];
 
+// Function to convert price to AED
+const convertToAED = (price: string): string => {
+  // Check if the price string already contains AED
+  if (price.includes('AED')) return price;
+  
+  // Handle price strings in different formats
+  let currencyValue: string = 'USD';
+  let numericValue: number = 0;
+  
+  // Extract currency and number from string like "USD 15.99"
+  const currencyMatch = price.match(/^([A-Z]{3})\s+(\d+(\.\d+)?)$/);
+  if (currencyMatch) {
+    currencyValue = currencyMatch[1];
+    numericValue = parseFloat(currencyMatch[2]);
+  } else {
+    // Try to extract just the number for cases where no currency is specified
+    const numericMatch = price.replace(/[^0-9.]/g, '');
+    numericValue = parseFloat(numericMatch);
+  }
+  
+  // Return original string if we couldn't parse it
+  if (isNaN(numericValue)) return `AED 0.00`;
+  
+  // Set conversion rate based on currency
+  let rate = 3.67; // Default USD to AED rate
+  
+  switch(currencyValue) {
+    case 'EUR': 
+      rate = 4.06;
+      break;
+    case 'GBP':
+      rate = 4.73;
+      break;
+    case 'JPY':
+      rate = 0.025;
+      break;
+    case 'CAD':
+      rate = 2.73;
+      break;
+    case 'AUD':
+      rate = 2.45;
+      break;
+    case 'CHF':
+      rate = 4.20;
+      break;
+    case 'AED':
+      rate = 1;
+      break;
+    // USD or any other currency - use default rate
+  }
+  
+  // Convert to AED
+  const aedValue = numericValue * rate;
+  return `AED ${aedValue.toFixed(2)}`;
+};
+
 const FeaturedProducts = () => {
   const [searchTerm] = useState(() => {
     // Pick a random search term when component mounts
@@ -70,7 +126,7 @@ const FeaturedProducts = () => {
       products.push(...ebayProducts.slice(0, 2).map(product => ({
         id: product.itemId,
         title: product.title,
-        price: `${product.price.currency} ${product.price.value}`,
+        price: convertToAED(`${product.price.currency} ${product.price.value}`),
         image: product.image,
         url: product.url,
         source: 'eBay'
@@ -82,7 +138,7 @@ const FeaturedProducts = () => {
       products.push(...amazonProducts.slice(0, 2).map(product => ({
         id: Math.random().toString(36).substring(2, 11), // Generate a random ID
         title: product.title,
-        price: product.price,
+        price: convertToAED(product.price),
         image: product.image,
         url: product.url || '',
         source: 'Amazon'
