@@ -1,11 +1,11 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
+// CORS headers for cross-origin requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,60 +14,50 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Edge function invoked: get-rapidapi-key");
-    
-    // Get the RapidAPI key from Supabase secrets
+    // Get the API key from environment variables (stored in Supabase Edge Function Secrets)
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
-    console.log("Retrieved RapidAPI key from environment, length:", rapidApiKey ? rapidApiKey.length : 0);
-
+    
+    // Log key information (without revealing the actual key)
+    console.log(`RapidAPI key found: ${rapidApiKey ? 'Yes' : 'No'}`);
+    if (rapidApiKey) {
+      console.log(`RapidAPI key length: ${rapidApiKey.length}`);
+    }
+    
+    // Create a response based on whether the key was found
     if (!rapidApiKey) {
-      console.error("RAPIDAPI_KEY not found in Supabase Edge Function Secrets");
       return new Response(
         JSON.stringify({ 
-          error: "RAPIDAPI_KEY not found in Supabase Edge Function Secrets",
-          keyFound: false 
+          keyFound: false, 
+          error: 'RAPIDAPI_KEY not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
         }),
         { 
-          status: 404,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404
         }
       );
     }
-
-    // Return the API key and its length for debugging
+    
+    // Return the API key if found
     return new Response(
       JSON.stringify({ 
+        keyFound: true, 
         rapidApiKey,
-        keyLength: rapidApiKey.length,
-        keyFound: true,
-        timestamp: new Date().toISOString()
+        keyLength: rapidApiKey.length
       }),
       { 
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
       }
     );
   } catch (error) {
-    console.error("Error in get-rapidapi-key function:", error);
+    console.error('Error retrieving RapidAPI key:', error);
     
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        keyFound: false 
-      }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     );
   }
-})
+});
