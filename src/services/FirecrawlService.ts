@@ -34,7 +34,7 @@ export class FirecrawlService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: { apiKey },
+        body: { apiKey: "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d" },
       });
       
       if (response.error) {

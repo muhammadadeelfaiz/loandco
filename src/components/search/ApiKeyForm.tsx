@@ -7,8 +7,8 @@ import { FirecrawlService } from "@/services/FirecrawlService";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
-export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
-  const [apiKey, setApiKey] = useState("");
+export const ApiKeyForm = ({ onSuccess, initialValue }: { onSuccess?: () => void, initialValue?: string }) => {
+  const [apiKey, setApiKey] = useState(initialValue || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -31,6 +31,10 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       
       if (success) {
         setApiKey("");
+        toast({
+          title: "Success",
+          description: "API key saved successfully. Amazon product search is now enabled.",
+        });
         if (onSuccess) {
           onSuccess();
         }

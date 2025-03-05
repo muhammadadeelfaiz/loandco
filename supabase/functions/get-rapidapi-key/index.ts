@@ -33,8 +33,7 @@ serve(async (req) => {
           );
         }
         
-        // In a real environment, you would save this to a secure location
-        // Here we're saving it to an environment variable, but this will only persist for the current instance
+        // Save the provided key as an environment variable
         Deno.env.set('RAPIDAPI_KEY', newApiKey);
         
         console.log(`New RapidAPI key set with length: ${newApiKey.length}`);

@@ -32,6 +32,24 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     checkApiKey();
   }, []);
 
+  useEffect(() => {
+    const activateApiKey = async () => {
+      if (!apiKeySet) {
+        try {
+          const success = await FirecrawlService.saveApiKey("1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d");
+          if (success) {
+            setApiKeySet(true);
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error("Error activating API key:", error);
+        }
+      }
+    };
+    
+    activateApiKey();
+  }, [apiKeySet]);
+
   const searchParams = new URLSearchParams(window.location.search);
   const submittedQuery = searchParams.get('q') || '';
   const categoryFromUrl = searchParams.get('category');
