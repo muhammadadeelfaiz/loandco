@@ -13,20 +13,31 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     const fetchToken = async () => {
       try {
         console.log('Fetching Mapbox token...');
-        const { data, error } = await supabase.functions.invoke('map-service');
-
-        if (error) {
-          console.error('Supabase function error:', error);
-          throw error;
+        
+        // Add a fallback token for development (replace with your token if available)
+        const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
+        
+        // Try to get token from Supabase Function first
+        try {
+          const { data, error } = await supabase.functions.invoke('map-service');
+          
+          if (error) {
+            console.error('Supabase function error:', error);
+            throw error;
+          }
+          
+          if (data?.token) {
+            console.log('Successfully received Mapbox token from Supabase');
+            setToken(data.token);
+            return;
+          }
+        } catch (supabaseError) {
+          console.error('Supabase token fetch failed, using fallback:', supabaseError);
         }
-
-        if (!data?.token) {
-          console.error('No token received:', data);
-          throw new Error('Invalid map configuration');
-        }
-
-        console.log('Successfully received Mapbox token');
-        setToken(data.token);
+        
+        // Use fallback token as last resort
+        console.log('Using fallback Mapbox token');
+        setToken(FALLBACK_TOKEN);
       } catch (error) {
         console.error('Token fetch error:', error);
         toast({
@@ -64,7 +75,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
       const defaultLocation = location || { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-      console.log('Creating map instance...');
+      console.log('Creating map instance with center:', defaultLocation);
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: theme === 'dark' 

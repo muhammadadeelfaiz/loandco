@@ -29,7 +29,7 @@
     # Control what features can be used in the browser
     Feature-Policy = "camera 'none'; microphone 'none'; geolocation 'self'"
     # Control what resources the browser can load
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://*.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' api.mapbox.com; connect-src 'self' https://*.supabase.co https://*.mapbox.com events.mapbox.com; img-src 'self' data: https://*.mapbox.com; style-src 'self' 'unsafe-inline' api.mapbox.com; font-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests; worker-src blob:"
     # Referrer Policy
     Referrer-Policy = "strict-origin-when-cross-origin"
     # Permissions Policy

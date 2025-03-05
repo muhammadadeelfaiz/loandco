@@ -28,7 +28,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Store Location</Label>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Click on the map to set your store's location
         </p>
       </div>
@@ -40,7 +40,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
-        <div className="h-[300px] rounded-lg overflow-hidden border-2 border-gray-200">
+        <div className="h-[300px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <Map
             location={location}
             onLocationChange={handleLocationChange}
@@ -50,7 +50,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
       )}
       
       {location && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           Selected location: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
         </div>
       )}

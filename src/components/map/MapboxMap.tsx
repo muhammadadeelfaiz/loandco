@@ -47,7 +47,7 @@ const MapboxMap = ({
   const markersInstance = useMapMarkers();
   const searchRadiusInstance = useSearchRadius();
 
-  const defaultCenter = { lat: 25.2048, lng: 55.2708 };
+  const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -56,6 +56,8 @@ const MapboxMap = ({
       try {
         setError(null);
         const initialCenter = location || defaultCenter;
+        console.log('Initializing map with location:', initialCenter);
+        
         const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
         
         if (newMap) {
@@ -93,7 +95,7 @@ const MapboxMap = ({
         setIsMapInitialized(false);
       }
     };
-  }, [location, onLocationChange, readonly]);
+  }, [location, onLocationChange, readonly, initializeMap]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
@@ -108,12 +110,12 @@ const MapboxMap = ({
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
     markersInstance.updateMarkers(map.current, markers);
-  }, [markers, isMapInitialized]);
+  }, [markers, isMapInitialized, markersInstance]);
 
   useEffect(() => {
-    if (!map.current || !isMapInitialized) return;
+    if (!map.current || !isMapInitialized || !location) return;
     searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
-  }, [location, searchRadius, isMapInitialized]);
+  }, [location, searchRadius, isMapInitialized, searchRadiusInstance]);
 
   if (error) {
     return (
@@ -126,13 +128,13 @@ const MapboxMap = ({
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <div 
         ref={mapContainer} 
         className="w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700" 
       />
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
       )}
@@ -141,4 +143,3 @@ const MapboxMap = ({
 };
 
 export default MapboxMap;
-
