@@ -1,5 +1,6 @@
+
 import { supabase } from '@/lib/supabase';
-import { useToast } from "@/components/ui/use-toast";
+import { toast as showToast } from "@/hooks/use-toast";
 
 interface CrawlResponse {
   success: boolean;
@@ -99,11 +100,6 @@ export class FirecrawlService {
       // Check for errors in the response
       if (response.error) {
         console.error("Error invoking get-rapidapi-key function:", response.error);
-        toast({
-          title: "API Key Error",
-          description: `Failed to retrieve RapidAPI key: ${response.error.message}`,
-          variant: "destructive"
-        });
         
         if (this.retryCount < this.MAX_RETRIES) {
           console.info(`Will retry in ${this.INIT_COOLDOWN/1000} seconds...`);
@@ -118,43 +114,23 @@ export class FirecrawlService {
       // Enhanced error checking for the response
       if (!data) {
         console.error("Null or undefined response from edge function");
-        toast({
-          title: "API Key Error",
-          description: "Empty response from RapidAPI key endpoint.",
-          variant: "destructive"
-        });
         return false;
       }
 
       if (data.error) {
         console.error("Error in edge function response:", data.error);
-        toast({
-          title: "API Key Error",
-          description: data.error,
-          variant: "destructive"
-        });
         return false;
       }
 
       // Explicitly check if keyFound is false
       if (data.keyFound === false) {
         console.error("Edge function reported key not found");
-        toast({
-          title: "API Key Missing",
-          description: "RAPIDAPI_KEY is not set in Supabase Edge Function Secrets",
-          variant: "destructive"
-        });
         return false;
       }
 
       // Check if we have data and it contains rapidApiKey
       if (typeof data.rapidApiKey !== 'string') {
         console.error("Invalid response from edge function. Response:", data);
-        toast({
-          title: "API Key Error",
-          description: "Invalid response format from RapidAPI key endpoint.",
-          variant: "destructive"
-        });
         return false;
       }
 
@@ -163,11 +139,6 @@ export class FirecrawlService {
 
       if (!rapidApiKey || rapidApiKey.length < 10) { // Basic validation - API keys are typically longer than 10 chars
         console.error("RapidAPI key appears to be invalid or missing. Length:", rapidApiKey ? rapidApiKey.length : 0);
-        toast({
-          title: "API Key Error",
-          description: "RapidAPI key appears to be invalid or missing. Please check Supabase Edge Function Secrets.",
-          variant: "destructive"
-        });
         return false;
       }
 
@@ -177,11 +148,6 @@ export class FirecrawlService {
       return true;
     } catch (error) {
       console.error("Error initializing RapidAPI:", error);
-      toast({
-        title: "API Key Error",
-        description: "Error connecting to API key service.",
-        variant: "destructive"
-      });
       return false;
     } finally {
       this.initializationInProgress = false;
@@ -252,42 +218,22 @@ export class FirecrawlService {
           if (errorText.includes("not subscribed")) {
             // Clear the key as it's not valid for this API
             this.rapidApiKey = null;
-            toast({
-              title: "API Subscription Required",
-              description: "You need to subscribe to the Real Time Amazon Data API on RapidAPI.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You need to subscribe to the Real Time Amazon Data API on RapidAPI. Please visit RapidAPI and subscribe to the service."
             };
           } else if (errorText.includes("exceeded the MONTHLY quota")) {
             this.quotaExceeded = true;
-            toast({
-              title: "API Quota Exceeded",
-              description: "You have exceeded your monthly quota for the Amazon Data API.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded your monthly quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the DAILY quota")) {
-            toast({
-              title: "API Quota Exceeded",
-              description: "You have exceeded your daily quota for the Amazon Data API.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded your daily quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the rate limit")) {
-            toast({
-              title: "API Rate Limit",
-              description: "Rate limit exceeded. Please try again later.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded the rate limit for the Real Time Amazon Data API on RapidAPI. Please try again later."
@@ -295,22 +241,12 @@ export class FirecrawlService {
           }
           
           // Generic access denied message
-          toast({
-            title: "API Access Denied",
-            description: "Access denied by RapidAPI. Check your subscription status.",
-            variant: "destructive"
-          });
           return {
             success: false,
             error: "Access denied by RapidAPI. Please check your subscription status for the Real Time Amazon Data API."
           };
         }
         
-        toast({
-          title: "API Request Failed",
-          description: `Failed with status: ${response.status}`,
-          variant: "destructive"
-        });
         return {
           success: false,
           error: `RapidAPI request failed with status: ${response.status}`
@@ -349,11 +285,6 @@ export class FirecrawlService {
       };
     } catch (error) {
       console.error("Error crawling Amazon product:", error);
-      toast({
-        title: "Amazon Search Error",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
-      });
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
