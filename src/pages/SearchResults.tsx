@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Key } from "lucide-react";
 import { FirecrawlService } from "@/services/FirecrawlService";
 import { Button } from "@/components/ui/button";
+import { ApiKeyForm } from "@/components/search/ApiKeyForm";
 
 interface SearchResultsProps {
   user: User | null;
@@ -20,6 +21,7 @@ const SearchResults = ({ user }: SearchResultsProps) => {
   const [category, setCategory] = useState("all");
   const [distanceRange, setDistanceRange] = useState("all");
   const [apiKeySet, setApiKeySet] = useState<boolean | null>(null);
+  const [showApiKeyForm, setShowApiKeyForm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -154,6 +156,12 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     }
   };
 
+  const handleApiKeySuccess = () => {
+    setShowApiKeyForm(false);
+    setApiKeySet(true);
+    window.location.reload();
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -173,7 +181,16 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       <Navigation user={user} />
       
       <main className="container mx-auto px-4 py-8">
-        {apiKeySet === false && (
+        {showApiKeyForm ? (
+          <div className="mb-8">
+            <ApiKeyForm onSuccess={handleApiKeySuccess} />
+            <div className="flex justify-center mt-4">
+              <Button variant="outline" onClick={() => setShowApiKeyForm(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : apiKeySet === false && (
           <Alert className="mb-6" variant="destructive">
             <Key className="h-4 w-4" />
             <AlertTitle>Product Search Service Unavailable</AlertTitle>
@@ -186,6 +203,13 @@ const SearchResults = ({ user }: SearchResultsProps) => {
                   onClick={handleRefreshApiKey}
                 >
                   Refresh Connection
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => setShowApiKeyForm(true)}
+                >
+                  Set API Key
                 </Button>
               </div>
             </AlertDescription>

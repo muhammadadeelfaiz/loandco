@@ -24,6 +24,49 @@ export class FirecrawlService {
     this.quotaExceeded = false;
   }
 
+  static async saveApiKey(apiKey: string): Promise<boolean> {
+    try {
+      console.log("Saving new RapidAPI key");
+      
+      // Call the Supabase Edge Function to update the API key
+      const response = await supabase.functions.invoke('get-rapidapi-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: { apiKey },
+      });
+      
+      if (response.error) {
+        console.error("Error saving RapidAPI key:", response.error);
+        toast({
+          title: "Error",
+          description: `Failed to save RapidAPI key: ${response.error.message}`,
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Reset our cache and use the new key
+      await this.resetApiKeyCache();
+      this.rapidApiKey = apiKey;
+      
+      toast({
+        title: "Success",
+        description: "API key saved successfully."
+      });
+      return true;
+    } catch (error) {
+      console.error("Error saving RapidAPI key:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save RapidAPI key",
+        variant: "destructive"
+      });
+      return false;
+    }
+  }
+
   static async initialize(): Promise<boolean> {
     // If we already have a key, return true
     if (this.rapidApiKey) {

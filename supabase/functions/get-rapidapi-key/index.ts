@@ -14,6 +14,58 @@ serve(async (req) => {
   }
 
   try {
+    // Check if this is a POST request to update the API key
+    if (req.method === 'POST') {
+      try {
+        const requestData = await req.json();
+        const newApiKey = requestData.apiKey;
+        
+        if (!newApiKey) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'No API key provided in request body' 
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 400
+            }
+          );
+        }
+        
+        // In a real environment, you would save this to a secure location
+        // Here we're saving it to an environment variable, but this will only persist for the current instance
+        Deno.env.set('RAPIDAPI_KEY', newApiKey);
+        
+        console.log(`New RapidAPI key set with length: ${newApiKey.length}`);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'API key updated successfully',
+            keyLength: newApiKey.length
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        );
+      } catch (error) {
+        console.error('Error parsing request body:', error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Invalid request format' 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          }
+        );
+      }
+    }
+    
+    // GET request to retrieve the API key
     // Get the API key from environment variables (stored in Supabase Edge Function Secrets)
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     

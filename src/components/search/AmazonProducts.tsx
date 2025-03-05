@@ -75,7 +75,7 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
     // Check for quota exceeded error
     if (error.includes('Monthly API quota exceeded') || error.includes('quota exceeded')) {
       return (
-        <Alert variant="warning" className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+        <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
           <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertTitle className="text-amber-800 dark:text-amber-300">Amazon Products Temporarily Unavailable</AlertTitle>
           <AlertDescription className="space-y-3 text-amber-700 dark:text-amber-400">
