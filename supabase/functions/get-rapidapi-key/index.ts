@@ -49,8 +49,7 @@ serve(async (req) => {
           );
         }
         
-        // Save the API key to the Supabase Edge Function Secrets
-        // This is the recommended way to store secrets for Supabase Edge Functions
+        // Save the API key to the environment
         console.log(`Setting RAPIDAPI_KEY secret with length: ${newApiKey.length}`);
         
         // For testing and demo purposes, we'll log a small part of the key to verify it's set correctly
@@ -58,8 +57,7 @@ serve(async (req) => {
         const maskedKey = `${newApiKey.substring(0, 5)}...${newApiKey.substring(newApiKey.length - 5)}`;
         console.log(`API key snippet (first/last 5 chars): ${maskedKey}`);
         
-        // In a real deployment, this would set the secret, but during local development,
-        // we'd set the environment variable
+        // Set the environment variable
         Deno.env.set('RAPIDAPI_KEY', newApiKey);
         
         return new Response(
@@ -89,7 +87,7 @@ serve(async (req) => {
     }
     
     // GET request to retrieve the API key
-    // Get the API key from environment variables (stored in Supabase Edge Function Secrets)
+    // Get the API key from environment variables
     const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
     
     // Log key information (without revealing the actual key)

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { toast } from "@/components/ui/use-toast";
 
@@ -22,6 +21,7 @@ export class FirecrawlService {
     this.rapidApiKey = null;
     this.retryCount = 0;
     this.quotaExceeded = false;
+    this.initializationInProgress = false;
   }
 
   static async testApiKey(apiKey: string): Promise<boolean> {
@@ -32,7 +32,7 @@ export class FirecrawlService {
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', 'test');
       url.searchParams.append('page', '1');
-      url.searchParams.append('country', 'AE'); // Changed to AE for UAE
+      url.searchParams.append('country', 'AE'); // Using AE for UAE
       url.searchParams.append('category_id', 'aps');
       
       const response = await fetch(url.toString(), {
@@ -47,6 +47,8 @@ export class FirecrawlService {
       
       if (response.status === 200) {
         console.log("API key test successful");
+        const data = await response.json();
+        console.log("Test response data:", data);
         return true;
       }
       
@@ -165,9 +167,10 @@ export class FirecrawlService {
           variant: "destructive"
         });
         
+        this.initializationInProgress = false;
         if (this.retryCount < this.MAX_RETRIES) {
           console.info(`Will retry in ${this.INIT_COOLDOWN/1000} seconds...`);
-          setTimeout(() => this.retryCount--, this.INIT_COOLDOWN); // Reset retry counter after cooldown
+          setTimeout(() => this.initializationInProgress = false, this.INIT_COOLDOWN);
         }
         return false;
       }
@@ -178,73 +181,48 @@ export class FirecrawlService {
       // Enhanced error checking for the response
       if (!data) {
         console.error("Null or undefined response from edge function");
-        toast({
-          title: "API Key Error",
-          description: "Empty response from RapidAPI key endpoint.",
-          variant: "destructive"
-        });
+        this.initializationInProgress = false;
         return false;
       }
 
       if (data.error) {
         console.error("Error in edge function response:", data.error);
-        toast({
-          title: "API Key Error",
-          description: data.error,
-          variant: "destructive"
-        });
+        this.initializationInProgress = false;
         return false;
       }
 
       // Explicitly check if keyFound is false
       if (data.keyFound === false) {
         console.error("Edge function reported key not found");
-        toast({
-          title: "API Key Missing",
-          description: "RAPIDAPI_KEY is not set in Supabase Edge Function Secrets",
-          variant: "destructive"
-        });
+        this.initializationInProgress = false;
         return false;
       }
 
       // Check if we have data and it contains rapidApiKey
       if (typeof data.rapidApiKey !== 'string') {
         console.error("Invalid response from edge function. Response:", data);
-        toast({
-          title: "API Key Error",
-          description: "Invalid response format from RapidAPI key endpoint.",
-          variant: "destructive"
-        });
+        this.initializationInProgress = false;
         return false;
       }
 
       const rapidApiKey = data.rapidApiKey;
       console.log("Key length from edge function:", data.keyLength || 'unknown');
 
-      if (!rapidApiKey || rapidApiKey.length < 10) { // Basic validation - API keys are typically longer than 10 chars
+      if (!rapidApiKey || rapidApiKey.length < 10) {
         console.error("RapidAPI key appears to be invalid or missing. Length:", rapidApiKey ? rapidApiKey.length : 0);
-        toast({
-          title: "API Key Error",
-          description: "RapidAPI key appears to be invalid or missing. Please check Supabase Edge Function Secrets.",
-          variant: "destructive"
-        });
+        this.initializationInProgress = false;
         return false;
       }
 
       console.info("Successfully retrieved RapidAPI key with length:", rapidApiKey.length);
       this.rapidApiKey = rapidApiKey;
       this.retryCount = 0; // Reset retry counter on success
+      this.initializationInProgress = false;
       return true;
     } catch (error) {
       console.error("Error initializing RapidAPI:", error);
-      toast({
-        title: "API Key Error",
-        description: "Error connecting to API key service.",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
       this.initializationInProgress = false;
+      return false;
     }
   }
 
@@ -259,10 +237,10 @@ export class FirecrawlService {
       }
       
       // Make sure we have the latest API key
-      await this.resetApiKeyCache();
       const isInitialized = await this.initialize();
       
       if (!isInitialized || !this.rapidApiKey) {
+        console.error("RapidAPI credentials not initialized");
         return {
           success: false,
           error: "RapidAPI credentials not initialized. Please check that the RAPIDAPI_KEY secret is set in Supabase Edge Function Secrets."
@@ -271,13 +249,16 @@ export class FirecrawlService {
 
       console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
       console.log("Using host: real-time-amazon-data.p.rapidapi.com");
+      console.log("Search query:", query);
       
       // Make a direct API call to RapidAPI's Amazon Search endpoint with AE country code
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', query);
       url.searchParams.append('page', '1');
-      url.searchParams.append('country', 'AE'); // Changed to AE for UAE
+      url.searchParams.append('country', 'AE'); // Using AE for UAE
       url.searchParams.append('category_id', 'aps');
+      
+      console.log("Full URL:", url.toString());
       
       const response = await fetch(url.toString(), {
         method: 'GET',
@@ -287,6 +268,8 @@ export class FirecrawlService {
         }
       });
 
+      console.log("RapidAPI response status:", response.status);
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
@@ -312,42 +295,22 @@ export class FirecrawlService {
           if (errorText.includes("not subscribed")) {
             // Clear the key as it's not valid for this API
             this.rapidApiKey = null;
-            toast({
-              title: "API Subscription Required",
-              description: "You need to subscribe to the Real Time Amazon Data API on RapidAPI.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You need to subscribe to the Real Time Amazon Data API on RapidAPI. Please visit RapidAPI and subscribe to the service."
             };
           } else if (errorText.includes("exceeded the MONTHLY quota")) {
             this.quotaExceeded = true;
-            toast({
-              title: "API Quota Exceeded",
-              description: "You have exceeded your monthly quota for the Amazon Data API.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded your monthly quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the DAILY quota")) {
-            toast({
-              title: "API Quota Exceeded",
-              description: "You have exceeded your daily quota for the Amazon Data API.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded your daily quota for the Real Time Amazon Data API on RapidAPI."
             };
           } else if (errorText.includes("exceeded the rate limit")) {
-            toast({
-              title: "API Rate Limit",
-              description: "Rate limit exceeded. Please try again later.",
-              variant: "destructive"
-            });
             return {
               success: false,
               error: "You have exceeded the rate limit for the Real Time Amazon Data API on RapidAPI. Please try again later."
@@ -355,22 +318,12 @@ export class FirecrawlService {
           }
           
           // Generic access denied message
-          toast({
-            title: "API Access Denied",
-            description: "Access denied by RapidAPI. Check your subscription status.",
-            variant: "destructive"
-          });
           return {
             success: false,
             error: "Access denied by RapidAPI. Please check your subscription status for the Real Time Amazon Data API."
           };
         }
         
-        toast({
-          title: "API Request Failed",
-          description: `Failed with status: ${response.status}`,
-          variant: "destructive"
-        });
         return {
           success: false,
           error: `RapidAPI request failed with status: ${response.status}`
@@ -378,10 +331,12 @@ export class FirecrawlService {
       }
 
       const data = await response.json();
-      console.log("Amazon search results:", data);
+      console.log("Amazon search results status:", data.status);
 
       // Map the response structure to our expected format
       if (data.status === "OK" && data.data && data.data.products && Array.isArray(data.data.products)) {
+        console.log("Found products:", data.data.products.length);
+        
         const formattedResults = data.data.products.map((product: any) => ({
           title: product.product_title || 'Unknown Product',
           price: product.product_price || product.product_original_price || 'N/A',
@@ -399,6 +354,8 @@ export class FirecrawlService {
           success: true,
           data: formattedResults
         };
+      } else {
+        console.log("No products found or unexpected response format:", data);
       }
 
       // If we reached here, the API returned a successful response but with no products
@@ -408,11 +365,6 @@ export class FirecrawlService {
       };
     } catch (error) {
       console.error("Error crawling Amazon product:", error);
-      toast({
-        title: "Amazon Search Error",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive"
-      });
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error occurred"
@@ -420,7 +372,6 @@ export class FirecrawlService {
     }
   }
 
-  // New method for searching Amazon products for homepage
   static async getAmazonProductsForHomepage(searchTerm: string): Promise<any[]> {
     try {
       // If quota already exceeded, return early with empty array
@@ -444,12 +395,10 @@ export class FirecrawlService {
     }
   }
   
-  // Helper method to check if quota is exceeded
   static isQuotaExceeded(): boolean {
     return this.quotaExceeded;
   }
   
-  // Method to reset quota exceeded status (for testing or after time period)
   static resetQuotaExceeded(): void {
     this.quotaExceeded = false;
   }

@@ -57,6 +57,7 @@ export const useProductSearch = (query: string, category: string) => {
     },
   });
 
+  // First check API key on mount
   useEffect(() => {
     const checkApiKey = async () => {
       // Ensure we start with a fresh state
@@ -87,16 +88,20 @@ export const useProductSearch = (query: string, category: string) => {
     checkApiKey();
   }, [toast]);
 
+  // Fetch eBay products when query changes
   useEffect(() => {
     const fetchEbayProducts = async () => {
+      if (!query) return;
+      
       setIsLoadingEbay(true);
       try {
         const searchQuery = category === 'all' ? query : `${query} ${category}`.trim();
-        if (searchQuery) {
-          const ebayResult = await EbayService.searchProducts(searchQuery);
-          if (ebayResult.success && ebayResult.data) {
-            setEbayProducts(ebayResult.data);
-          }
+        console.log('Fetching eBay products with query:', searchQuery);
+        const ebayResult = await EbayService.searchProducts(searchQuery);
+        if (ebayResult.success && ebayResult.data) {
+          setEbayProducts(ebayResult.data);
+        } else if (ebayResult.error) {
+          console.error('Error from eBay API:', ebayResult.error);
         }
       } catch (error) {
         console.error('Error fetching eBay products:', error);
@@ -113,24 +118,27 @@ export const useProductSearch = (query: string, category: string) => {
     fetchEbayProducts();
   }, [query, category, toast]);
 
+  // Fetch Amazon products when query or apiKeyInitialized changes
   useEffect(() => {
     const fetchAmazonProducts = async () => {
-      if (!query || !apiKeyInitialized) return;
+      if (!query) return;
+      
+      if (!apiKeyInitialized) {
+        console.log('Skipping Amazon search because API key is not initialized');
+        setAmazonError('Amazon product search is unavailable. Please check API key configuration.');
+        return;
+      }
       
       setIsLoadingAmazon(true);
       setAmazonError(undefined);
       
       try {
-        console.log('Starting Amazon product search with query:', query, 'API key initialized:', apiKeyInitialized);
+        console.log('Starting Amazon product search with query:', query);
         const amazonResult = await FirecrawlService.crawlAmazonProduct(query);
         
         if (amazonResult.success && amazonResult.data) {
-          console.log('Amazon search successful, formatting products');
-          const formattedProducts = amazonResult.data.map(product => ({
-            ...product,
-            url: product.url ? (product.url.startsWith('http') ? product.url : `https://www.amazon.ae${product.url}`) : undefined
-          }));
-          setAmazonProducts(formattedProducts);
+          console.log('Amazon search successful, found', amazonResult.data.length, 'products');
+          setAmazonProducts(amazonResult.data);
         } else {
           console.error('Error from Amazon API:', amazonResult.error);
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");

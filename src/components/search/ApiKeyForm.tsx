@@ -5,19 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FirecrawlService } from "@/services/FirecrawlService";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [apiKey, setApiKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testInProgress, setTestInProgress] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleRefresh = async () => {
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     
     if (!apiKey.trim()) {
+      setFormError("Please enter a valid API key");
       toast({
         title: "Error",
         description: "Please enter a valid API key",
@@ -40,6 +47,7 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       setTestInProgress(false);
       
       if (!testResult) {
+        setFormError("The API key could not be verified. Please check that you've entered a valid RapidAPI key with access to the Real-Time Amazon Data API.");
         toast({
           title: "Invalid API Key",
           description: "The API key could not be verified. Please check that you've entered a valid RapidAPI key with access to the Real-Time Amazon Data API.",
@@ -63,6 +71,7 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
           onSuccess();
         }
       } else {
+        setFormError("Failed to save API key. Please try again.");
         toast({
           title: "Error",
           description: "Failed to save API key. Please try again.",
@@ -71,6 +80,7 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       }
     } catch (error) {
       console.error("Error saving API key:", error);
+      setFormError("An unexpected error occurred while saving the API key.");
       toast({
         title: "Error",
         description: "An unexpected error occurred while saving the API key.",
@@ -109,6 +119,9 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
                 onChange={(e) => setApiKey(e.target.value)}
                 className="w-full"
               />
+              {formError && (
+                <p className="text-sm text-destructive">{formError}</p>
+              )}
             </div>
             
             <Alert className="bg-muted">
@@ -140,16 +153,29 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
             {isSubmitting ? "Saving..." : testInProgress ? "Testing Key..." : "Save API Key"}
           </Button>
           
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full text-xs"
-            onClick={() => window.open('https://rapidapi.com/DataCrawler/api/real-time-amazon-data/', '_blank')}
-          >
-            <ExternalLink className="mr-1 h-3 w-3" />
-            Get a RapidAPI Key
-          </Button>
+          <div className="flex gap-2 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={() => window.open('https://rapidapi.com/DataCrawler/api/real-time-amazon-data/', '_blank')}
+            >
+              <ExternalLink className="mr-1 h-3 w-3" />
+              Get a RapidAPI Key
+            </Button>
+            
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 text-xs"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className="mr-1 h-3 w-3" />
+              Refresh Page
+            </Button>
+          </div>
         </CardFooter>
       </form>
     </Card>
