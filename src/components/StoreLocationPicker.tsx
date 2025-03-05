@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Label } from './ui/label';
 import Map from './Map';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -17,24 +17,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const [error, setError] = useState<string | null>(null);
   const [forceRender, setForceRender] = useState(0);
   const { toast } = useToast();
-
-  // Test Mapbox connectivity on component mount
-  useEffect(() => {
-    const checkMapboxConnectivity = async () => {
-      try {
-        await fetch('https://api.mapbox.com/tokens/v2', { 
-          method: 'HEAD',
-          mode: 'no-cors' // Prevent CORS errors
-        });
-        console.log('Mapbox connectivity check passed');
-      } catch (err) {
-        console.warn('Mapbox connectivity check failed:', err);
-        // Don't set error here, let the Map component handle specific errors
-      }
-    };
-    
-    checkMapboxConnectivity();
-  }, []);
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
     console.log('Location changed in StoreLocationPicker:', newLocation);
