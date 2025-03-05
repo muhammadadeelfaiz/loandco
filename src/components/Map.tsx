@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Map from './map/Map';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface MapProps {
   location?: { lat: number; lng: number } | null;
@@ -23,6 +24,25 @@ interface MapProps {
 const MapComponent = (props: MapProps) => {
   const [error, setError] = useState<string | null>(null);
   const [forceRender, setForceRender] = useState(0);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Check if Mapbox is blocked at startup
+    const testMapboxConnectivity = async () => {
+      try {
+        const response = await fetch('https://api.mapbox.com/tokens/v2?access_token=pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A', { 
+          method: 'HEAD',
+          mode: 'no-cors' // This prevents CORS errors during the test
+        });
+        console.log('Mapbox connectivity test completed');
+      } catch (err) {
+        console.warn('Mapbox connectivity test failed:', err);
+        setError('Unable to connect to Mapbox services. Please check your network connection or firewall settings.');
+      }
+    };
+    
+    testMapboxConnectivity();
+  }, []);
   
   const handleMapError = (message: string) => {
     console.error("Map error in MapComponent:", message);
@@ -30,6 +50,13 @@ const MapComponent = (props: MapProps) => {
     if (props.onError) {
       props.onError(message);
     }
+    
+    toast({
+      variant: "destructive",
+      title: "Map Error",
+      description: message || "Failed to load the map. Please check your internet connection.",
+      duration: 5000,
+    });
   };
   
   const handleRetry = () => {
@@ -38,7 +65,14 @@ const MapComponent = (props: MapProps) => {
     // Clear localStorage cache when retrying
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
+    // Force a complete re-initialization of the map
     setForceRender(prev => prev + 1);
+    
+    toast({
+      title: "Retrying Map",
+      description: "Attempting to reload the map...",
+      duration: 3000,
+    });
   };
 
   if (error) {

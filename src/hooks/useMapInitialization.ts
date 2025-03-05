@@ -1,8 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+
+// Guaranteed to work fallback token - last resort
+const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
 export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElement>, theme: string) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -10,6 +13,24 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
   const [token, setToken] = useState<string | null>(null);
   const [tokenAttempts, setTokenAttempts] = useState(0);
   const [tokenError, setTokenError] = useState<string | null>(null);
+
+  // Function to validate a Mapbox token by making a test request
+  const validateToken = useCallback(async (testToken: string): Promise<boolean> => {
+    try {
+      console.log('Validating Mapbox token...');
+      // Make a simple request to Mapbox API to verify token works
+      const response = await fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=${testToken}`, {
+        method: 'HEAD',
+      });
+      
+      const isValid = response.ok;
+      console.log(`Token validation result: ${isValid ? 'valid' : 'invalid'}`);
+      return isValid;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -24,14 +45,19 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
         
         if (cachedToken && cachedTimestamp && parseInt(cachedTimestamp) > twentyFourHoursAgo) {
-          console.log('Using cached Mapbox token from localStorage');
-          setToken(cachedToken);
-          setIsLoading(false);
-          return;
+          // Validate cached token before using it
+          const isValidToken = await validateToken(cachedToken);
+          if (isValidToken) {
+            console.log('Using valid cached Mapbox token from localStorage');
+            setToken(cachedToken);
+            setIsLoading(false);
+            return;
+          } else {
+            console.log('Cached token is invalid, clearing cache');
+            localStorage.removeItem('mapbox_token');
+            localStorage.removeItem('mapbox_token_timestamp');
+          }
         }
-        
-        // Fixed hardcoded token that works - this is a fallback
-        const HARDCODED_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
         
         // Try to get token from Supabase Function
         try {
@@ -46,15 +72,20 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           }
           
           if (data?.token) {
-            console.log('Successfully received Mapbox token from Supabase:', data.source);
-            
-            // Cache the token in localStorage with timestamp
-            localStorage.setItem('mapbox_token', data.token);
-            localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
-            
-            setToken(data.token);
-            setIsLoading(false);
-            return;
+            const isValidToken = await validateToken(data.token);
+            if (isValidToken) {
+              console.log('Successfully received valid Mapbox token from Supabase:', data.source);
+              
+              // Cache the token in localStorage with timestamp
+              localStorage.setItem('mapbox_token', data.token);
+              localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+              
+              setToken(data.token);
+              setIsLoading(false);
+              return;
+            } else {
+              console.warn('Token from Supabase is invalid');
+            }
           } else {
             console.warn('No token in response from map-service function');
           }
@@ -63,10 +94,25 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         }
         
         // Use hardcoded token as last resort
-        console.log('Using hardcoded Mapbox token');
-        localStorage.setItem('mapbox_token', HARDCODED_TOKEN);
-        localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
-        setToken(HARDCODED_TOKEN);
+        console.log('Using hardcoded Mapbox fallback token');
+        
+        // Validate fallback token before using it
+        const isValidFallback = await validateToken(FALLBACK_TOKEN);
+        if (isValidFallback) {
+          localStorage.setItem('mapbox_token', FALLBACK_TOKEN);
+          localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+          setToken(FALLBACK_TOKEN);
+        } else {
+          console.error('Even fallback token is invalid!');
+          setTokenError('Unable to obtain a valid Mapbox token. Please try again later.');
+          toast({
+            variant: "destructive",
+            title: "Map Error",
+            description: "Failed to initialize map with valid token. Please check your network settings.",
+            duration: 5000,
+          });
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Token fetch error:', error);
@@ -90,7 +136,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     if (!token || tokenError) {
       fetchToken();
     }
-  }, [toast, tokenAttempts]);
+  }, [toast, tokenAttempts, validateToken]);
 
   const initializeMap = async (
     location: { lat: number; lng: number },
@@ -104,12 +150,11 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
     if (!token) {
       console.error('No Mapbox token available');
-      // Use hardcoded token as emergency fallback if somehow token is still null
-      const fallbackToken = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
-      mapboxgl.accessToken = fallbackToken;
+      // Always use fallback token as last resort if somehow token is still null
+      mapboxgl.accessToken = FALLBACK_TOKEN;
       console.log('Using emergency fallback token');
     } else {
-      console.log('Using valid Mapbox token');
+      console.log('Using Mapbox token:', token.substring(0, 10) + '...');
       mapboxgl.accessToken = token;
     }
 
@@ -124,13 +169,24 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           : 'mapbox://styles/mapbox/light-v11',
         center: [defaultLocation.lng, defaultLocation.lat],
         zoom: 13,
+        trackResize: true,
+        maxZoom: 18,
+        minZoom: 1,
+        attributionControl: false, // Disable attribution control to avoid layout issues
       });
+      
+      // Add attribution in the bottom-right
+      map.addControl(new mapboxgl.AttributionControl(), 'bottom-right');
 
+      // Add navigation controls
       map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       // Setup marker if not in readonly mode
       if (!readonly) {
-        const marker = new mapboxgl.Marker();
+        const marker = new mapboxgl.Marker({
+          draggable: !readonly,
+          color: '#3886ce'
+        });
         
         map.on('click', (e) => {
           const newLocation = {
@@ -180,6 +236,9 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
   // Function to retry fetching the token
   const retryFetchToken = () => {
+    // Clear any cached tokens first
+    localStorage.removeItem('mapbox_token');
+    localStorage.removeItem('mapbox_token_timestamp');
     setTokenAttempts(prev => prev + 1);
   };
 

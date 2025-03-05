@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import Map from './Map';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -18,11 +18,35 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const [forceRender, setForceRender] = useState(0);
   const { toast } = useToast();
 
+  // Test Mapbox connectivity on component mount
+  useEffect(() => {
+    const checkMapboxConnectivity = async () => {
+      try {
+        await fetch('https://api.mapbox.com/tokens/v2', { 
+          method: 'HEAD',
+          mode: 'no-cors' // Prevent CORS errors
+        });
+        console.log('Mapbox connectivity check passed');
+      } catch (err) {
+        console.warn('Mapbox connectivity check failed:', err);
+        // Don't set error here, let the Map component handle specific errors
+      }
+    };
+    
+    checkMapboxConnectivity();
+  }, []);
+
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
     console.log('Location changed in StoreLocationPicker:', newLocation);
     setError(null);
     setLocation(newLocation);
     onLocationSelect(newLocation);
+    
+    toast({
+      title: "Location Selected",
+      description: `Location set at ${newLocation.lat.toFixed(4)}, ${newLocation.lng.toFixed(4)}`,
+      duration: 3000,
+    });
   };
 
   const handleMapError = (errorMessage: string) => {
@@ -43,6 +67,12 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
     setForceRender(prev => prev + 1);
+    
+    toast({
+      title: "Retrying",
+      description: "Attempting to reload the map...",
+      duration: 3000,
+    });
   };
 
   return (

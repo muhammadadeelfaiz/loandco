@@ -44,6 +44,7 @@ const MapboxMap = ({
   const map = useRef<mapboxgl.Map | null>(null);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { theme } = useTheme();
   const { isLoading, initializeMap, retryFetchToken, tokenError } = useMapInitialization(mapContainer, theme);
   
@@ -64,12 +65,17 @@ const MapboxMap = ({
     console.log('Retrying map initialization...');
     setError(null);
     setIsMapInitialized(false);
+    setRetryCount(prev => prev + 1);
     
     // Clean up existing map if any
     if (map.current) {
       map.current.remove();
       map.current = null;
     }
+    
+    // Clear token cache
+    localStorage.removeItem('mapbox_token');
+    localStorage.removeItem('mapbox_token_timestamp');
     
     // Retry token fetch
     retryFetchToken();
@@ -133,26 +139,38 @@ const MapboxMap = ({
         setIsMapInitialized(false);
       }
     };
-  }, [location, onLocationChange, readonly, initializeMap, onError, tokenError]);
+  }, [location, onLocationChange, readonly, initializeMap, onError, tokenError, retryCount]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
 
-    map.current.setStyle(
-      theme === 'dark'
-        ? 'mapbox://styles/mapbox/dark-v11'
-        : 'mapbox://styles/mapbox/light-v11'
-    );
+    try {
+      map.current.setStyle(
+        theme === 'dark'
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : 'mapbox://styles/mapbox/light-v11'
+      );
+    } catch (err) {
+      console.error('Error setting map style:', err);
+    }
   }, [theme, isMapInitialized]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
-    markersInstance.updateMarkers(map.current, markers);
+    try {
+      markersInstance.updateMarkers(map.current, markers);
+    } catch (err) {
+      console.error('Error updating markers:', err);
+    }
   }, [markers, isMapInitialized, markersInstance]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized || !location) return;
-    searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
+    try {
+      searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
+    } catch (err) {
+      console.error('Error updating search radius:', err);
+    }
   }, [location, searchRadius, isMapInitialized, searchRadiusInstance]);
 
   if (error) {

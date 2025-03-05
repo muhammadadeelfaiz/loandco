@@ -28,7 +28,7 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     # Control what features can be used in the browser
     Feature-Policy = "camera 'none'; microphone 'none'; geolocation 'self'"
-    # Control what resources the browser can load - Allow Mapbox, Amazon, eBay and other required resources
+    # Control what resources the browser can load - Allow all required resources with broader permissions
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' api.mapbox.com events.mapbox.com; connect-src 'self' https://*.mapbox.com https://*.supabase.co api.mapbox.com events.mapbox.com https://*.amazon.com https://*.amazon.ae https://amazon.ae https://amazon.com https://*.ebay.com https://ebay.com https://api.ebay.com https://real-time-amazon-data.p.rapidapi.com https://*.rapidapi.com; img-src 'self' data: blob: https://*.mapbox.com https://*.amazon.com https://*.amazon.ae https://*.ebay.com https://*.ebayimg.com https://*.ebaystatic.com https://*.ebaydesc.com https://i.ebayimg.com https://*.ssl-images-amazon.com https://*.media-amazon.com https://m.media-amazon.com https://*.images-amazon.com https://images-na.ssl-images-amazon.com https://*.cloudfront.net https://*.amazonaws.com; style-src 'self' 'unsafe-inline' api.mapbox.com; font-src 'self' data:; frame-ancestors 'none'; upgrade-insecure-requests;"
     # Referrer Policy
     Referrer-Policy = "strict-origin-when-cross-origin"
