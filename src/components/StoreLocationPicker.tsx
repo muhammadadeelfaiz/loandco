@@ -4,6 +4,8 @@ import { Label } from './ui/label';
 import Map from './Map';
 import { AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface StoreLocationPickerProps {
   onLocationSelect: (location: { lat: number; lng: number }) => void;
@@ -13,6 +15,7 @@ interface StoreLocationPickerProps {
 const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocationPickerProps) => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
     setError(null);
@@ -21,7 +24,19 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   };
 
   const handleMapError = (errorMessage: string) => {
+    console.error('Map error received:', errorMessage);
     setError(errorMessage);
+    toast({
+      variant: "destructive",
+      title: "Map Error",
+      description: errorMessage || "There was an error loading the map. Please try again.",
+    });
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    // Force a re-render by updating state
+    setLocation(location => location ? {...location} : null);
   };
 
   return (
@@ -34,17 +49,23 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
       </div>
       
       {error ? (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Map Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Map Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <Button onClick={handleRetry} variant="outline">
+            Retry Loading Map
+          </Button>
+        </div>
       ) : (
         <div className="h-[300px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <Map
             location={location}
             onLocationChange={handleLocationChange}
             readonly={false}
+            onError={handleMapError}
           />
         </div>
       )}

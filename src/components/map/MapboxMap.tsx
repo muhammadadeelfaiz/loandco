@@ -14,6 +14,7 @@ interface MapboxMapProps {
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
   searchRadius?: number;
+  onError?: (message: string) => void;
   markers?: Array<{
     id: string;
     lat: number;
@@ -35,7 +36,8 @@ const MapboxMap = ({
   onLocationChange,
   readonly = false,
   searchRadius = 5,
-  markers = []
+  markers = [],
+  onError
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -48,6 +50,14 @@ const MapboxMap = ({
   const searchRadiusInstance = useSearchRadius();
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
+
+  const handleError = (errorMessage: string) => {
+    console.error('Map error:', errorMessage);
+    setError(errorMessage);
+    if (onError) {
+      onError(errorMessage);
+    }
+  };
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -71,18 +81,20 @@ const MapboxMap = ({
 
           // Add specific error handling for authentication errors
           newMap.on('error', (e: mapboxgl.ErrorEvent) => {
-            console.error('Map error:', e);
+            console.error('Map error event:', e);
             const mapError = e.error as MapboxError;
             if (mapError?.sourceError?.status === 403) {
-              setError('Map authentication failed. Please check your Mapbox token.');
+              handleError('Map authentication failed. Please check your Mapbox token.');
             } else {
-              setError('There was an error loading the map. Please check your internet connection.');
+              handleError('There was an error loading the map. Please check your internet connection.');
             }
           });
+        } else {
+          handleError('Failed to initialize map. Token might be invalid or network issues.');
         }
       } catch (err) {
         console.error('Map initialization error:', err);
-        setError('Failed to initialize map. Please try refreshing the page.');
+        handleError('Failed to initialize map. Please try refreshing the page.');
       }
     };
 
@@ -95,7 +107,7 @@ const MapboxMap = ({
         setIsMapInitialized(false);
       }
     };
-  }, [location, onLocationChange, readonly, initializeMap]);
+  }, [location, onLocationChange, readonly, initializeMap, onError]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;

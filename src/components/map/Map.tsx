@@ -6,6 +6,7 @@ interface MapProps {
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
   searchRadius?: number;
+  onError?: (message: string) => void;
   markers?: Array<{
     id: string;
     lat: number;

@@ -13,12 +13,14 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
     const fetchToken = async () => {
       try {
         console.log('Fetching Mapbox token...');
+        setIsLoading(true);
         
         // Add a fallback token for development (replace with your token if available)
         const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
         
-        // Try to get token from Supabase Function first
+        // Try to get token from Supabase Function
         try {
+          console.log('Calling Supabase map-service function...');
           const { data, error } = await supabase.functions.invoke('map-service');
           
           if (error) {
@@ -29,6 +31,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           if (data?.token) {
             console.log('Successfully received Mapbox token from Supabase');
             setToken(data.token);
+            setIsLoading(false);
             return;
           }
         } catch (supabaseError) {
@@ -38,6 +41,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         // Use fallback token as last resort
         console.log('Using fallback Mapbox token');
         setToken(FALLBACK_TOKEN);
+        setIsLoading(false);
       } catch (error) {
         console.error('Token fetch error:', error);
         toast({
