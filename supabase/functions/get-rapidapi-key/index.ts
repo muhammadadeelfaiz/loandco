@@ -18,13 +18,9 @@ serve(async (req) => {
     if (req.method === 'POST') {
       try {
         const requestData = await req.json();
-        console.log('Request data received:', JSON.stringify(requestData));
-        
-        // Extract apiKey from the request body
         const newApiKey = requestData.apiKey;
         
         if (!newApiKey) {
-          console.error('No API key provided in request body');
           return new Response(
             JSON.stringify({ 
               success: false, 
@@ -37,7 +33,8 @@ serve(async (req) => {
           );
         }
         
-        // Save the provided key as an environment variable
+        // In a real environment, you would save this to a secure location
+        // Here we're saving it to an environment variable, but this will only persist for the current instance
         Deno.env.set('RAPIDAPI_KEY', newApiKey);
         
         console.log(`New RapidAPI key set with length: ${newApiKey.length}`);

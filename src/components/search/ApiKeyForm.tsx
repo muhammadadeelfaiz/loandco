@@ -7,8 +7,8 @@ import { FirecrawlService } from "@/services/FirecrawlService";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
-export const ApiKeyForm = ({ onSuccess, initialValue }: { onSuccess?: () => void, initialValue?: string }) => {
-  const [apiKey, setApiKey] = useState(initialValue || "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d");
+export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
+  const [apiKey, setApiKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -27,32 +27,14 @@ export const ApiKeyForm = ({ onSuccess, initialValue }: { onSuccess?: () => void
     setIsSubmitting(true);
     
     try {
-      console.log("Submitting API key:", apiKey);
       const success = await FirecrawlService.saveApiKey(apiKey);
       
       if (success) {
         setApiKey("");
-        toast({
-          title: "Success",
-          description: "API key saved successfully. Amazon product search is now enabled.",
-        });
         if (onSuccess) {
           onSuccess();
         }
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to save API key. Please try again.",
-          variant: "destructive"
-        });
       }
-    } catch (error) {
-      console.error("Error saving API key:", error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while saving the API key.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
