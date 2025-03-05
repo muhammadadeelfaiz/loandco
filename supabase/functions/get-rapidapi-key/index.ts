@@ -18,9 +18,13 @@ serve(async (req) => {
     if (req.method === 'POST') {
       try {
         const requestData = await req.json();
+        console.log('Request data received:', JSON.stringify(requestData));
+        
+        // Extract apiKey from the request body
         const newApiKey = requestData.apiKey;
         
         if (!newApiKey) {
+          console.error('No API key provided in request body');
           return new Response(
             JSON.stringify({ 
               success: false, 

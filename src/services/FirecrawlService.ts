@@ -1,6 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CrawlResponse {
   success: boolean;
@@ -34,19 +33,13 @@ export class FirecrawlService {
       // Call the Supabase Edge Function to update the API key
       const response = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: { apiKey },
       });
       
+      console.log("API key save response:", response);
+      
       if (response.error) {
         console.error("Error saving RapidAPI key:", response.error);
-        toast({
-          title: "Error",
-          description: `Failed to save RapidAPI key: ${response.error.message}`,
-          variant: "destructive"
-        });
         return false;
       }
       
@@ -54,18 +47,10 @@ export class FirecrawlService {
       await this.resetApiKeyCache();
       this.rapidApiKey = apiKey;
       
-      toast({
-        title: "Success",
-        description: "API key saved successfully."
-      });
+      console.log("API key saved successfully with length:", apiKey.length);
       return true;
     } catch (error) {
       console.error("Error saving RapidAPI key:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save RapidAPI key",
-        variant: "destructive"
-      });
       return false;
     }
   }

@@ -1,3 +1,4 @@
+
 import { AlertCircle, ExternalLink, Key, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -32,15 +33,17 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
     });
     
     try {
-      // Use the new API key
-      const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
-      
       // Reset quota exceeded status
       FirecrawlService.resetQuotaExceeded();
       await FirecrawlService.resetApiKeyCache();
       
+      // Use the new API key
+      const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
+      console.log("Attempting to save API key:", apiKey);
+      
       // Save the new API key
       const success = await FirecrawlService.saveApiKey(apiKey);
+      console.log("API key save result:", success);
       
       if (success) {
         toast({
@@ -58,6 +61,7 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
         });
       }
     } catch (e) {
+      console.error("Error refreshing API connection:", e);
       toast({
         title: "Error",
         description: "An unexpected error occurred while refreshing the connection.",
