@@ -59,6 +59,8 @@ export const useProductSearch = (query: string, category: string) => {
 
   useEffect(() => {
     const checkApiKey = async () => {
+      // Reset the quota exceeded flag
+      FirecrawlService.resetQuotaExceeded();
       await FirecrawlService.resetApiKeyCache();
       const initialized = await FirecrawlService.initialize();
       console.log("API key initialization check result:", initialized);
@@ -132,17 +134,34 @@ export const useProductSearch = (query: string, category: string) => {
           console.error('Error from Amazon API:', amazonResult.error);
           setAmazonError(amazonResult.error || "Failed to fetch Amazon products");
           
-          if (amazonResult.error?.includes('credentials not initialized')) {
+          if (amazonResult.error?.includes('credentials not initialized') || 
+              amazonResult.error?.includes('quota exceeded')) {
             console.log('Attempting to reconnect to product search service...');
-            await FirecrawlService.resetApiKeyCache();
-            const reinitialized = await FirecrawlService.initialize();
-            setApiKeyInitialized(reinitialized);
             
-            if (reinitialized) {
+            // Reset API key and try with the new one
+            await FirecrawlService.resetApiKeyCache();
+            FirecrawlService.resetQuotaExceeded();
+            
+            const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
+            const success = await FirecrawlService.saveApiKey(apiKey);
+            setApiKeyInitialized(success);
+            
+            if (success) {
               toast({
                 title: "Connection Restored",
                 description: "Product search service reconnected. Try searching again.",
               });
+              
+              // Try fetching again with the new key
+              const retryResult = await FirecrawlService.crawlAmazonProduct(query);
+              if (retryResult.success && retryResult.data) {
+                const formattedProducts = retryResult.data.map(product => ({
+                  ...product,
+                  url: product.url ? (product.url.startsWith('http') ? product.url : `https://${product.url}`) : undefined
+                }));
+                setAmazonProducts(formattedProducts);
+                setAmazonError(undefined);
+              }
             }
           }
         }

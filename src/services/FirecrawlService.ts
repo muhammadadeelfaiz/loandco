@@ -28,13 +28,16 @@ export class FirecrawlService {
     try {
       console.log("Saving new RapidAPI key");
       
+      // Reset the quota exceeded flag when saving a new API key
+      this.quotaExceeded = false;
+      
       // Call the Supabase Edge Function to update the API key
       const response = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: { apiKey: "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d" },
+        body: { apiKey },
       });
       
       if (response.error) {

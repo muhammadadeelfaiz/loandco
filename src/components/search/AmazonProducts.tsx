@@ -1,4 +1,3 @@
-
 import { AlertCircle, ExternalLink, Key, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -33,16 +32,24 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
     });
     
     try {
+      // Use the new API key
+      const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
+      
       // Reset quota exceeded status
       FirecrawlService.resetQuotaExceeded();
       await FirecrawlService.resetApiKeyCache();
-      const initialized = await FirecrawlService.initialize();
       
-      if (initialized) {
+      // Save the new API key
+      const success = await FirecrawlService.saveApiKey(apiKey);
+      
+      if (success) {
         toast({
           title: "Success",
           description: "Successfully connected to the product search service. Refresh the page to see results."
         });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         toast({
           title: "Connection Error",
@@ -77,12 +84,20 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
       return (
         <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
           <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertTitle className="text-amber-800 dark:text-amber-300">Amazon Products Temporarily Unavailable</AlertTitle>
+          <AlertTitle className="text-amber-800 dark:text-amber-300">API Quota Issue</AlertTitle>
           <AlertDescription className="space-y-3 text-amber-700 dark:text-amber-400">
-            <p>We've reached our monthly limit for Amazon product data. This feature will be available again next month.</p>
-            <p className="text-sm">
-              You can still browse local stores and eBay products in the meantime.
-            </p>
+            <p>We're having trouble with the Amazon product data API quota. Let's try refreshing with a new API key.</p>
+            <div className="flex flex-col sm:flex-row gap-2 mt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRefreshApiKey}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Connecting...' : 'Refresh Connection'}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       );

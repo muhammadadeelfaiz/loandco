@@ -26,6 +26,8 @@ const SearchResults = ({ user }: SearchResultsProps) => {
 
   useEffect(() => {
     const checkApiKey = async () => {
+      FirecrawlService.resetQuotaExceeded();
+      await FirecrawlService.resetApiKeyCache();
       const initialized = await FirecrawlService.initialize();
       setApiKeySet(initialized);
     };
@@ -36,8 +38,13 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     const activateApiKey = async () => {
       if (!apiKeySet) {
         try {
-          const success = await FirecrawlService.saveApiKey("1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d");
+          const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
+          const success = await FirecrawlService.saveApiKey(apiKey);
           if (success) {
+            toast({
+              title: "API Key Activated",
+              description: "Successfully activated the RapidAPI key for Amazon product search."
+            });
             setApiKeySet(true);
             window.location.reload();
           }
@@ -48,7 +55,7 @@ const SearchResults = ({ user }: SearchResultsProps) => {
     };
     
     activateApiKey();
-  }, [apiKeySet]);
+  }, [apiKeySet, toast]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const submittedQuery = searchParams.get('q') || '';
@@ -154,12 +161,13 @@ const SearchResults = ({ user }: SearchResultsProps) => {
       description: "Attempting to reconnect to the product search service..."
     });
     
+    FirecrawlService.resetQuotaExceeded();
     await FirecrawlService.resetApiKeyCache(); 
     
-    const initialized = await FirecrawlService.initialize();
-    setApiKeySet(initialized);
+    const apiKey = "1f98c121c7mshd020b5c989dcde0p19e810jsn206cf8a3609d";
+    const success = await FirecrawlService.saveApiKey(apiKey);
     
-    if (initialized) {
+    if (success) {
       toast({
         title: "Success",
         description: "Successfully connected to the product search service. Refreshing products..."
