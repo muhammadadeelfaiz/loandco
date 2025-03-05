@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import Map from './Map';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
@@ -17,6 +17,12 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const [error, setError] = useState<string | null>(null);
   const [forceRender, setForceRender] = useState(0);
   const { toast } = useToast();
+
+  // Reset localStorage on mount to ensure fresh tokens
+  useEffect(() => {
+    localStorage.removeItem('mapbox_token');
+    localStorage.removeItem('mapbox_token_timestamp');
+  }, []);
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
     console.log('Location changed in StoreLocationPicker:', newLocation);

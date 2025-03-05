@@ -57,6 +57,13 @@ const MapComponent = (props: MapProps) => {
     });
   };
 
+  // Clear any local storage on mount to ensure fresh tokens
+  useEffect(() => {
+    localStorage.removeItem('mapbox_token');
+    localStorage.removeItem('mapbox_token_timestamp');
+    setError(null);
+  }, []);
+
   if (error) {
     return (
       <div className="h-[400px] flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-lg p-4">

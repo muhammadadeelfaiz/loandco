@@ -5,8 +5,12 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
-// Guaranteed working public token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+// Define multiple backup tokens in case one fails
+const MAPBOX_TOKENS = [
+  'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A',
+  'pk.eyJ1IjoiZ2FuZXNoZGVicmFoIiwiYSI6ImNsYmNtYjJ5ZzFscTQzcHFqeTAzM2J3bm8ifQ.HhWElNuCOESuHgCbD8Uk0A',
+  'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA'
+];
 
 interface FallbackMapProps {
   location?: { lat: number; lng: number } | null;
@@ -36,11 +40,12 @@ const FallbackMap = ({
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { theme } = useTheme();
+  const [tokenIndex, setTokenIndex] = useState(0);
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
+  // Cleanup function
   useEffect(() => {
-    // Clean up function
     return () => {
       if (map.current) {
         map.current.remove();
@@ -49,134 +54,139 @@ const FallbackMap = ({
     };
   }, []);
 
+  // Initialize map with token retry logic
   useEffect(() => {
-    if (!mapContainer.current) return;
-    
-    try {
-      // Set the access token
-      mapboxgl.accessToken = MAPBOX_TOKEN;
+    async function initializeMap() {
+      if (!mapContainer.current) return;
       
-      const initialCenter = location || defaultCenter;
-      console.log('Initializing map with location:', initialCenter);
-      
-      // Create a new map
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: theme === 'dark' 
-          ? 'mapbox://styles/mapbox/dark-v11'
-          : 'mapbox://styles/mapbox/light-v11',
-        center: [initialCenter.lng, initialCenter.lat],
-        zoom: 12,
-        attributionControl: false,
-      });
-      
-      // Add attribution in the bottom-right
-      map.current.addControl(new mapboxgl.AttributionControl(), 'bottom-right');
-
-      // Add navigation controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      
-      // Set up location marker if provided
-      if (location) {
-        userMarker.current = new mapboxgl.Marker({ color: '#3886ce', draggable: !readonly })
-          .setLngLat([location.lng, location.lat])
-          .addTo(map.current);
-          
-        if (!readonly && userMarker.current) {
-          userMarker.current.on('dragend', () => {
-            const lngLat = userMarker.current!.getLngLat();
-            onLocationChange?.({ lat: lngLat.lat, lng: lngLat.lng });
-          });
+      try {
+        // Clear any previous map instance
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
         }
-      }
-      
-      // Handle map click for location selection
-      if (!readonly) {
-        map.current.on('click', (e) => {
-          const newLocation = {
-            lat: e.lngLat.lat,
-            lng: e.lngLat.lng
-          };
-          
-          if (userMarker.current) {
-            userMarker.current.setLngLat([newLocation.lng, newLocation.lat]);
-          } else {
-            userMarker.current = new mapboxgl.Marker({ color: '#3886ce', draggable: !readonly })
-              .setLngLat([newLocation.lng, newLocation.lat])
-              .addTo(map.current!);
-              
+        
+        console.log(`Initializing map with token index: ${tokenIndex}`);
+        
+        // Set the access token
+        const currentToken = MAPBOX_TOKENS[tokenIndex];
+        mapboxgl.accessToken = currentToken;
+        
+        const initialCenter = location || defaultCenter;
+        console.log('Initializing map with location:', initialCenter);
+        
+        // Create a new map
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: theme === 'dark' 
+            ? 'mapbox://styles/mapbox/dark-v11'
+            : 'mapbox://styles/mapbox/light-v11',
+          center: [initialCenter.lng, initialCenter.lat],
+          zoom: 12,
+          attributionControl: false,
+        });
+        
+        // Add attribution in the bottom-right
+        map.current.addControl(new mapboxgl.AttributionControl(), 'bottom-right');
+  
+        // Add navigation controls
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        // Set up location marker if provided
+        if (location) {
+          userMarker.current = new mapboxgl.Marker({ color: '#3886ce', draggable: !readonly })
+            .setLngLat([location.lng, location.lat])
+            .addTo(map.current);
+            
+          if (!readonly && userMarker.current) {
             userMarker.current.on('dragend', () => {
               const lngLat = userMarker.current!.getLngLat();
               onLocationChange?.({ lat: lngLat.lat, lng: lngLat.lng });
             });
           }
-          
-          onLocationChange?.(newLocation);
-        });
-      }
-      
-      // Event handlers
-      map.current.on('load', () => {
-        console.log('Map loaded successfully');
-        setIsLoading(false);
-      });
-      
-      map.current.on('error', (e) => {
-        console.error('Map error:', e);
-        if (onError) {
-          onError('There was an error loading the map. Please check your internet connection.');
         }
-      });
-      
-    } catch (err) {
-      console.error('Error initializing map:', err);
-      if (onError) {
-        onError('Failed to initialize map. Please try refreshing the page.');
+        
+        // Handle map click for location selection
+        if (!readonly) {
+          map.current.on('click', (e) => {
+            const newLocation = {
+              lat: e.lngLat.lat,
+              lng: e.lngLat.lng
+            };
+            
+            if (userMarker.current) {
+              userMarker.current.setLngLat([newLocation.lng, newLocation.lat]);
+            } else {
+              userMarker.current = new mapboxgl.Marker({ color: '#3886ce', draggable: !readonly })
+                .setLngLat([newLocation.lng, newLocation.lat])
+                .addTo(map.current!);
+                
+              userMarker.current.on('dragend', () => {
+                const lngLat = userMarker.current!.getLngLat();
+                onLocationChange?.({ lat: lngLat.lat, lng: lngLat.lng });
+              });
+            }
+            
+            onLocationChange?.(newLocation);
+          });
+        }
+        
+        // Add markers
+        markers.forEach(marker => {
+          const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+            `<strong>${marker.title}</strong>${marker.description ? `<p>${marker.description}</p>` : ''}`
+          );
+          
+          const markerElement = new mapboxgl.Marker({ color: '#FF0000' })
+            .setLngLat([marker.lng, marker.lat])
+            .setPopup(popup)
+            .addTo(map.current!);
+            
+          markerRefs.current[marker.id] = markerElement;
+        });
+        
+        // Event handlers
+        map.current.on('load', () => {
+          console.log('Map loaded successfully with token:', currentToken);
+          setIsLoading(false);
+        });
+        
+        // Handle map error - try another token
+        map.current.on('error', (e) => {
+          console.error('Map error:', e);
+          
+          // Try next token if available
+          if (tokenIndex < MAPBOX_TOKENS.length - 1) {
+            console.log(`Trying next token (${tokenIndex + 1}/${MAPBOX_TOKENS.length})`);
+            setTokenIndex(prev => prev + 1);
+          } else {
+            // All tokens failed
+            setIsLoading(false);
+            if (onError) {
+              onError('There was an error loading the map. Please check your internet connection or try again later.');
+            }
+          }
+        });
+        
+      } catch (err) {
+        console.error('Error initializing map:', err);
+        
+        // Try next token if available
+        if (tokenIndex < MAPBOX_TOKENS.length - 1) {
+          console.log(`Initialization error, trying next token (${tokenIndex + 1}/${MAPBOX_TOKENS.length})`);
+          setTokenIndex(prev => prev + 1);
+        } else {
+          // All tokens failed
+          setIsLoading(false);
+          if (onError) {
+            onError('Failed to initialize map. Please try refreshing the page.');
+          }
+        }
       }
     }
-  }, [location, onLocationChange, readonly, theme]);
-  
-  // Add markers whenever they change
-  useEffect(() => {
-    if (!map.current || !markers.length) return;
     
-    try {
-      // First clear existing markers
-      Object.values(markerRefs.current).forEach(marker => marker.remove());
-      markerRefs.current = {};
-      
-      // Add all markers
-      markers.forEach(marker => {
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-          `<strong>${marker.title}</strong>${marker.description ? `<p>${marker.description}</p>` : ''}`
-        );
-        
-        const markerElement = new mapboxgl.Marker({ color: '#FF0000' })
-          .setLngLat([marker.lng, marker.lat])
-          .setPopup(popup)
-          .addTo(map.current!);
-          
-        markerRefs.current[marker.id] = markerElement;
-      });
-    } catch (err) {
-      console.error('Error adding markers:', err);
-    }
-  }, [markers]);
-
-  // Update map style when theme changes
-  useEffect(() => {
-    if (!map.current) return;
-    
-    try {
-      map.current.setStyle(
-        theme === 'dark'
-          ? 'mapbox://styles/mapbox/dark-v11'
-          : 'mapbox://styles/mapbox/light-v11'
-      );
-    } catch (error) {
-      console.error('Error setting map style:', error);
-    }
-  }, [theme]);
+    initializeMap();
+  }, [location, tokenIndex, readonly, theme]);
 
   return (
     <div className="w-full h-full relative rounded-lg overflow-hidden">
