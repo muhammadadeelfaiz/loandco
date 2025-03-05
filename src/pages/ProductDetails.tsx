@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Share2, ShoppingCart, Star, Store, Truck } from "lucide-react";
+import { Heart, Share2, Star, Store, Truck, MapPin, GitCompare } from "lucide-react";
 
 interface ProductDetailsProps {
   user: User | null;
@@ -34,13 +35,14 @@ interface Store {
   name: string;
   description?: string;
   logo_url?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const ProductDetails = ({ user }: ProductDetailsProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
 
   const { data: product, isLoading: isProductLoading } = useQuery({
     queryKey: ['product', id],
@@ -69,7 +71,7 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
 
       const { data, error } = await supabase
         .from('stores')
-        .select('id, name, description, logo_url')
+        .select('id, name, description, logo_url, latitude, longitude')
         .eq('id', product.store_id)
         .single();
 
@@ -81,22 +83,6 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
     enabled: !!product?.store_id,
     retry: 1
   });
-
-  const handleAddToCart = () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to add items to your cart",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Added to cart",
-      description: `${quantity} ${quantity > 1 ? 'items' : 'item'} added to your cart`
-    });
-  };
 
   const handleAddToWishlist = async () => {
     if (!user) {
@@ -142,6 +128,31 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
       toast({
         title: "Link copied",
         description: "Product link copied to clipboard"
+      });
+    }
+  };
+
+  const handleCompare = () => {
+    if (id) {
+      navigate(`/compare/${id}`);
+    }
+  };
+
+  const handleGetDirections = () => {
+    if (store?.latitude && store?.longitude) {
+      // Open directions in Mapbox
+      const mapboxUrl = `https://www.mapbox.com/directions?route=d-${store.latitude},${store.longitude}`;
+      window.open(mapboxUrl, '_blank');
+      
+      toast({
+        title: "Directions",
+        description: `Getting directions to ${store.name}`
+      });
+    } else {
+      toast({
+        title: "Location Unavailable",
+        description: "Store location information is not available.",
+        variant: "destructive"
       });
     }
   };
@@ -235,43 +246,28 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
               </p>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-md">
-                  <button
-                    className="px-3 py-1 text-xl"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  >
-                    -
-                  </button>
-                  <span className="px-3 py-1 border-x">{quantity}</span>
-                  <button
-                    className="px-3 py-1 text-xl"
-                    onClick={() => setQuantity(quantity + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button 
-                  className="flex-1" 
-                  onClick={handleAddToCart}
-                  disabled={!product.availability}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={handleAddToWishlist}>
+                <Heart className="w-4 h-4 mr-2" />
+                Wishlist
+              </Button>
+              
+              <Button variant="outline" onClick={handleShare}>
+                <Share2 className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+              
+              <Button variant="outline" onClick={handleCompare}>
+                <GitCompare className="w-4 h-4 mr-2" />
+                Compare
+              </Button>
+              
+              {store?.latitude && store?.longitude && (
+                <Button variant="outline" onClick={handleGetDirections}>
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Get Directions
                 </Button>
-                <Button variant="outline" onClick={handleAddToWishlist}>
-                  <Heart className="w-4 h-4 mr-2" />
-                  Wishlist
-                </Button>
-                <Button variant="outline" onClick={handleShare}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              </div>
+              )}
             </div>
 
             {!isStoreLoading && store && (
@@ -293,8 +289,8 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
               <Truck className="w-5 h-5 text-gray-600" />
               <div>
-                <p className="font-medium">Delivery</p>
-                <p className="text-sm text-gray-600">Free delivery on orders over AED 100</p>
+                <p className="font-medium">Available at Local Store</p>
+                <p className="text-sm text-gray-600">Visit store for more details on stock availability</p>
               </div>
             </div>
           </div>

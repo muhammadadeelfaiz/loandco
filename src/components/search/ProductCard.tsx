@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Star, Heart } from 'lucide-react';
+import { Mail, MapPin, Star, Heart, GitCompare } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useState } from "react";
@@ -111,6 +111,11 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
     }
   };
 
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = `/compare/${product.id}`;
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <Link to={`/product/${product.id}`}>
@@ -193,6 +198,16 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
                     Get Directions
                   </Button>
                 )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCompare}
+                  className="flex items-center gap-2"
+                >
+                  <GitCompare className="w-4 h-4" />
+                  Compare
+                </Button>
               </div>
             </div>
           </div>
