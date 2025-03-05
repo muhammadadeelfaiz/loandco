@@ -8,20 +8,37 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
+  const [tokenAttempts, setTokenAttempts] = useState(0);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchToken = async () => {
       try {
-        console.log('Fetching Mapbox token...');
+        console.log('Fetching Mapbox token... Attempt:', tokenAttempts + 1);
         setIsLoading(true);
+        setTokenError(null);
         
-        // Add a fallback token for development (replace with your token if available)
+        // First try to get token from localStorage cache if it exists and is recent
+        const cachedToken = localStorage.getItem('mapbox_token');
+        const cachedTimestamp = localStorage.getItem('mapbox_token_timestamp');
+        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+        
+        if (cachedToken && cachedTimestamp && parseInt(cachedTimestamp) > twentyFourHoursAgo) {
+          console.log('Using cached Mapbox token from localStorage');
+          setToken(cachedToken);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Fixed fallback token for development/emergencies
         const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
         
         // Try to get token from Supabase Function
         try {
           console.log('Calling Supabase map-service function...');
-          const { data, error } = await supabase.functions.invoke('map-service');
+          const { data, error } = await supabase.functions.invoke('map-service', {
+            method: 'GET',
+          });
           
           if (error) {
             console.error('Supabase function error:', error);
@@ -29,13 +46,20 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           }
           
           if (data?.token) {
-            console.log('Successfully received Mapbox token from Supabase');
+            console.log('Successfully received Mapbox token from Supabase:', data.source);
+            
+            // Cache the token in localStorage with timestamp
+            localStorage.setItem('mapbox_token', data.token);
+            localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+            
             setToken(data.token);
             setIsLoading(false);
             return;
+          } else {
+            console.warn('No token in response from map-service function');
           }
         } catch (supabaseError) {
-          console.error('Supabase token fetch failed, using fallback:', supabaseError);
+          console.error('Supabase token fetch failed:', supabaseError);
         }
         
         // Use fallback token as last resort
@@ -44,17 +68,27 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         setIsLoading(false);
       } catch (error) {
         console.error('Token fetch error:', error);
+        setTokenError(error instanceof Error ? error.message : 'Unknown error fetching map token');
+        setToken(null);
+        setIsLoading(false);
+        
         toast({
           variant: "destructive",
           title: "Map Error",
-          description: error instanceof Error ? error.message : "Failed to fetch map configuration"
+          description: error instanceof Error ? error.message : "Failed to fetch map configuration",
+          duration: 5000,
         });
-        setIsLoading(false);
+        
+        // Increment attempt counter
+        setTokenAttempts(prev => prev + 1);
       }
     };
 
-    fetchToken();
-  }, [toast]);
+    // Only fetch if we don't have a token or if there was an error and we're retrying
+    if (!token || tokenError) {
+      fetchToken();
+    }
+  }, [toast, tokenAttempts]);
 
   const initializeMap = async (
     location: { lat: number; lng: number },
@@ -63,13 +97,11 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
   ) => {
     if (!mapContainer.current) {
       console.error('Map container not found');
-      setIsLoading(false);
       return null;
     }
 
     if (!token) {
       console.error('No Mapbox token available');
-      setIsLoading(false);
       return null;
     }
 
@@ -121,7 +153,8 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
         toast({
           variant: "destructive",
           title: "Map Error",
-          description: "There was an error with the map. Please try again."
+          description: "There was an error with the map. Please try reloading the page.",
+          duration: 5000,
         });
       });
 
@@ -133,11 +166,17 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
       toast({
         variant: "destructive",
         title: "Map Error",
-        description: error instanceof Error ? error.message : "Failed to initialize map"
+        description: error instanceof Error ? error.message : "Failed to initialize map",
+        duration: 5000,
       });
       return null;
     }
   };
 
-  return { isLoading, initializeMap };
+  // Function to retry fetching the token
+  const retryFetchToken = () => {
+    setTokenAttempts(prev => prev + 1);
+  };
+
+  return { isLoading, initializeMap, retryFetchToken, tokenError };
 };

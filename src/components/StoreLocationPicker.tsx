@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Label } from './ui/label';
 import Map from './Map';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ interface StoreLocationPickerProps {
 const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocationPickerProps) => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
   const [error, setError] = useState<string | null>(null);
+  const [forceRender, setForceRender] = useState(0);
   const { toast } = useToast();
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
@@ -30,13 +31,14 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
       variant: "destructive",
       title: "Map Error",
       description: errorMessage || "There was an error loading the map. Please try again.",
+      duration: 5000,
     });
   };
 
   const handleRetry = () => {
+    console.log('Retrying map load...');
     setError(null);
-    // Force a re-render by updating state
-    setLocation(location => location ? {...location} : null);
+    setForceRender(prev => prev + 1);
   };
 
   return (
@@ -55,13 +57,19 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
             <AlertTitle>Map Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button onClick={handleRetry} variant="outline">
+          <Button 
+            onClick={handleRetry} 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
             Retry Loading Map
           </Button>
         </div>
       ) : (
         <div className="h-[300px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
           <Map
+            key={`location-map-${forceRender}`}
             location={location}
             onLocationChange={handleLocationChange}
             readonly={false}

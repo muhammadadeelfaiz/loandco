@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Fallback token (only for development)
+// Public Mapbox token that can be used as fallback (limited usage)
 const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
 serve(async (req) => {
@@ -17,14 +17,16 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Map service function called');
+    console.log('Map service function called - retrieving Mapbox token');
     
     let token = null;
+    let tokenSource = 'fallback';
     
     // Try to get token from environment variables first
     if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
       token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
-      console.log('Using MAPBOX_PUBLIC_TOKEN from environment');
+      tokenSource = 'environment';
+      console.log('Using MAPBOX_PUBLIC_TOKEN from environment variables');
     } else {
       // Initialize Supabase client with Edge Function's environment variables
       try {
@@ -33,7 +35,6 @@ serve(async (req) => {
         
         if (!supabaseUrl || !supabaseKey) {
           console.log('Missing Supabase credentials, using fallback token');
-          token = FALLBACK_TOKEN;
         } else {
           const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -44,32 +45,30 @@ serve(async (req) => {
 
           if (secretsError) {
             console.error('Error fetching secret:', secretsError);
-            throw new Error('Failed to fetch Mapbox token');
-          }
-
-          token = secrets?.MAPBOX_PUBLIC_TOKEN;
-          
-          if (!token) {
-            console.log('No MAPBOX_PUBLIC_TOKEN in secrets, using fallback');
-            token = FALLBACK_TOKEN;
+          } else if (secrets?.MAPBOX_PUBLIC_TOKEN) {
+            token = secrets.MAPBOX_PUBLIC_TOKEN;
+            tokenSource = 'supabase-secrets';
+            console.log('Using MAPBOX_PUBLIC_TOKEN from Supabase secrets');
           }
         }
       } catch (error) {
         console.error('Error with Supabase client:', error);
-        token = FALLBACK_TOKEN;
       }
     }
     
-    // Use fallback token if nothing else worked (development only)
+    // Use fallback token if nothing else worked
     if (!token) {
-      console.log('Token still null, using fallback token');
+      console.log('No token found in environment or Supabase secrets, using fallback token');
       token = FALLBACK_TOKEN;
     }
 
-    console.log('Successfully retrieved Mapbox token');
+    console.log(`Successfully retrieved Mapbox token from ${tokenSource}`);
     
     return new Response(
-      JSON.stringify({ token }), 
+      JSON.stringify({ 
+        token,
+        source: tokenSource 
+      }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
@@ -81,7 +80,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'An unknown error occurred',
-        token: FALLBACK_TOKEN // Provide fallback token even in error case
+        token: FALLBACK_TOKEN, // Provide fallback token even in error case
+        source: 'error-fallback'
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
