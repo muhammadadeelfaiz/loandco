@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import {
   Toast,
@@ -100,8 +101,7 @@ export const reducer = (state: State, action: Action): State => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
+      // Side effects
       if (toastId) {
         addToRemoveQueue(toastId)
       } else {
@@ -147,15 +147,15 @@ function dispatch(action: Action) {
   })
 }
 
-export interface ToastState {
+interface ToastContextType {
   toasts: ToasterToast[]
-  addToast: (toast: ToastOptions) => string
-  updateToast: (id: string, toast: ToastOptions) => void
-  dismissToast: (id: string) => void
-  removeToast: (id: string) => void
+  toast: (options: ToastOptions) => string
+  dismiss: (id: string) => void
+  update: (id: string, options: ToastOptions) => void
+  remove: (id: string) => void
 }
 
-export function useToast(): ToastState {
+export function useToast(): ToastContextType {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -170,7 +170,7 @@ export function useToast(): ToastState {
 
   return {
     toasts: state.toasts,
-    addToast: (props) => {
+    toast: (props) => {
       const id = props.id || genId()
       const toast = {
         ...props,
@@ -185,22 +185,48 @@ export function useToast(): ToastState {
 
       return id
     },
-    updateToast: (id, props) => {
+    dismiss: (id) => {
+      dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
+    },
+    remove: (id) => {
+      dispatch({ type: actionTypes.REMOVE_TOAST, toastId: id })
+    },
+    update: (id, props) => {
       dispatch({
         type: actionTypes.UPDATE_TOAST,
         toast: { ...props, id },
       })
     },
-    dismissToast: (id) => {
-      dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id })
-    },
-    removeToast: (id) => {
-      dispatch({ type: actionTypes.REMOVE_TOAST, toastId: id })
-    },
   }
 }
 
-export const toast = (options: ToastOptions) => {
-  const { addToast } = useToast()
-  return addToast(options)
+// Standalone toast function for direct usage
+export const toast = (options: ToastOptions): string => {
+  const id = options.id || genId()
+  const toast = {
+    ...options,
+    id,
+    open: true,
+  } as ToasterToast
+
+  dispatch({
+    type: actionTypes.ADD_TOAST,
+    toast,
+  })
+
+  return id
 }
+
+// Add convenience methods to directly create different types of toasts
+toast.error = (options: Omit<ToastOptions, "variant">) => {
+  return toast({ ...options, variant: "destructive" });
+};
+
+toast.success = (options: Omit<ToastOptions, "variant">) => {
+  return toast({ ...options });
+};
+
+// Method to dismiss all toasts
+toast.dismiss = (toastId?: string) => {
+  dispatch({ type: actionTypes.DISMISS_TOAST, toastId });
+};
