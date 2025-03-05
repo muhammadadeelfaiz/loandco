@@ -21,10 +21,26 @@ serve(async (req) => {
         const newApiKey = requestData.apiKey;
         
         if (!newApiKey) {
+          console.error("No API key provided in request body");
           return new Response(
             JSON.stringify({ 
               success: false, 
               error: 'No API key provided in request body' 
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 400
+            }
+          );
+        }
+        
+        // Validate that it looks like a RapidAPI key (basic check)
+        if (newApiKey.length < 20) {
+          console.error("API key appears to be too short:", newApiKey.length);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'API key appears to be invalid (too short)' 
             }),
             { 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -27,14 +27,37 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
     setIsSubmitting(true);
     
     try {
-      const success = await FirecrawlService.saveApiKey(apiKey);
+      // Clean up the API key by removing any whitespace
+      const cleanedApiKey = apiKey.trim();
+      
+      console.log("Saving API key with length:", cleanedApiKey.length);
+      
+      const success = await FirecrawlService.saveApiKey(cleanedApiKey);
       
       if (success) {
+        toast({
+          title: "Success",
+          description: "API key saved successfully. The product search service is now available."
+        });
+        
         setApiKey("");
         if (onSuccess) {
           onSuccess();
         }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save API key. Please try again.",
+          variant: "destructive"
+        });
       }
+    } catch (error) {
+      console.error("Error saving API key:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while saving the API key.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
