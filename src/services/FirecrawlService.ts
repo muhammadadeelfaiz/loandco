@@ -32,7 +32,7 @@ export class FirecrawlService {
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', 'test');
       url.searchParams.append('page', '1');
-      url.searchParams.append('country', 'US');
+      url.searchParams.append('country', 'AE'); // Changed to AE for UAE
       url.searchParams.append('category_id', 'aps');
       
       const response = await fetch(url.toString(), {
@@ -45,8 +45,8 @@ export class FirecrawlService {
 
       console.log("API key test response status:", response.status);
       
-      // Only 200 responses indicate a valid key
       if (response.status === 200) {
+        console.log("API key test successful");
         return true;
       }
       
@@ -64,6 +64,7 @@ export class FirecrawlService {
         }
       }
       
+      console.error("API key test failed with status:", response.status);
       return false;
     } catch (error) {
       console.error("Error testing API key:", error);
@@ -144,7 +145,7 @@ export class FirecrawlService {
       // Force-clear any previous key in case it was invalid
       this.rapidApiKey = null;
       
-      // Fetch the RapidAPI key from Supabase Edge Functions with explicit timeout
+      // Fetch the RapidAPI key from Supabase Edge Functions
       console.log("Calling get-rapidapi-key edge function...");
       const response = await supabase.functions.invoke('get-rapidapi-key', {
         method: 'GET',
@@ -257,7 +258,7 @@ export class FirecrawlService {
         };
       }
       
-      // Instead of directly setting the rapidApiKey to null, use our new method
+      // Make sure we have the latest API key
       await this.resetApiKeyCache();
       const isInitialized = await this.initialize();
       
@@ -271,11 +272,11 @@ export class FirecrawlService {
       console.log("Making request to Amazon API with key length:", this.rapidApiKey.length);
       console.log("Using host: real-time-amazon-data.p.rapidapi.com");
       
-      // Make a direct API call to RapidAPI's Amazon Search endpoint
+      // Make a direct API call to RapidAPI's Amazon Search endpoint with AE country code
       const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
       url.searchParams.append('query', query);
       url.searchParams.append('page', '1');
-      url.searchParams.append('country', 'US');
+      url.searchParams.append('country', 'AE'); // Changed to AE for UAE
       url.searchParams.append('category_id', 'aps');
       
       const response = await fetch(url.toString(), {
@@ -380,7 +381,6 @@ export class FirecrawlService {
       console.log("Amazon search results:", data);
 
       // Map the response structure to our expected format
-      // Updated to correctly handle the API response structure
       if (data.status === "OK" && data.data && data.data.products && Array.isArray(data.data.products)) {
         const formattedResults = data.data.products.map((product: any) => ({
           title: product.product_title || 'Unknown Product',
@@ -391,7 +391,7 @@ export class FirecrawlService {
           url: product.product_url ? 
                 (product.product_url.startsWith('http') ? 
                   product.product_url : 
-                  `https://www.amazon.com${product.product_url}`) : 
+                  `https://www.amazon.ae${product.product_url}`) : 
                 undefined
         }));
 

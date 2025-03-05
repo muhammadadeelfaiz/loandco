@@ -32,7 +32,7 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       // Clean up the API key by removing any whitespace
       const cleanedApiKey = apiKey.trim();
       
-      console.log("Saving API key with length:", cleanedApiKey.length);
+      console.log("Testing API key with length:", cleanedApiKey.length);
       
       // First test the API key
       setTestInProgress(true);
@@ -45,9 +45,11 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
           description: "The API key could not be verified. Please check that you've entered a valid RapidAPI key with access to the Real-Time Amazon Data API.",
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
       
+      // Save the validated API key
       const success = await FirecrawlService.saveApiKey(cleanedApiKey);
       
       if (success) {
@@ -76,7 +78,6 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       });
     } finally {
       setIsSubmitting(false);
-      setTestInProgress(false);
     }
   };
 

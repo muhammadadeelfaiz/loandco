@@ -59,7 +59,10 @@ export const useProductSearch = (query: string, category: string) => {
 
   useEffect(() => {
     const checkApiKey = async () => {
+      // Ensure we start with a fresh state
       await FirecrawlService.resetApiKeyCache();
+      
+      // Attempt to initialize the service with the stored API key
       const initialized = await FirecrawlService.initialize();
       console.log("API key initialization check result:", initialized);
       setApiKeyInitialized(initialized);
@@ -125,7 +128,7 @@ export const useProductSearch = (query: string, category: string) => {
           console.log('Amazon search successful, formatting products');
           const formattedProducts = amazonResult.data.map(product => ({
             ...product,
-            url: product.url ? (product.url.startsWith('http') ? product.url : `https://${product.url}`) : undefined
+            url: product.url ? (product.url.startsWith('http') ? product.url : `https://www.amazon.ae${product.url}`) : undefined
           }));
           setAmazonProducts(formattedProducts);
         } else {

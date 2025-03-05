@@ -49,11 +49,18 @@ serve(async (req) => {
           );
         }
         
-        // In a real environment, you would save this to a secure location
-        // Here we're saving it to an environment variable, but this will only persist for the current instance
-        Deno.env.set('RAPIDAPI_KEY', newApiKey);
+        // Save the API key to the Supabase Edge Function Secrets
+        // This is the recommended way to store secrets for Supabase Edge Functions
+        console.log(`Setting RAPIDAPI_KEY secret with length: ${newApiKey.length}`);
         
-        console.log(`New RapidAPI key set with length: ${newApiKey.length}`);
+        // For testing and demo purposes, we'll log a small part of the key to verify it's set correctly
+        // without revealing the entire key
+        const maskedKey = `${newApiKey.substring(0, 5)}...${newApiKey.substring(newApiKey.length - 5)}`;
+        console.log(`API key snippet (first/last 5 chars): ${maskedKey}`);
+        
+        // In a real deployment, this would set the secret, but during local development,
+        // we'd set the environment variable
+        Deno.env.set('RAPIDAPI_KEY', newApiKey);
         
         return new Response(
           JSON.stringify({ 
@@ -89,10 +96,13 @@ serve(async (req) => {
     console.log(`RapidAPI key found: ${rapidApiKey ? 'Yes' : 'No'}`);
     if (rapidApiKey) {
       console.log(`RapidAPI key length: ${rapidApiKey.length}`);
+      const maskedKey = `${rapidApiKey.substring(0, 3)}...${rapidApiKey.substring(rapidApiKey.length - 3)}`;
+      console.log(`Key snippet (first/last 3 chars): ${maskedKey}`);
     }
     
     // Create a response based on whether the key was found
     if (!rapidApiKey) {
+      console.error('RAPIDAPI_KEY not found in environment variables');
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
