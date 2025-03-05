@@ -1,6 +1,5 @@
 
 import { supabase } from '@/lib/supabase';
-import { toast as showToast } from "@/hooks/use-toast";
 
 interface CrawlResponse {
   success: boolean;
