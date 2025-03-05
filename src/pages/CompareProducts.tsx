@@ -1,280 +1,179 @@
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import Navigation from "@/components/Navigation";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useComparisonProducts } from "@/hooks/useComparisonProducts";
+import { ProductComparisonTable } from "@/components/products/ProductComparisonTable";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface CompareProductsProps {
   user: User | null;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  store_id?: string;
+  store_name?: string;
+  store_latitude?: number;
+  store_longitude?: number;
+  description?: string;
+}
+
 const CompareProducts = ({ user }: CompareProductsProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<any>(null);
-  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const { toast } = useToast();
+  const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProductData = async () => {
+    const fetchProduct = async () => {
       if (!id) return;
-
+      
+      setIsLoading(true);
+      
       try {
-        setIsLoading(true);
-        // Fetch the main product
-        const { data: productData, error: productError } = await supabase
+        // Fetch product with store information
+        const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            stores:store_id (
+              name,
+              latitude,
+              longitude
+            )
+          `)
           .eq('id', id)
           .single();
-
-        if (productError) throw productError;
-        setProduct(productData);
-
-        // Fetch similar products in the same category
-        const { data: similarData, error: similarError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('category', productData.category)
-          .neq('id', id)
-          .limit(3);
-
-        if (similarError) throw similarError;
-        setSimilarProducts(similarData || []);
-      } catch (error) {
-        console.error('Error fetching product data:', error);
+        
+        if (error) throw error;
+        
+        if (data) {
+          // Format the product data
+          setProduct({
+            id: data.id,
+            name: data.name,
+            price: data.price,
+            category: data.category,
+            store_id: data.store_id,
+            store_name: data.stores?.name,
+            store_latitude: data.stores?.latitude,
+            store_longitude: data.stores?.longitude,
+            description: data.description
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to fetch product details');
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load product information"
+        });
       } finally {
         setIsLoading(false);
       }
     };
+    
+    fetchProduct();
+  }, [id, toast]);
 
-    fetchProductData();
-  }, [id]);
+  // Fetch comparison products from Amazon and eBay
+  const { amazonProducts, ebayProducts, isLoading: isLoadingExternal } = useComparisonProducts(
+    product?.name || '',
+    product?.category || ''
+  );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <Navigation user={user} />
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          </div>
+  const handleGetDirections = (lat: number, lng: number, storeName: string) => {
+    // Open directions in Mapbox
+    const mapboxUrl = `https://www.mapbox.com/directions?route=d-${lat},${lng}`;
+    window.open(mapboxUrl, '_blank');
+    
+    toast({
+      title: "Directions",
+      description: `Getting directions to ${storeName}`
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navigation user={user} />
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Price Comparison
+          </h1>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </Button>
         </div>
-      </div>
-    );
-  }
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <Navigation user={user} />
-        <div className="container mx-auto px-4 py-8">
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+            <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        ) : product ? (
+          <div className="space-y-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">
+                Comparing prices for: {product.name}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                {product.description || `Compare prices for ${product.name} across local stores and online retailers.`}
+              </p>
+            </div>
+
+            <ProductComparisonTable
+              localProduct={{
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                store_name: product.store_name,
+                latitude: product.store_latitude,
+                longitude: product.store_longitude
+              }}
+              amazonProducts={amazonProducts}
+              ebayProducts={ebayProducts}
+              isLoading={isLoadingExternal}
+              onGetDirections={handleGetDirections}
+            />
+          </div>
+        ) : (
           <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
               Product not found
             </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              We couldn't find the product you're looking for.
+            </p>
             <Button onClick={() => navigate('/')} variant="outline">
               Return to Home
             </Button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
-      <div className="container mx-auto px-4 py-8">
-        <Button 
-          variant="ghost" 
-          className="mb-6 flex items-center gap-2"
-          onClick={() => navigate(`/product/${id}`)}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Product
-        </Button>
-
-        <h1 className="text-3xl font-bold mb-8">Compare Products</h1>
-
-        <Tabs defaultValue="features" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="specifications">Specifications</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="features">
-            <Card>
-              <CardContent className="p-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-1/4">Feature</TableHead>
-                      <TableHead>{product.name}</TableHead>
-                      {similarProducts.map((p) => (
-                        <TableHead key={p.id}>{p.name}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Availability</TableCell>
-                      <TableCell>
-                        {product.availability ? (
-                          <Check className="text-green-500" />
-                        ) : (
-                          <X className="text-red-500" />
-                        )}
-                      </TableCell>
-                      {similarProducts.map((p) => (
-                        <TableCell key={`avail-${p.id}`}>
-                          {p.availability ? (
-                            <Check className="text-green-500" />
-                          ) : (
-                            <X className="text-red-500" />
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Free Shipping</TableCell>
-                      <TableCell>
-                        <Check className="text-green-500" />
-                      </TableCell>
-                      {similarProducts.map((p, index) => (
-                        <TableCell key={`ship-${p.id}`}>
-                          {index === 0 ? (
-                            <X className="text-red-500" />
-                          ) : (
-                            <Check className="text-green-500" />
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Warranty</TableCell>
-                      <TableCell>1 Year</TableCell>
-                      {similarProducts.map((p, index) => (
-                        <TableCell key={`warranty-${p.id}`}>
-                          {index === 1 ? "2 Years" : "1 Year"}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="specifications">
-            <Card>
-              <CardContent className="p-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-1/4">Specification</TableHead>
-                      <TableHead>{product.name}</TableHead>
-                      {similarProducts.map((p) => (
-                        <TableHead key={p.id}>{p.name}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Category</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      {similarProducts.map((p) => (
-                        <TableCell key={`cat-${p.id}`}>{p.category}</TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Weight</TableCell>
-                      <TableCell>0.5 kg</TableCell>
-                      {similarProducts.map((p, index) => (
-                        <TableCell key={`weight-${p.id}`}>
-                          {index === 0 ? "0.6 kg" : index === 1 ? "0.4 kg" : "0.5 kg"}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Dimensions</TableCell>
-                      <TableCell>10 x 5 x 2 cm</TableCell>
-                      {similarProducts.map((p, index) => (
-                        <TableCell key={`dim-${p.id}`}>
-                          {index === 0 ? "12 x 6 x 2 cm" : index === 1 ? "9 x 5 x 2 cm" : "10 x 5 x 2 cm"}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pricing">
-            <Card>
-              <CardContent className="p-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-1/4">Pricing</TableHead>
-                      <TableHead>{product.name}</TableHead>
-                      {similarProducts.map((p) => (
-                        <TableHead key={p.id}>{p.name}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-medium">Price</TableCell>
-                      <TableCell className="font-bold">AED {product.price}</TableCell>
-                      {similarProducts.map((p) => (
-                        <TableCell key={`price-${p.id}`} className="font-bold">
-                          AED {p.price}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Discount</TableCell>
-                      <TableCell>10%</TableCell>
-                      {similarProducts.map((p, index) => (
-                        <TableCell key={`discount-${p.id}`}>
-                          {index === 0 ? "5%" : index === 1 ? "15%" : "None"}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-medium">Actions</TableCell>
-                      <TableCell>
-                        <Button size="sm" className="w-full">View Details</Button>
-                      </TableCell>
-                      {similarProducts.map((p) => (
-                        <TableCell key={`action-${p.id}`}>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={() => navigate(`/product/${p.id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+        )}
+      </main>
     </div>
   );
 };

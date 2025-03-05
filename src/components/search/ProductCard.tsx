@@ -113,6 +113,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
 
   const handleCompare = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Navigate to the compare page with this product ID
     window.location.href = `/compare/${product.id}`;
   };
 
