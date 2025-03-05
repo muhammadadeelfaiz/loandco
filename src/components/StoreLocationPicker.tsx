@@ -39,6 +39,9 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const handleRetry = () => {
     console.log('Retrying map load in StoreLocationPicker...');
     setError(null);
+    // Clear localStorage cache when retrying
+    localStorage.removeItem('mapbox_token');
+    localStorage.removeItem('mapbox_token_timestamp');
     setForceRender(prev => prev + 1);
   };
 

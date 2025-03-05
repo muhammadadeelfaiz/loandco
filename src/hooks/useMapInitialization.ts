@@ -30,8 +30,8 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           return;
         }
         
-        // Fixed fallback token for development/emergencies
-        const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
+        // Fixed hardcoded token that works - this is a fallback
+        const HARDCODED_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A'; 
         
         // Try to get token from Supabase Function
         try {
@@ -62,9 +62,11 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           console.error('Supabase token fetch failed:', supabaseError);
         }
         
-        // Use fallback token as last resort
-        console.log('Using fallback Mapbox token');
-        setToken(FALLBACK_TOKEN);
+        // Use hardcoded token as last resort
+        console.log('Using hardcoded Mapbox token');
+        localStorage.setItem('mapbox_token', HARDCODED_TOKEN);
+        localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+        setToken(HARDCODED_TOKEN);
         setIsLoading(false);
       } catch (error) {
         console.error('Token fetch error:', error);
@@ -102,13 +104,16 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
     if (!token) {
       console.error('No Mapbox token available');
-      return null;
+      // Use hardcoded token as emergency fallback if somehow token is still null
+      const fallbackToken = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+      mapboxgl.accessToken = fallbackToken;
+      console.log('Using emergency fallback token');
+    } else {
+      console.log('Using valid Mapbox token');
+      mapboxgl.accessToken = token;
     }
 
     try {
-      console.log('Initializing map with token...');
-      mapboxgl.accessToken = token;
-
       const defaultLocation = location || { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
       console.log('Creating map instance with center:', defaultLocation);
