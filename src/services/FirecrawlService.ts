@@ -24,6 +24,53 @@ export class FirecrawlService {
     this.quotaExceeded = false;
   }
 
+  static async testApiKey(apiKey: string): Promise<boolean> {
+    try {
+      console.log("Testing RapidAPI key validity");
+      
+      // Simple test call to the API with minimal parameters
+      const url = new URL('https://real-time-amazon-data.p.rapidapi.com/search');
+      url.searchParams.append('query', 'test');
+      url.searchParams.append('page', '1');
+      url.searchParams.append('country', 'US');
+      url.searchParams.append('category_id', 'aps');
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'X-RapidAPI-Key': apiKey,
+          'X-RapidAPI-Host': 'real-time-amazon-data.p.rapidapi.com'
+        }
+      });
+
+      console.log("API key test response status:", response.status);
+      
+      // Only 200 responses indicate a valid key
+      if (response.status === 200) {
+        return true;
+      }
+      
+      // Log specific error conditions
+      if (response.status === 403) {
+        const responseText = await response.text();
+        console.error("API key test failed with 403 Forbidden:", responseText);
+        
+        if (responseText.includes("not subscribed")) {
+          toast({
+            title: "Subscription Required",
+            description: "You need to subscribe to the Real Time Amazon Data API on RapidAPI.",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error testing API key:", error);
+      return false;
+    }
+  }
+
   static async saveApiKey(apiKey: string): Promise<boolean> {
     try {
       console.log("Saving new RapidAPI key");

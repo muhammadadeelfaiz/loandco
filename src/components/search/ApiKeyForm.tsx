@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { FirecrawlService } from "@/services/FirecrawlService";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [apiKey, setApiKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [testInProgress, setTestInProgress] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +33,20 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       const cleanedApiKey = apiKey.trim();
       
       console.log("Saving API key with length:", cleanedApiKey.length);
+      
+      // First test the API key
+      setTestInProgress(true);
+      const testResult = await FirecrawlService.testApiKey(cleanedApiKey);
+      setTestInProgress(false);
+      
+      if (!testResult) {
+        toast({
+          title: "Invalid API Key",
+          description: "The API key could not be verified. Please check that you've entered a valid RapidAPI key with access to the Real-Time Amazon Data API.",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const success = await FirecrawlService.saveApiKey(cleanedApiKey);
       
@@ -60,6 +76,7 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
       });
     } finally {
       setIsSubmitting(false);
+      setTestInProgress(false);
     }
   };
 
@@ -92,16 +109,45 @@ export const ApiKeyForm = ({ onSuccess }: { onSuccess?: () => void }) => {
                 className="w-full"
               />
             </div>
+            
+            <Alert className="bg-muted">
+              <AlertDescription className="text-xs">
+                <p className="mb-2">To get your RapidAPI key:</p>
+                <ol className="list-decimal pl-4 space-y-1">
+                  <li>Create a RapidAPI account</li>
+                  <li>Subscribe to the <a 
+                    href="https://rapidapi.com/DataCrawler/api/real-time-amazon-data/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80"
+                  >
+                    Real-Time Amazon Data API
+                  </a> (Free tier available)</li>
+                  <li>Copy your API key from the API dashboard</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-2">
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isSubmitting || !apiKey.trim()}
+            disabled={isSubmitting || testInProgress || !apiKey.trim()}
           >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Saving..." : "Save API Key"}
+            {(isSubmitting || testInProgress) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? "Saving..." : testInProgress ? "Testing Key..." : "Save API Key"}
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            onClick={() => window.open('https://rapidapi.com/DataCrawler/api/real-time-amazon-data/', '_blank')}
+          >
+            <ExternalLink className="mr-1 h-3 w-3" />
+            Get a RapidAPI Key
           </Button>
         </CardFooter>
       </form>
