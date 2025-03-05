@@ -19,13 +19,14 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const { toast } = useToast();
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {
+    console.log('Location changed in StoreLocationPicker:', newLocation);
     setError(null);
     setLocation(newLocation);
     onLocationSelect(newLocation);
   };
 
   const handleMapError = (errorMessage: string) => {
-    console.error('Map error received:', errorMessage);
+    console.error('Map error in StoreLocationPicker:', errorMessage);
     setError(errorMessage);
     toast({
       variant: "destructive",
@@ -36,7 +37,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   };
 
   const handleRetry = () => {
-    console.log('Retrying map load...');
+    console.log('Retrying map load in StoreLocationPicker...');
     setError(null);
     setForceRender(prev => prev + 1);
   };

@@ -17,6 +17,12 @@ interface MapProps {
 }
 
 const Map = (props: MapProps) => {
+  console.log('Rendering Map component with props:', {
+    hasLocation: !!props.location,
+    isReadonly: props.readonly,
+    markersCount: props.markers?.length
+  });
+  
   return <MapboxMap {...props} />;
 };
 

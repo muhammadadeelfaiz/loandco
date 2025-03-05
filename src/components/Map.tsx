@@ -25,6 +25,7 @@ const MapComponent = (props: MapProps) => {
   const [forceRender, setForceRender] = useState(0);
   
   const handleMapError = (message: string) => {
+    console.error("Map error in MapComponent:", message);
     setError(message);
     if (props.onError) {
       props.onError(message);
@@ -32,6 +33,7 @@ const MapComponent = (props: MapProps) => {
   };
   
   const handleRetry = () => {
+    console.log('Retrying map render in MapComponent...');
     setError(null);
     setForceRender(prev => prev + 1);
   };
