@@ -15,11 +15,13 @@ export class FirecrawlService {
   private static INIT_COOLDOWN = 5000; // 5 seconds cooldown between init attempts
   private static MAX_RETRIES = 3;
   private static retryCount = 0;
+  private static quotaExceeded = false;
 
   static async resetApiKeyCache(): Promise<void> {
     console.log("Resetting RapidAPI key cache");
     this.rapidApiKey = null;
     this.retryCount = 0;
+    this.quotaExceeded = false;
   }
 
   static async initialize(): Promise<boolean> {
@@ -27,6 +29,12 @@ export class FirecrawlService {
     if (this.rapidApiKey) {
       console.log("Using cached RapidAPI key with length:", this.rapidApiKey.length);
       return true;
+    }
+
+    // If we've already determined we've exceeded quota, don't try again
+    if (this.quotaExceeded) {
+      console.log("API quota already marked as exceeded, returning false");
+      return false;
     }
 
     // Don't try to initialize too frequently
@@ -151,6 +159,14 @@ export class FirecrawlService {
 
   static async crawlAmazonProduct(query: string): Promise<CrawlResponse> {
     try {
+      // If quota already exceeded, return early
+      if (this.quotaExceeded) {
+        return {
+          success: false,
+          error: "Monthly quota exceeded for the Amazon product search API. Please try again later."
+        };
+      }
+      
       // Instead of directly setting the rapidApiKey to null, use our new method
       await this.resetApiKeyCache();
       const isInitialized = await this.initialize();
@@ -184,6 +200,20 @@ export class FirecrawlService {
         const errorText = await response.text();
         console.error(`RapidAPI request failed with status: ${response.status}`, errorText);
         
+        // Check for quota exceeded errors (429 status code)
+        if (response.status === 429) {
+          console.warn("Received 429 Too Many Requests from RapidAPI. Full error:", errorText);
+          
+          // Set the quota exceeded flag
+          this.quotaExceeded = true;
+          
+          // This is a special error we want to display differently to users
+          return {
+            success: false,
+            error: "Monthly API quota exceeded. We've temporarily disabled Amazon product search to prevent additional charges. Please try again later."
+          };
+        }
+        
         // Check for common API errors
         if (response.status === 403) {
           console.warn("Received 403 Forbidden from RapidAPI. Full error:", errorText);
@@ -201,6 +231,7 @@ export class FirecrawlService {
               error: "You need to subscribe to the Real Time Amazon Data API on RapidAPI. Please visit RapidAPI and subscribe to the service."
             };
           } else if (errorText.includes("exceeded the MONTHLY quota")) {
+            this.quotaExceeded = true;
             toast({
               title: "API Quota Exceeded",
               description: "You have exceeded your monthly quota for the Amazon Data API.",
@@ -302,6 +333,12 @@ export class FirecrawlService {
   // New method for searching Amazon products for homepage
   static async getAmazonProductsForHomepage(searchTerm: string): Promise<any[]> {
     try {
+      // If quota already exceeded, return early with empty array
+      if (this.quotaExceeded) {
+        console.log("API quota exceeded, returning empty results for homepage");
+        return [];
+      }
+      
       console.log('Fetching Amazon products for homepage with term:', searchTerm);
       const result = await this.crawlAmazonProduct(searchTerm);
       
@@ -315,5 +352,15 @@ export class FirecrawlService {
       console.error('Error fetching Amazon products for homepage:', error);
       return [];
     }
+  }
+  
+  // Helper method to check if quota is exceeded
+  static isQuotaExceeded(): boolean {
+    return this.quotaExceeded;
+  }
+  
+  // Method to reset quota exceeded status (for testing or after time period)
+  static resetQuotaExceeded(): void {
+    this.quotaExceeded = false;
   }
 }

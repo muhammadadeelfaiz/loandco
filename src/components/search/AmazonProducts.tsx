@@ -33,6 +33,8 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
     });
     
     try {
+      // Reset quota exceeded status
+      FirecrawlService.resetQuotaExceeded();
       await FirecrawlService.resetApiKeyCache();
       const initialized = await FirecrawlService.initialize();
       
@@ -70,6 +72,22 @@ export const AmazonProducts = ({ products, isLoading, error }: AmazonProductsPro
   }
 
   if (error) {
+    // Check for quota exceeded error
+    if (error.includes('Monthly API quota exceeded') || error.includes('quota exceeded')) {
+      return (
+        <Alert variant="warning" className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertTitle className="text-amber-800 dark:text-amber-300">Amazon Products Temporarily Unavailable</AlertTitle>
+          <AlertDescription className="space-y-3 text-amber-700 dark:text-amber-400">
+            <p>We've reached our monthly limit for Amazon product data. This feature will be available again next month.</p>
+            <p className="text-sm">
+              You can still browse local stores and eBay products in the meantime.
+            </p>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
     // Special handling for API key errors with more user-friendly messaging
     if (error.includes('RapidAPI credentials not initialized') || error.includes('API key')) {
       return (
