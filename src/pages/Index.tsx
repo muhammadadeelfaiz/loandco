@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
@@ -11,8 +12,10 @@ import RetailerGrid from "@/components/home/RetailerGrid";
 import Map from "@/components/Map";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "@/hooks/useLocation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import Deals from "@/components/home/Deals";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface IndexProps {
   user: User | null;
@@ -39,11 +42,25 @@ const RETAILER_IMAGES = {
 const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
-  const { userLocation, isLoading: isLoadingLocation } = useLocation();
+  const { userLocation, isLoading: isLoadingLocation, error: locationError } = useLocation();
   const { stores } = useStores(userLocation);
+  const { toast } = useToast();
 
   const handleLocationReceived = (coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
+    console.log("Location received:", coords);
+    
+    // Force reload the page to update all location-dependent components
+    window.location.reload();
+  };
+
+  const handleRefreshLocation = () => {
+    // Clear location from localStorage
+    localStorage.removeItem('userLocation');
+    localStorage.removeItem('locationPrompted');
+    
+    // Show the location prompt again
+    window.location.reload();
   };
 
   const handleCategoryClick = (categoryName: string) => {
@@ -81,7 +98,22 @@ const Index = ({ user }: IndexProps) => {
         <BestSellers />
 
         <section className="my-12">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-gray-50">Stores Near You</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Stores Near You</h2>
+            
+            {userLocation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshLocation}
+                className="flex items-center gap-2"
+              >
+                <MapPin className="h-4 w-4" />
+                Update Location
+              </Button>
+            )}
+          </div>
+          
           <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
             <div className="h-[400px] w-full">
               {isLoadingLocation ? (

@@ -14,21 +14,21 @@ serve(async (req) => {
   }
 
   try {
-    // Get the Go Map API key using the correct secret name
-    const goMapApiKey = Deno.env.get('Gomap_api');
+    // Get the Google Maps API key using the correct secret name
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     
     // Log key information (without revealing the actual key)
-    console.log(`Go Map API key found: ${goMapApiKey ? 'Yes' : 'No'}`);
-    if (goMapApiKey) {
-      console.log(`Go Map API key length: ${goMapApiKey.length}`);
+    console.log(`Google Maps API key found: ${googleMapsApiKey ? 'Yes' : 'No'}`);
+    if (googleMapsApiKey) {
+      console.log(`Google Maps API key length: ${googleMapsApiKey.length}`);
     }
     
     // Create a response based on whether the key was found
-    if (!goMapApiKey) {
+    if (!googleMapsApiKey) {
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
-          error: 'Gomap_api not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
+          error: 'GOOGLE_MAPS_API_KEY not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -41,7 +41,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         keyFound: true, 
-        goMapApiKey: goMapApiKey
+        googleMapsApiKey: googleMapsApiKey
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -49,7 +49,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error retrieving Go Map API key:', error);
+    console.error('Error retrieving Google Maps API key:', error);
     
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
