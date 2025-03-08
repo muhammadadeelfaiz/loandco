@@ -78,7 +78,7 @@ declare global {
         top: number;
       }
 
-      class Marker {
+      class Marker extends MVCObject {
         constructor(opts?: MarkerOptions);
         setMap(map: Map | null): void;
         setPosition(latLng: LatLng | LatLngLiteral): void;
@@ -96,7 +96,6 @@ declare global {
         getDraggable(): boolean;
         getVisible(): boolean;
         getZIndex(): number;
-        addListener(eventName: string, handler: Function): MapsEventListener;
       }
 
       interface MarkerOptions {
@@ -171,13 +170,18 @@ declare global {
 
       class InfoWindow {
         constructor(opts?: InfoWindowOptions);
-        open(map?: Map, anchor?: MVCObject): void;
+        open(mapOrOptions?: Map | InfoWindowOpenOptions): void;
         close(): void;
         getContent(): string | Element;
         getPosition(): LatLng;
         setContent(content: string | Element): void;
         setPosition(position: LatLng | LatLngLiteral): void;
         setZIndex(zIndex: number): void;
+      }
+
+      interface InfoWindowOpenOptions {
+        map?: Map;
+        anchor?: MVCObject;
       }
 
       interface InfoWindowOptions {

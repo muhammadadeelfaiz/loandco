@@ -20,6 +20,14 @@ interface GoogleMapProps {
   }>;
 }
 
+// Add missing Google Maps type definitions
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap: () => void;
+  }
+}
+
 const GoogleMap = ({
   location,
   onLocationChange,
@@ -228,7 +236,11 @@ const GoogleMap = ({
           });
           
           mapMarker.addListener('click', () => {
-            infoWindow.open(mapRef.current!, mapMarker);
+            // Fix the error - instead of passing the marker directly, pass null and the marker separately
+            infoWindow.open({
+              map: mapRef.current,
+              anchor: mapMarker
+            });
           });
           
           markerRefs.current[marker.id] = mapMarker;
@@ -264,13 +276,6 @@ const GoogleMap = ({
       }
     };
   }, [apiKey, location, markers, readonly, theme, onLocationChange, onError]);
-
-  // Add map types interface to window object
-  useEffect(() => {
-    if (!window.google) {
-      window.google = { maps: {} } as any;
-    }
-  }, []);
 
   return (
     <div className="w-full h-full relative rounded-lg overflow-hidden">
