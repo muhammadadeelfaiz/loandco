@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import FallbackMap from './map/FallbackMap';
+import GoogleMap from './map/GoogleMap';
 
 interface MapProps {
   location?: { lat: number; lng: number } | null;
@@ -45,8 +45,8 @@ const MapComponent = (props: MapProps) => {
     console.log('Retrying map render in MapComponent...');
     setError(null);
     // Clear localStorage cache when retrying
-    localStorage.removeItem('mapbox_token');
-    localStorage.removeItem('mapbox_token_timestamp');
+    localStorage.removeItem('rapidapi_key');
+    localStorage.removeItem('rapidapi_key_timestamp');
     // Force a complete re-initialization of the map
     setForceRender(prev => prev + 1);
     
@@ -59,8 +59,8 @@ const MapComponent = (props: MapProps) => {
 
   // Clear any local storage on mount to ensure fresh tokens
   useEffect(() => {
-    localStorage.removeItem('mapbox_token');
-    localStorage.removeItem('mapbox_token_timestamp');
+    localStorage.removeItem('rapidapi_key');
+    localStorage.removeItem('rapidapi_key_timestamp');
     setError(null);
   }, []);
 
@@ -93,7 +93,7 @@ const MapComponent = (props: MapProps) => {
   }
 
   return (
-    <FallbackMap 
+    <GoogleMap 
       {...props} 
       key={`map-${forceRender}`} 
       onError={handleMapError} 
