@@ -14,26 +14,21 @@ serve(async (req) => {
   }
 
   try {
-    // First try to get the key from the environment variable
-    let googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
-    
-    // If not found, try the Mapapi_rapid secret
-    if (!googleMapsApiKey) {
-      googleMapsApiKey = Deno.env.get('Mapapi_rapid');
-    }
+    // Get the Mapapi_rapid key which will now be used for Go Map
+    const goMapApiKey = Deno.env.get('Mapapi_rapid');
     
     // Log key information (without revealing the actual key)
-    console.log(`Google Maps API key found: ${googleMapsApiKey ? 'Yes' : 'No'}`);
-    if (googleMapsApiKey) {
-      console.log(`Google Maps API key length: ${googleMapsApiKey.length}`);
+    console.log(`Go Map API key found: ${goMapApiKey ? 'Yes' : 'No'}`);
+    if (goMapApiKey) {
+      console.log(`Go Map API key length: ${goMapApiKey.length}`);
     }
     
     // Create a response based on whether the key was found
-    if (!googleMapsApiKey) {
+    if (!goMapApiKey) {
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
-          error: 'Neither GOOGLE_MAPS_API_KEY nor Mapapi_rapid found in environment variables. Please set one of them in the Supabase Edge Function Secrets.' 
+          error: 'Mapapi_rapid not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -46,7 +41,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         keyFound: true, 
-        googleMapsApiKey
+        goMapApiKey: goMapApiKey
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -54,7 +49,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error retrieving Google Maps API key:', error);
+    console.error('Error retrieving Go Map API key:', error);
     
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
