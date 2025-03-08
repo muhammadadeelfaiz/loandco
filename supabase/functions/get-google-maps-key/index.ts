@@ -14,8 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    // Get the Mapapi_rapid key which will now be used for Go Map
-    const goMapApiKey = Deno.env.get('Mapapi_rapid');
+    // Get the Go Map API key using the correct secret name
+    const goMapApiKey = Deno.env.get('Gomap_api');
     
     // Log key information (without revealing the actual key)
     console.log(`Go Map API key found: ${goMapApiKey ? 'Yes' : 'No'}`);
@@ -28,7 +28,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
-          error: 'Mapapi_rapid not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
+          error: 'Gomap_api not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
