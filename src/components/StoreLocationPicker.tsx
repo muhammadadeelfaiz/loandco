@@ -20,8 +20,8 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
 
   // Reset localStorage on mount to ensure fresh tokens
   useEffect(() => {
-    localStorage.removeItem('rapidapi_key');
-    localStorage.removeItem('rapidapi_key_timestamp');
+    localStorage.removeItem('google_maps_api_key');
+    localStorage.removeItem('google_maps_api_key_timestamp');
   }, []);
 
   const handleLocationChange = (newLocation: { lat: number; lng: number }) => {

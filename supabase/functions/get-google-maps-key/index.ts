@@ -14,21 +14,21 @@ serve(async (req) => {
   }
 
   try {
-    // Get the RapidAPI key from environment variables
-    const rapidApiKey = Deno.env.get('RAPIDAPI_KEY');
+    // Get the Google Maps API key from environment variables
+    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
     
     // Log key information (without revealing the actual key)
-    console.log(`RapidAPI key found: ${rapidApiKey ? 'Yes' : 'No'}`);
-    if (rapidApiKey) {
-      console.log(`RapidAPI key length: ${rapidApiKey.length}`);
+    console.log(`Google Maps API key found: ${googleMapsApiKey ? 'Yes' : 'No'}`);
+    if (googleMapsApiKey) {
+      console.log(`Google Maps API key length: ${googleMapsApiKey.length}`);
     }
     
     // Create a response based on whether the key was found
-    if (!rapidApiKey) {
+    if (!googleMapsApiKey) {
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
-          error: 'RAPIDAPI_KEY not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
+          error: 'GOOGLE_MAPS_API_KEY not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -41,7 +41,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         keyFound: true, 
-        rapidApiKey
+        googleMapsApiKey
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -49,7 +49,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error retrieving RapidAPI key:', error);
+    console.error('Error retrieving Google Maps API key:', error);
     
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),

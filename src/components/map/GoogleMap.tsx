@@ -46,44 +46,44 @@ const GoogleMap = ({
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-  // Fetch the RapidAPI key
+  // Fetch the Google Maps API key
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
         // Try to get from localStorage first
-        const cachedKey = localStorage.getItem('rapidapi_key');
-        const cachedTimestamp = localStorage.getItem('rapidapi_key_timestamp');
+        const cachedKey = localStorage.getItem('google_maps_api_key');
+        const cachedTimestamp = localStorage.getItem('google_maps_api_key_timestamp');
         
         // Check if we have a valid cached key (less than 1 hour old)
         if (cachedKey && cachedTimestamp) {
           const timestamp = parseInt(cachedTimestamp, 10);
           const now = Date.now();
           if (now - timestamp < 60 * 60 * 1000) { // 1 hour
-            console.log('Using cached RapidAPI key');
+            console.log('Using cached Google Maps API key');
             setApiKey(cachedKey);
             return;
           }
         }
 
         // Fetch from Edge Function if no valid cache
-        console.log('Fetching RapidAPI key from Edge Function');
+        console.log('Fetching Google Maps API key from Edge Function');
         const { data, error } = await supabase.functions.invoke('get-google-maps-key');
         
         if (error) {
           throw new Error(`Failed to invoke edge function: ${error.message}`);
         }
         
-        if (!data.keyFound || !data.rapidApiKey) {
-          throw new Error('RapidAPI key not found');
+        if (!data.keyFound || !data.googleMapsApiKey) {
+          throw new Error('Google Maps API key not found');
         }
         
         // Cache the key in localStorage
-        localStorage.setItem('rapidapi_key', data.rapidApiKey);
-        localStorage.setItem('rapidapi_key_timestamp', Date.now().toString());
+        localStorage.setItem('google_maps_api_key', data.googleMapsApiKey);
+        localStorage.setItem('google_maps_api_key_timestamp', Date.now().toString());
         
-        setApiKey(data.rapidApiKey);
+        setApiKey(data.googleMapsApiKey);
       } catch (error) {
-        console.error('Error fetching RapidAPI key:', error);
+        console.error('Error fetching Google Maps API key:', error);
         if (onError) {
           onError('Failed to load map API key. Please try again later.');
         }
