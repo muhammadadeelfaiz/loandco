@@ -14,8 +14,13 @@ serve(async (req) => {
   }
 
   try {
-    // Get the Google Maps API key from environment variables
-    const googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    // First try to get the key from the environment variable
+    let googleMapsApiKey = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    
+    // If not found, try the Mapapi_rapid secret
+    if (!googleMapsApiKey) {
+      googleMapsApiKey = Deno.env.get('Mapapi_rapid');
+    }
     
     // Log key information (without revealing the actual key)
     console.log(`Google Maps API key found: ${googleMapsApiKey ? 'Yes' : 'No'}`);
@@ -28,7 +33,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           keyFound: false, 
-          error: 'GOOGLE_MAPS_API_KEY not found in environment variables. Please set it in the Supabase Edge Function Secrets.' 
+          error: 'Neither GOOGLE_MAPS_API_KEY nor Mapapi_rapid found in environment variables. Please set one of them in the Supabase Edge Function Secrets.' 
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
