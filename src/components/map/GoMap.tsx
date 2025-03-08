@@ -168,7 +168,10 @@ const GoMap = ({
           
           userMarker.addListener("click", () => {
             if (infoWindowRef.current) infoWindowRef.current.close();
-            userInfoWindow.open(map, userMarker);
+            userInfoWindow.open({
+              map,
+              anchor: userMarker
+            });
             infoWindowRef.current = userInfoWindow;
           });
         }
@@ -213,7 +216,7 @@ const GoMap = ({
         
         // Add click listener for location picking
         if (!readonly) {
-          google.maps.event.addListener(map, "click", (e: google.maps.MapMouseEvent) => {
+          google.maps.event.addListener(map, "click", (e: any) => {
             if (!e.latLng) return;
             
             const newLocation = {

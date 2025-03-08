@@ -7,7 +7,7 @@ declare global {
   
   namespace google {
     namespace maps {
-      // Add the missing MapMouseEvent interface
+      // This provides an explicit type for the click event handler
       interface MapMouseEvent {
         latLng?: google.maps.LatLng;
         stop(): void;
