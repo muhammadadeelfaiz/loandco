@@ -203,14 +203,17 @@ const GoMap = ({
           
           storeMarker.addListener("click", () => {
             if (infoWindowRef.current) infoWindowRef.current.close();
-            infoWindow.open(map, storeMarker);
+            infoWindow.open({
+              map,
+              anchor: storeMarker
+            });
             infoWindowRef.current = infoWindow;
           });
         });
         
         // Add click listener for location picking
         if (!readonly) {
-          map.addListener("click", (e: google.maps.MapMouseEvent) => {
+          google.maps.event.addListener(map, "click", (e: google.maps.MapMouseEvent) => {
             if (!e.latLng) return;
             
             const newLocation = {
