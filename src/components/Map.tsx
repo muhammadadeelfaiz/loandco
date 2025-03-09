@@ -72,6 +72,9 @@ const MapComponent = (props: MapProps) => {
           <AlertTitle>Map Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+        <p className="text-sm text-gray-500 dark:text-gray-400 my-2 text-center">
+          Check that you have the GOOGLEMAP_API_KEY secret properly configured in your Supabase project.
+        </p>
         <Button 
           onClick={handleRetry} 
           variant="outline" 

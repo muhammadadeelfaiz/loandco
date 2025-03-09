@@ -36,6 +36,7 @@ const GoogleMapComponent = ({
   const markerRefs = useRef<{ [id: string]: google.maps.Marker }>({});
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const [mapLoadAttempts, setMapLoadAttempts] = useState(0);
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
   const initialCenter = location || defaultCenter;
@@ -44,44 +45,64 @@ const GoogleMapComponent = ({
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
+        console.log('Fetching Google Maps API key from Edge Function...');
+        setIsLoading(true);
+        
         const { data, error } = await supabase.functions.invoke('get-google-maps-key');
         
         if (error) {
-          console.error('Error fetching Google Maps API key:', error);
-          if (onError) onError('Failed to load map configuration');
+          console.error('Error invoking Edge Function:', error);
+          if (onError) onError(`Failed to load map configuration: ${error.message}`);
           return;
         }
         
-        if (data && data.googleMapsApiKey) {
+        console.log('Edge Function response:', data);
+        
+        if (data && data.success && data.googleMapsApiKey) {
+          console.log('Successfully retrieved Google Maps API key, length:', data.googleMapsApiKey.length);
           setApiKey(data.googleMapsApiKey);
         } else {
-          if (onError) onError('Google Maps API key not found');
+          const errorMessage = data?.error || 'Google Maps API key not found';
+          console.error('Failed to get Google Maps API key:', errorMessage);
+          if (onError) onError(`Failed to load map configuration: ${errorMessage}`);
         }
       } catch (err) {
         console.error('Exception fetching Google Maps API key:', err);
-        if (onError) onError('Failed to load map configuration');
+        if (onError) onError('Failed to load map configuration. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchApiKey();
-  }, [onError]);
+  }, [onError, mapLoadAttempts]);
   
   // Function to load Google Maps API script
   const loadGoogleMapsScript = useCallback((key: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (window.google && window.google.maps) {
+        console.log('Google Maps API already loaded');
         resolve();
         return;
       }
 
+      console.log('Loading Google Maps script...');
+      
       // Create script element
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
       script.async = true;
       script.defer = true;
       
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Google Maps script'));
+      script.onload = () => {
+        console.log('Google Maps script loaded successfully');
+        resolve();
+      };
+      
+      script.onerror = (e) => {
+        console.error('Failed to load Google Maps script:', e);
+        reject(new Error('Failed to load Google Maps script'));
+      };
       
       document.head.appendChild(script);
     });
@@ -95,8 +116,14 @@ const GoogleMapComponent = ({
       setIsLoading(true);
       
       try {
+        console.log('Initializing Google Maps with API key...');
         await loadGoogleMapsScript(apiKey);
         
+        if (!window.google || !window.google.maps) {
+          throw new Error('Google Maps failed to initialize properly');
+        }
+        
+        console.log('Creating map instance...');
         // Create map instance
         const mapOptions: google.maps.MapOptions = {
           center: initialCenter,
@@ -115,11 +142,13 @@ const GoogleMapComponent = ({
         };
         
         if (mapContainer.current) {
+          console.log('Creating map in container');
           const map = new google.maps.Map(mapContainer.current, mapOptions);
           mapRef.current = map;
           
           // Add user marker if location is provided
           if (location) {
+            console.log('Adding user marker at', location);
             const userMarker = new google.maps.Marker({
               position: location,
               map: map,
@@ -152,6 +181,7 @@ const GoogleMapComponent = ({
           
           // Add store markers
           markers.forEach((marker) => {
+            console.log('Adding marker for', marker.title);
             const storeMarker = new google.maps.Marker({
               position: { lat: marker.lat, lng: marker.lng },
               map: map,
@@ -190,6 +220,7 @@ const GoogleMapComponent = ({
           
           // Add click listener for location picking
           if (!readonly) {
+            console.log('Adding click listener for location picking');
             google.maps.event.addListener(map, "click", (e: google.maps.MapMouseEvent) => {
               if (!e.latLng) return;
               
@@ -225,6 +256,13 @@ const GoogleMapComponent = ({
               }
             });
           }
+          
+          console.log('Map initialization completed successfully');
+          toast({
+            title: "Map loaded",
+            description: "Google Maps has been loaded successfully",
+            duration: 3000,
+          });
         }
         
         setIsLoading(false);
@@ -253,7 +291,13 @@ const GoogleMapComponent = ({
       markerRefs.current = {};
       userMarkerRef.current = null;
     };
-  }, [initialCenter, location, loadGoogleMapsScript, markers, onError, onLocationChange, readonly, theme, apiKey]);
+  }, [initialCenter, location, loadGoogleMapsScript, markers, onError, onLocationChange, readonly, theme, apiKey, toast]);
+
+  // Retry loading the map
+  const retryLoadMap = () => {
+    console.log('Retrying map load...');
+    setMapLoadAttempts(prev => prev + 1);
+  };
 
   return (
     <div className="w-full h-full relative rounded-lg overflow-hidden">
@@ -261,6 +305,17 @@ const GoogleMapComponent = ({
       {isLoading && (
         <div className="absolute inset-0 bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      )}
+      {!isLoading && !apiKey && (
+        <div className="absolute inset-0 bg-gray-100/80 dark:bg-gray-800/80 flex flex-col items-center justify-center p-4">
+          <p className="text-red-500 mb-4 text-center">Failed to load Google Maps API key</p>
+          <button 
+            onClick={retryLoadMap}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
     </div>
