@@ -26,7 +26,7 @@ serve(async (req) => {
     
     // Get the Google Maps API key from Supabase Secrets
     const { data, error } = await supabaseAdmin.rpc('get_secrets', {
-      secret_names: ['GOOGLEMAP_APi']
+      secret_names: ['GOOGLEMAP_API_KEY']
     });
     
     if (error) {
@@ -34,7 +34,7 @@ serve(async (req) => {
       throw new Error('Failed to retrieve Google Maps API key');
     }
     
-    if (!data || !data.GOOGLEMAP_APi) {
+    if (!data || !data.GOOGLEMAP_API_KEY) {
       console.error('Google Maps API key not found in secrets');
       throw new Error('Google Maps API key not configured');
     }
@@ -43,7 +43,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        googleMapsApiKey: data.GOOGLEMAP_APi
+        googleMapsApiKey: data.GOOGLEMAP_API_KEY
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
