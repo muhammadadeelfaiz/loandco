@@ -52,8 +52,11 @@ const GoMap = ({
           return;
         }
         
-        // Use the saved GOOGLEMAP_APi key
-        setApiKey('LOADED'); // We don't need to store the actual key, just indicate it's loaded
+        if (data && data.googleMapsApiKey) {
+          setApiKey(data.googleMapsApiKey);
+        } else {
+          if (onError) onError('Google Maps API key not found');
+        }
       } catch (err) {
         console.error('Exception fetching Google Maps API key:', err);
         if (onError) onError('Failed to load map configuration');
@@ -64,7 +67,7 @@ const GoMap = ({
   }, [onError]);
   
   // Function to load Google Maps API script
-  const loadGoogleMapsScript = useCallback((): Promise<void> => {
+  const loadGoogleMapsScript = useCallback((key: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (window.google && window.google.maps) {
         resolve();
@@ -73,7 +76,7 @@ const GoMap = ({
 
       // Create script element
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLEMAP_APi || ''}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
       script.async = true;
       script.defer = true;
       
@@ -92,10 +95,10 @@ const GoMap = ({
       setIsLoading(true);
       
       try {
-        await loadGoogleMapsScript();
+        await loadGoogleMapsScript(apiKey);
         
         // Create map instance
-        const mapOptions = {
+        const mapOptions: google.maps.MapOptions = {
           center: initialCenter,
           zoom: 14,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -182,7 +185,7 @@ const GoMap = ({
           
           // Add click listener for location picking
           if (!readonly) {
-            map.addListener("click", (e: google.maps.MapMouseEvent) => {
+            google.maps.event.addListener(map, "click", (e: google.maps.MapMouseEvent) => {
               if (!e.latLng) return;
               
               const newLocation = {

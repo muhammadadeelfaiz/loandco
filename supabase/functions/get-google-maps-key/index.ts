@@ -24,7 +24,7 @@ serve(async (req) => {
     
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     
-    // Get the Google Maps API key from Supabase Secrets (using your saved GOOGLEMAP_APi secret)
+    // Get the Google Maps API key from Supabase Secrets
     const { data, error } = await supabaseAdmin.rpc('get_secrets', {
       secret_names: ['GOOGLEMAP_APi']
     });

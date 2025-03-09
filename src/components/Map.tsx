@@ -44,9 +44,9 @@ const MapComponent = (props: MapProps) => {
   const handleRetry = () => {
     console.log('Retrying map render in MapComponent...');
     setError(null);
-    // Clear localStorage cache when retrying
-    localStorage.removeItem('go_map_api_key');
-    localStorage.removeItem('go_map_api_key_timestamp');
+    // Clear any cached data
+    localStorage.removeItem('google_maps_api_key');
+    localStorage.removeItem('google_maps_api_key_timestamp');
     // Force a complete re-initialization of the map
     setForceRender(prev => prev + 1);
     
@@ -59,8 +59,8 @@ const MapComponent = (props: MapProps) => {
 
   // Clear any local storage on mount to ensure fresh tokens
   useEffect(() => {
-    localStorage.removeItem('go_map_api_key');
-    localStorage.removeItem('go_map_api_key_timestamp');
+    localStorage.removeItem('google_maps_api_key');
+    localStorage.removeItem('google_maps_api_key_timestamp');
     setError(null);
   }, []);
 
