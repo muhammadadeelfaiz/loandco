@@ -29,6 +29,7 @@ const GoMap = ({
 }: GoMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const { theme } = useTheme();
   const { toast } = useToast();
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -39,6 +40,29 @@ const GoMap = ({
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
   const initialCenter = location || defaultCenter;
   
+  // Fetch Google Maps API key from Supabase Edge Function
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-google-maps-key');
+        
+        if (error) {
+          console.error('Error fetching Google Maps API key:', error);
+          if (onError) onError('Failed to load map configuration');
+          return;
+        }
+        
+        // Use the saved GOOGLEMAP_APi key
+        setApiKey('LOADED'); // We don't need to store the actual key, just indicate it's loaded
+      } catch (err) {
+        console.error('Exception fetching Google Maps API key:', err);
+        if (onError) onError('Failed to load map configuration');
+      }
+    };
+
+    fetchApiKey();
+  }, [onError]);
+  
   // Function to load Google Maps API script
   const loadGoogleMapsScript = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -47,12 +71,9 @@ const GoMap = ({
         return;
       }
 
-      // Direct Google Maps API key
-      const apiKey = "your_google_maps_api_key";
-
       // Create script element
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLEMAP_APi || ''}&libraries=places`;
       script.async = true;
       script.defer = true;
       
@@ -63,9 +84,9 @@ const GoMap = ({
     });
   }, []);
 
-  // Initialize map once API key is available
+  // Initialize map once API key is loaded
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !apiKey) return;
 
     const initMap = async () => {
       setIsLoading(true);
@@ -74,7 +95,7 @@ const GoMap = ({
         await loadGoogleMapsScript();
         
         // Create map instance
-        const mapOptions: google.maps.MapOptions = {
+        const mapOptions = {
           center: initialCenter,
           zoom: 14,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -91,97 +112,14 @@ const GoMap = ({
           ] : []
         };
         
-        const map = new google.maps.Map(mapContainer.current, mapOptions);
-        mapRef.current = map;
-        
-        // Add user marker if location is provided
-        if (location) {
-          const userMarker = new google.maps.Marker({
-            position: location,
-            map: map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: "#4285F4",
-              fillOpacity: 1,
-              strokeColor: "white",
-              strokeWeight: 2,
-            },
-            title: "Your Location"
-          });
-          userMarkerRef.current = userMarker;
+        if (mapContainer.current) {
+          const map = new google.maps.Map(mapContainer.current, mapOptions);
+          mapRef.current = map;
           
-          // Add info window for user location
-          const userInfoWindow = new google.maps.InfoWindow({
-            content: `<div style="color: black;">Your Location</div>`
-          });
-          
-          userMarker.addListener("click", () => {
-            if (infoWindowRef.current) infoWindowRef.current.close();
-            userInfoWindow.open({
-              map,
-              anchor: userMarker
-            });
-            infoWindowRef.current = userInfoWindow;
-          });
-        }
-        
-        // Add store markers
-        markers.forEach((marker) => {
-          const storeMarker = new google.maps.Marker({
-            position: { lat: marker.lat, lng: marker.lng },
-            map: map,
-            title: marker.title,
-            icon: {
-              path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-              scale: 5,
-              fillColor: "#DB4437",
-              fillOpacity: 1,
-              strokeColor: "white",
-              strokeWeight: 2,
-            }
-          });
-          
-          markerRefs.current[marker.id] = storeMarker;
-          
-          // Create info window content
-          const content = `
-            <div style="padding: 8px; max-width: 200px; color: black;">
-              <h3 style="margin: 0 0 8px 0; font-size: 16px;">${marker.title}</h3>
-              ${marker.description ? `<p style="margin: 0; font-size: 14px;">${marker.description}</p>` : ''}
-            </div>
-          `;
-          
-          const infoWindow = new google.maps.InfoWindow({ content });
-          
-          storeMarker.addListener("click", () => {
-            if (infoWindowRef.current) infoWindowRef.current.close();
-            infoWindow.open({
-              map,
-              anchor: storeMarker
-            });
-            infoWindowRef.current = infoWindow;
-          });
-        });
-        
-        // Add click listener for location picking
-        if (!readonly) {
-          google.maps.event.addListener(map, "click", (e: any) => {
-            if (!e.latLng) return;
-            
-            const newLocation = {
-              lat: e.latLng.lat(),
-              lng: e.latLng.lng()
-            };
-            
-            // Remove previous marker if exists
-            if (userMarkerRef.current) {
-              userMarkerRef.current.setMap(null);
-            }
-            
-            // Add new marker
+          // Add user marker if location is provided
+          if (location) {
             const userMarker = new google.maps.Marker({
-              position: newLocation,
+              position: location,
               map: map,
               icon: {
                 path: google.maps.SymbolPath.CIRCLE,
@@ -191,15 +129,94 @@ const GoMap = ({
                 strokeColor: "white",
                 strokeWeight: 2,
               },
-              title: "Selected Location"
+              title: "Your Location"
             });
-            
             userMarkerRef.current = userMarker;
             
-            if (onLocationChange) {
-              onLocationChange(newLocation);
-            }
+            // Add info window for user location
+            const userInfoWindow = new google.maps.InfoWindow({
+              content: `<div style="color: black;">Your Location</div>`
+            });
+            
+            userMarker.addListener("click", () => {
+              if (infoWindowRef.current) infoWindowRef.current.close();
+              userInfoWindow.open(map, userMarker);
+              infoWindowRef.current = userInfoWindow;
+            });
+          }
+          
+          // Add store markers
+          markers.forEach((marker) => {
+            const storeMarker = new google.maps.Marker({
+              position: { lat: marker.lat, lng: marker.lng },
+              map: map,
+              title: marker.title,
+              icon: {
+                path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                scale: 5,
+                fillColor: "#DB4437",
+                fillOpacity: 1,
+                strokeColor: "white",
+                strokeWeight: 2,
+              }
+            });
+            
+            markerRefs.current[marker.id] = storeMarker;
+            
+            // Create info window content
+            const content = `
+              <div style="padding: 8px; max-width: 200px; color: black;">
+                <h3 style="margin: 0 0 8px 0; font-size: 16px;">${marker.title}</h3>
+                ${marker.description ? `<p style="margin: 0; font-size: 14px;">${marker.description}</p>` : ''}
+              </div>
+            `;
+            
+            const infoWindow = new google.maps.InfoWindow({ content });
+            
+            storeMarker.addListener("click", () => {
+              if (infoWindowRef.current) infoWindowRef.current.close();
+              infoWindow.open(map, storeMarker);
+              infoWindowRef.current = infoWindow;
+            });
           });
+          
+          // Add click listener for location picking
+          if (!readonly) {
+            map.addListener("click", (e: google.maps.MapMouseEvent) => {
+              if (!e.latLng) return;
+              
+              const newLocation = {
+                lat: e.latLng.lat(),
+                lng: e.latLng.lng()
+              };
+              
+              // Remove previous marker if exists
+              if (userMarkerRef.current) {
+                userMarkerRef.current.setMap(null);
+              }
+              
+              // Add new marker
+              const userMarker = new google.maps.Marker({
+                position: newLocation,
+                map: map,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: "#4285F4",
+                  fillOpacity: 1,
+                  strokeColor: "white",
+                  strokeWeight: 2,
+                },
+                title: "Selected Location"
+              });
+              
+              userMarkerRef.current = userMarker;
+              
+              if (onLocationChange) {
+                onLocationChange(newLocation);
+              }
+            });
+          }
         }
         
         setIsLoading(false);
@@ -228,7 +245,7 @@ const GoMap = ({
       markerRefs.current = {};
       userMarkerRef.current = null;
     };
-  }, [initialCenter, location, loadGoogleMapsScript, markers, onError, onLocationChange, readonly, theme]);
+  }, [initialCenter, location, loadGoogleMapsScript, markers, onError, onLocationChange, readonly, theme, apiKey]);
 
   return (
     <div className="w-full h-full relative rounded-lg overflow-hidden">
