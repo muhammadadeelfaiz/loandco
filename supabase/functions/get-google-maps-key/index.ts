@@ -15,16 +15,21 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting get-google-maps-key edge function');
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials');
       throw new Error('Missing Supabase credentials');
     }
     
+    console.log('Creating Supabase admin client');
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
     
     // Get the Google Maps API key from Supabase Secrets
+    console.log('Fetching Google Maps API key from Supabase secrets');
     const { data, error } = await supabaseAdmin.rpc('get_secrets', {
       secret_names: ['GOOGLEMAP_API_KEY']
     });
@@ -34,12 +39,18 @@ serve(async (req) => {
       throw new Error('Failed to retrieve Google Maps API key');
     }
     
+    console.log('Secret data received:', JSON.stringify({
+      receivedKeys: data ? Object.keys(data) : [],
+      hasGoogleMapKey: data && data.GOOGLEMAP_API_KEY ? true : false
+    }));
+    
     if (!data || !data.GOOGLEMAP_API_KEY) {
       console.error('Google Maps API key not found in secrets');
       throw new Error('Google Maps API key not configured');
     }
     
     // Return the API key
+    console.log('Returning Google Maps API key successfully');
     return new Response(
       JSON.stringify({ 
         success: true,
