@@ -4,7 +4,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import GoMap from './map/GoMap';
+import GoogleMapComponent from './map/GoogleMapComponent';
 
 interface MapProps {
   location?: { lat: number; lng: number } | null;
@@ -93,7 +93,7 @@ const MapComponent = (props: MapProps) => {
   }
 
   return (
-    <GoMap 
+    <GoogleMapComponent 
       {...props} 
       key={`map-${forceRender}`} 
       onError={handleMapError} 

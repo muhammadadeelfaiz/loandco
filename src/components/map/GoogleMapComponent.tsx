@@ -5,7 +5,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
-interface GoMapProps {
+interface GoogleMapComponentProps {
   location?: { lat: number; lng: number } | null;
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
@@ -20,13 +20,13 @@ interface GoMapProps {
   }>;
 }
 
-const GoMap = ({
+const GoogleMapComponent = ({
   location,
   onLocationChange,
   readonly = false,
   markers = [],
   onError
-}: GoMapProps) => {
+}: GoogleMapComponentProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -101,10 +101,9 @@ const GoMap = ({
         const mapOptions: google.maps.MapOptions = {
           center: initialCenter,
           zoom: 14,
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeControl: false,
           fullscreenControl: false,
           streetViewControl: false,
-          mapTypeControl: false,
           styles: theme === 'dark' ? [
             { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
             { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
@@ -185,7 +184,7 @@ const GoMap = ({
           
           // Add click listener for location picking
           if (!readonly) {
-            google.maps.event.addListener(map, "click", (e: google.maps.MapMouseEvent) => {
+            map.addListener("click", (e: google.maps.MapMouseEvent) => {
               if (!e.latLng) return;
               
               const newLocation = {
@@ -262,4 +261,4 @@ const GoMap = ({
   );
 };
 
-export default GoMap;
+export default GoogleMapComponent;
