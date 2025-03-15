@@ -16,6 +16,7 @@ interface MapboxMapProps {
   readonly?: boolean;
   searchRadius?: number;
   onError?: (message: string) => void;
+  onMarkerClick?: (markerId: string) => void;
   initComplete?: MutableRefObject<boolean>;
   markers?: Array<{
     id: string;
@@ -40,6 +41,7 @@ const MapboxMap = memo(({
   searchRadius = 5,
   markers = [],
   onError,
+  onMarkerClick,
   initComplete
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -52,7 +54,7 @@ const MapboxMap = memo(({
   const { theme } = useTheme();
   const { isLoading, initializeMap, retryFetchToken, tokenError, tokenSource } = useMapInitialization(mapContainer, theme);
   
-  const markersInstance = useMapMarkers();
+  const { updateMarkers } = useMapMarkers(onMarkerClick);
   const searchRadiusInstance = useSearchRadius();
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
@@ -126,7 +128,7 @@ const MapboxMap = memo(({
             
             // After map is loaded, update markers and search radius
             if (markers.length > 0) {
-              markersInstance.updateMarkers(newMap, markers);
+              updateMarkers(newMap, markers);
             }
             
             if (location) {
@@ -205,9 +207,16 @@ const MapboxMap = memo(({
     defaultCenter, 
     markers,
     searchRadius,
-    markersInstance,
+    updateMarkers,
     searchRadiusInstance
   ]);
+
+  // Update markers when they change
+  useEffect(() => {
+    if (map.current && isMapInitialized && markers.length > 0) {
+      updateMarkers(map.current, markers);
+    }
+  }, [markers, isMapInitialized, updateMarkers]);
 
   // Apply theme changes
   useEffect(() => {

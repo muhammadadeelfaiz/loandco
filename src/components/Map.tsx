@@ -19,6 +19,7 @@ interface MapProps {
     title: string;
     description?: string;
   }>;
+  onMarkerClick?: (markerId: string) => void;
 }
 
 const Map = memo((props: MapProps) => {
@@ -98,6 +99,7 @@ const Map = memo((props: MapProps) => {
       searchRadius={props.searchRadius}
       markers={props.markers} 
       onError={handleMapError}
+      onMarkerClick={props.onMarkerClick}
       initComplete={initCompleteRef}
     />
   );

@@ -16,7 +16,6 @@ import { Loader2, MapPin } from "lucide-react";
 import Deals from "@/components/home/Deals";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import StoreList from "@/components/home/StoreList";
 
 interface IndexProps {
   user: User | null;
@@ -69,6 +68,10 @@ const Index = ({ user }: IndexProps) => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
   }, [navigate]);
 
+  const handleStoreMarkerClick = useCallback((storeId: string) => {
+    navigate(`/store/${storeId}`);
+  }, [navigate]);
+
   // Handle map errors
   const handleMapError = useCallback((errorMessage: string) => {
     setMapError(errorMessage);
@@ -86,7 +89,7 @@ const Index = ({ user }: IndexProps) => {
     lat: store.latitude,
     lng: store.longitude,
     title: store.name,
-    description: store.description || undefined
+    description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
   })), [stores]);
 
   // Memoize the Map component with its props to prevent re-rendering
@@ -107,9 +110,10 @@ const Index = ({ user }: IndexProps) => {
         searchRadius={5}
         readonly={true}
         onError={handleMapError}
+        onMarkerClick={handleStoreMarkerClick}
       />
     );
-  }, [isLoadingLocation, userLocation, storeMarkers, mapKey, handleMapError]);
+  }, [isLoadingLocation, userLocation, storeMarkers, mapKey, handleMapError, handleStoreMarkerClick]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">
@@ -154,9 +158,7 @@ const Index = ({ user }: IndexProps) => {
             </div>
           </Card>
           
-          {!mapError && !isLoadingLocation && stores.length > 0 && (
-            <StoreList stores={stores} />
-          )}
+          {/* StoreList component removed, markers now on map instead */}
         </section>
         
         <Deals />
