@@ -14,6 +14,7 @@ const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnY
 async function verifyMapboxToken(token: string): Promise<{isValid: boolean; error?: string}> {
   try {
     console.log('Verifying Mapbox token validity...');
+    // Use a more reliable endpoint for token validation
     const response = await fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=${token}`, {
       method: 'HEAD',
     });
@@ -50,8 +51,11 @@ serve(async (req) => {
     // Get request information
     const url = new URL(req.url);
     const originDomain = req.headers.get('origin') || 'unknown';
+    const referer = req.headers.get('referer') || 'unknown';
+    
     console.log(`Map service function called from origin: ${originDomain}`);
     console.log(`Request URL: ${url.toString()}`);
+    console.log(`Referer: ${referer}`);
     
     let token = null;
     let tokenSource = 'fallback';
@@ -122,8 +126,21 @@ serve(async (req) => {
         console.log('Using valid fallback Mapbox token');
       } else {
         console.error(`Even fallback token is invalid: ${verificationResult.error}`);
-        token = FALLBACK_TOKEN;
-        tokenSource = 'invalid-fallback';
+        return new Response(
+          JSON.stringify({ 
+            error: "All available tokens are invalid. Please check Mapbox service status.",
+            source: "validation-error",
+            requestInfo: {
+              origin: originDomain,
+              referer: referer,
+              timestamp: new Date().toISOString()
+            }
+          }), 
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500
+          }
+        );
       }
     }
 
@@ -137,8 +154,10 @@ serve(async (req) => {
         error: verificationResult.error,
         requestInfo: {
           origin: originDomain,
+          referer: referer,
           url: url.toString(),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          userAgent: req.headers.get('user-agent') || 'unknown'
         }
       }), 
       { 
