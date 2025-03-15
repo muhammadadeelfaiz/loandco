@@ -53,11 +53,13 @@ const ChatSidebar = ({ userId, activeConversationId }: ChatSidebarProps) => {
             // Handle different possible data structures
             if (retailerData) {
               if (typeof retailerData === 'object' && !Array.isArray(retailerData)) {
-                // Direct object
-                retailerInfo = { name: retailerData.name || "Unknown Retailer" };
+                // Direct object - ensure we're properly typing this
+                const retailerObj = retailerData as Record<string, any>;
+                retailerInfo = { name: retailerObj.name || "Unknown Retailer" };
               } else if (Array.isArray(retailerData) && retailerData.length > 0) {
-                // Array of objects (first item)
-                retailerInfo = { name: retailerData[0].name || "Unknown Retailer" };
+                // Array of objects (first item) - ensure we're properly typing this
+                const firstRetailer = retailerData[0] as Record<string, any>;
+                retailerInfo = { name: firstRetailer.name || "Unknown Retailer" };
               }
             }
             

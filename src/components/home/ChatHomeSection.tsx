@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -83,8 +82,17 @@ const ChatHomeSection = () => {
           const retailerData = item.retailer;
           let retailerName = "Unknown Retailer";
           
-          if (retailerData && typeof retailerData === 'object') {
-            retailerName = retailerData.name || "Unknown Retailer";
+          if (retailerData) {
+            // Properly handle the retailer data with type assertion
+            if (typeof retailerData === 'object' && !Array.isArray(retailerData)) {
+              // Direct object
+              const retailerObj = retailerData as Record<string, any>;
+              retailerName = retailerObj.name || "Unknown Retailer";
+            } else if (Array.isArray(retailerData) && retailerData.length > 0) {
+              // Array of objects (first item)
+              const firstRetailer = retailerData[0] as Record<string, any>;
+              retailerName = firstRetailer.name || "Unknown Retailer";
+            }
           }
           
           // Get the last message
@@ -123,6 +131,7 @@ const ChatHomeSection = () => {
     fetchConversations();
   }, [user?.id, toast]);
 
+  // Filter conversations based on search query and active tab
   const filteredConversations = conversations.filter(conv => {
     // First apply category filter
     if (activeTab === "unread" && conv.unread_count === 0) return false;
@@ -166,7 +175,7 @@ const ChatHomeSection = () => {
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <div>Messages</div>
-          <NewChatButton userId={user.id || ''} />
+          <NewChatButton userId={user?.id || ''} />
         </CardTitle>
       </CardHeader>
       <CardContent>
