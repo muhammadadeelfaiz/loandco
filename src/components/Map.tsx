@@ -1,5 +1,5 @@
 
-import React, { memo, useCallback, useState, useRef } from 'react';
+import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import MapboxMap from './map/MapboxMap';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -27,6 +27,11 @@ const Map = memo((props: MapProps) => {
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const initCompleteRef = useRef(false);
+  
+  // Log markers for debugging
+  useEffect(() => {
+    console.log('Map component markers:', props.markers?.length);
+  }, [props.markers]);
   
   const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);

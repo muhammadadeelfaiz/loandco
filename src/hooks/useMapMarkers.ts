@@ -1,6 +1,5 @@
 import { useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { Store } from 'lucide-react';
 
 interface Marker {
   id: string;
@@ -14,6 +13,8 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
   const markersRef = useRef<{[key: string]: mapboxgl.Marker}>({});
 
   const updateMarkers = useCallback((map: mapboxgl.Map, markers: Marker[]) => {
+    console.log('updateMarkers called with', markers.length, 'markers');
+    
     // Track existing marker IDs to avoid removing and recreating unchanged markers
     const existingMarkerIds = new Set(Object.keys(markersRef.current));
     const newMarkerIds = new Set(markers.map(m => m.id));
@@ -79,7 +80,8 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
 
         // Add click handler for marker
         if (onMarkerClick) {
-          el.addEventListener('click', () => {
+          el.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent map click event
             onMarkerClick(marker.id);
           });
         }

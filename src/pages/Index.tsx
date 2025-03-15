@@ -48,6 +48,14 @@ const Index = ({ user }: IndexProps) => {
   const [mapKey, setMapKey] = useState<number>(0);
   const [mapError, setMapError] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log('User location:', userLocation);
+    console.log('Stores count:', stores.length);
+    if (stores.length > 0) {
+      console.log('First store:', stores[0]);
+    }
+  }, [userLocation, stores]);
+
   const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
     
@@ -69,6 +77,7 @@ const Index = ({ user }: IndexProps) => {
   }, [navigate]);
 
   const handleStoreMarkerClick = useCallback((storeId: string) => {
+    console.log('Store marker clicked:', storeId);
     navigate(`/store/${storeId}`);
   }, [navigate]);
 
@@ -84,13 +93,17 @@ const Index = ({ user }: IndexProps) => {
   }, [toast]);
 
   // Memoize the store markers to prevent unnecessary recalculations
-  const storeMarkers = useMemo(() => stores.map(store => ({
-    id: store.id,
-    lat: store.latitude,
-    lng: store.longitude,
-    title: store.name,
-    description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
-  })), [stores]);
+  const storeMarkers = useMemo(() => {
+    if (!stores || stores.length === 0) return [];
+    
+    return stores.map(store => ({
+      id: store.id,
+      lat: store.latitude,
+      lng: store.longitude,
+      title: store.name,
+      description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
+    }));
+  }, [stores]);
 
   // Memoize the Map component with its props to prevent re-rendering
   const mapComponent = useMemo(() => {
@@ -157,8 +170,6 @@ const Index = ({ user }: IndexProps) => {
               {mapComponent}
             </div>
           </Card>
-          
-          {/* StoreList component removed, markers now on map instead */}
         </section>
         
         <Deals />

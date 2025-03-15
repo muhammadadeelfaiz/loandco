@@ -46,6 +46,7 @@ const MapboxMap = memo(({
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markersUpdatedRef = useRef<boolean>(false);
   const mapInitializedRef = useRef<boolean>(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,11 @@ const MapboxMap = memo(({
   const searchRadiusInstance = useSearchRadius();
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
+
+  // Log marker data for debugging
+  useEffect(() => {
+    console.log('Markers data:', markers);
+  }, [markers]);
 
   const handleError = useCallback((errorMessage: string, details?: string) => {
     if (error) return; // Prevent duplicate error handling
@@ -75,6 +81,7 @@ const MapboxMap = memo(({
     setErrorDetails(null);
     setIsMapInitialized(false);
     mapInitializedRef.current = false;
+    markersUpdatedRef.current = false;
     if (initComplete) initComplete.current = false;
     setRetryCount(prev => prev + 1);
     
@@ -126,13 +133,15 @@ const MapboxMap = memo(({
             mapInitializedRef.current = true;
             if (initComplete) initComplete.current = true;
             
-            // After map is loaded, update markers and search radius
-            if (markers.length > 0) {
-              updateMarkers(newMap, markers);
-            }
-            
+            // After map is loaded, add markers and search radius
             if (location) {
               searchRadiusInstance.updateSearchRadius(newMap, location, searchRadius);
+            }
+            
+            if (markers.length > 0) {
+              console.log('Adding markers after map load:', markers.length);
+              updateMarkers(newMap, markers);
+              markersUpdatedRef.current = true;
             }
           });
 
@@ -214,7 +223,9 @@ const MapboxMap = memo(({
   // Update markers when they change
   useEffect(() => {
     if (map.current && isMapInitialized && markers.length > 0) {
+      console.log('Updating markers after marker prop change:', markers.length);
       updateMarkers(map.current, markers);
+      markersUpdatedRef.current = true;
     }
   }, [markers, isMapInitialized, updateMarkers]);
 
