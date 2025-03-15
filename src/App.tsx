@@ -21,6 +21,7 @@ import CreateStore from "./pages/CreateStore";
 import Wishlist from "./pages/Wishlist";
 import CompareProducts from "./pages/CompareProducts";
 import RetailerDashboard from "./pages/RetailerDashboard";
+import Chat from "./pages/Chat";
 import { useUser } from "@/hooks/useUser";
 import { Footer } from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
@@ -94,6 +95,8 @@ const App = () => {
                 <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/signin" />} />
                 <Route path="/account" element={user ? <Account user={user} /> : <Navigate to="/signin" />} />
                 <Route path="/wishlist" element={user ? <Wishlist user={user} /> : <Navigate to="/signin" />} />
+                <Route path="/chat" element={user ? <Chat /> : <Navigate to="/signin" />} />
+                <Route path="/chat/:id" element={user ? <Chat /> : <Navigate to="/signin" />} />
                 <Route 
                   path="/dashboard" 
                   element={
