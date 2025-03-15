@@ -16,6 +16,7 @@ import { Loader2, MapPin } from "lucide-react";
 import Deals from "@/components/home/Deals";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import ChatHomeSection from "@/components/home/ChatHomeSection";
 
 interface IndexProps {
   user: User | null;
@@ -85,7 +86,14 @@ const Index = ({ user }: IndexProps) => {
       <Navigation user={user} />
 
       <main className="container mx-auto px-4 py-8">
-        <FeaturedProducts />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          <div className="lg:col-span-2">
+            <FeaturedProducts />
+          </div>
+          <div>
+            <ChatHomeSection />
+          </div>
+        </div>
         
         <div className="mb-12">
           <div className="text-center mb-8">

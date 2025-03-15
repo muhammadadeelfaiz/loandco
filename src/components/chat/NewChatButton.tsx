@@ -115,7 +115,7 @@ const NewChatButton = ({ userId }: NewChatButtonProps) => {
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full">New Chat</Button>
+        <Button id="new-chat-button">New Chat</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

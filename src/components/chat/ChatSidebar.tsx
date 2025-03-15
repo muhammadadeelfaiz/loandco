@@ -44,16 +44,30 @@ const ChatSidebar = ({ userId, activeConversationId }: ChatSidebarProps) => {
         
         // Process the data to match our Conversation type
         if (data) {
-          const formattedData = data.map(item => ({
-            id: item.id,
-            last_message_at: item.last_message_at,
-            retailer: {
-              // If retailer is null or an empty array, use default values
-              name: item.retailer && Array.isArray(item.retailer) && item.retailer.length > 0
-                ? item.retailer[0].name
-                : "Unknown Retailer"
+          const formattedData = data.map(item => {
+            // Get retailer information, ensuring it matches our expected format
+            const retailerData = item.retailer;
+            let retailerName = "Unknown Retailer";
+            
+            // Handle different possible data structures
+            if (retailerData) {
+              if (typeof retailerData === 'object' && !Array.isArray(retailerData)) {
+                // Direct object
+                retailerName = retailerData.name || "Unknown Retailer";
+              } else if (Array.isArray(retailerData) && retailerData.length > 0) {
+                // Array of objects (first item)
+                retailerName = retailerData[0].name || "Unknown Retailer";
+              }
             }
-          }));
+            
+            return {
+              id: item.id,
+              last_message_at: item.last_message_at,
+              retailer: {
+                name: retailerName
+              }
+            };
+          });
           
           setConversations(formattedData);
         }
