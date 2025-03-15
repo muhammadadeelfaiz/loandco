@@ -1,5 +1,5 @@
 
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 interface Marker {
@@ -13,7 +13,7 @@ interface Marker {
 export const useMapMarkers = () => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
-  const updateMarkers = (map: mapboxgl.Map, markers: Marker[]) => {
+  const updateMarkers = useCallback((map: mapboxgl.Map, markers: Marker[]) => {
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
@@ -36,7 +36,7 @@ export const useMapMarkers = () => {
         console.error('Error adding marker:', error);
       }
     });
-  };
+  }, []);
 
   return {
     updateMarkers
