@@ -5,7 +5,7 @@ export const useSearchRadius = () => {
   const updateSearchRadius = (
     map: mapboxgl.Map,
     location?: { lat: number; lng: number },
-    searchRadius: number = 5
+    searchRadius: number = 60
   ) => {
     if (!map || !location) return;
 
@@ -32,6 +32,9 @@ export const useSearchRadius = () => {
           }
         });
 
+        // Calculate radius in meters
+        const radiusInMeters = searchRadius * 1000;
+
         map.addLayer({
           id: 'search-radius',
           type: 'circle',
@@ -40,7 +43,7 @@ export const useSearchRadius = () => {
             'circle-radius': {
               stops: [
                 [0, 0],
-                [20, searchRadius * 1000]
+                [20, radiusInMeters]
               ],
               base: 2
             },
@@ -50,10 +53,16 @@ export const useSearchRadius = () => {
           }
         });
 
+        // Adjust the zoom level to show the entire radius
+        const zoomLevel = Math.max(9, 12 - Math.log(searchRadius / 5) / Math.log(2));
+        
         map.flyTo({
           center: [location.lng, location.lat],
+          zoom: zoomLevel,
           essential: true
         });
+        
+        console.log(`Search radius set to ${searchRadius}km (${radiusInMeters}m) at zoom ${zoomLevel}`);
       } catch (error) {
         console.error('Error updating search radius:', error);
       }

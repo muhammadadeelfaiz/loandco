@@ -101,7 +101,7 @@ const Map = memo((props: MapProps) => {
       location={props.location}
       onLocationChange={props.onLocationChange}
       readonly={props.readonly}
-      searchRadius={props.searchRadius}
+      searchRadius={props.searchRadius || 60} // Default to 60km radius
       markers={props.markers} 
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}

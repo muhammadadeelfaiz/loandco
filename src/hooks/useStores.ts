@@ -13,11 +13,15 @@ export interface Store {
   distance?: number;
 }
 
-export const useStores = (userLocation: { lat: number; lng: number } | null, selectedCategory: string | null = null) => {
+export const useStores = (
+  userLocation: { lat: number; lng: number } | null, 
+  selectedCategory: string | null = null,
+  radiusKm: number = 60 // Default radius of 60km
+) => {
   const [stores, setStores] = useState<Store[]>([]);
 
   const { data: initialStores, isLoading } = useQuery({
-    queryKey: ['stores', selectedCategory, userLocation?.lat, userLocation?.lng],
+    queryKey: ['stores', selectedCategory, userLocation?.lat, userLocation?.lng, radiusKm],
     queryFn: async () => {
       let query = supabase.from('stores').select('*');
       
@@ -104,6 +108,7 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
     return R * c;
   };
 
+  // Calculate distance and filter stores within radius
   const storesWithDistance = stores.map(store => {
     let distance = null;
     if (userLocation && store.latitude && store.longitude) {
@@ -119,7 +124,10 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
       ...store,
       distance
     };
-  });
+  }).filter(store => 
+    // Only include stores within the specified radius
+    store.distance !== null && store.distance <= radiusKm
+  );
 
   return {
     stores: storesWithDistance.sort((a, b) => 

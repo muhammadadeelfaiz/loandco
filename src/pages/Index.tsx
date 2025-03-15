@@ -39,18 +39,21 @@ const RETAILER_IMAGES = {
   "Fashion Hub": "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png",
 };
 
+// Set radius to 60km
+const SEARCH_RADIUS_KM = 60;
+
 const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const { userLocation, isLoading: isLoadingLocation, error: locationError } = useLocation();
-  const { stores, isLoading: isLoadingStores } = useStores(userLocation);
+  const { stores, isLoading: isLoadingStores } = useStores(userLocation, null, SEARCH_RADIUS_KM);
   const { toast } = useToast();
   const [mapKey, setMapKey] = useState<number>(0);
   const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('User location:', userLocation);
-    console.log('Stores count:', stores.length);
+    console.log('Stores count within 60km radius:', stores.length);
     if (stores.length > 0) {
       console.log('First store:', stores[0]);
     }
@@ -95,7 +98,7 @@ const Index = ({ user }: IndexProps) => {
   // Memoize the store markers to prevent unnecessary recalculations
   const storeMarkers = useMemo(() => {
     if (!stores || stores.length === 0) {
-      console.log('No stores available for markers');
+      console.log('No stores available for markers within 60km radius');
       return [];
     }
     
@@ -107,7 +110,7 @@ const Index = ({ user }: IndexProps) => {
       description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
     }));
     
-    console.log('Created store markers:', markers.length);
+    console.log('Created store markers within 60km radius:', markers.length);
     return markers;
   }, [stores]);
 
@@ -121,14 +124,14 @@ const Index = ({ user }: IndexProps) => {
       );
     }
     
-    console.log('Rendering map with', storeMarkers.length, 'markers');
+    console.log('Rendering map with', storeMarkers.length, 'markers within 60km radius');
     
     return (
       <Map 
         key={`map-${mapKey}`}
         location={userLocation}
         markers={storeMarkers}
-        searchRadius={5}
+        searchRadius={SEARCH_RADIUS_KM}
         readonly={true}
         onError={handleMapError}
         onMarkerClick={handleStoreMarkerClick}
@@ -159,18 +162,22 @@ const Index = ({ user }: IndexProps) => {
         <section className="my-12">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Stores Near You</h2>
-            
-            {userLocation && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleRefreshLocation}
-                className="flex items-center gap-2"
-              >
-                <MapPin className="h-4 w-4" />
-                Update Location
-              </Button>
-            )}
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Showing stores within {SEARCH_RADIUS_KM}km
+              </div>
+              {userLocation && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshLocation}
+                  className="flex items-center gap-2"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Update Location
+                </Button>
+              )}
+            </div>
           </div>
           
           <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
@@ -180,7 +187,7 @@ const Index = ({ user }: IndexProps) => {
             
             {storeMarkers.length === 0 && !isLoadingLocation && !isLoadingStores && (
               <div className="mt-4 text-center text-gray-600 dark:text-gray-300">
-                <p>No stores found near your location. Try updating your location or check back later.</p>
+                <p>No stores found within {SEARCH_RADIUS_KM}km of your location. Try updating your location or check back later.</p>
               </div>
             )}
           </Card>
