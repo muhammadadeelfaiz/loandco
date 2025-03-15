@@ -42,6 +42,7 @@ const MapboxMap = memo(({
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const mapInitializedRef = useRef<boolean>(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
@@ -68,6 +69,7 @@ const MapboxMap = memo(({
     setError(null);
     setErrorDetails(null);
     setIsMapInitialized(false);
+    mapInitializedRef.current = false;
     setRetryCount(prev => prev + 1);
     
     // Clean up existing map if any
@@ -84,8 +86,9 @@ const MapboxMap = memo(({
     retryFetchToken();
   }, [retryFetchToken]);
 
+  // Initialize map once
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || mapInitializedRef.current) return;
     
     // Clear any existing error when we try to initialize
     if (tokenError) {
@@ -112,6 +115,7 @@ const MapboxMap = memo(({
           newMap.on('load', () => {
             console.log('Map initialized successfully');
             setIsMapInitialized(true);
+            mapInitializedRef.current = true;
           });
 
           // Add specific error handling for authentication errors
@@ -172,11 +176,13 @@ const MapboxMap = memo(({
       if (map.current) {
         map.current.remove();
         map.current = null;
+        mapInitializedRef.current = false;
         setIsMapInitialized(false);
       }
     };
   }, [location, onLocationChange, readonly, initializeMap, handleError, tokenError, retryCount, defaultCenter]);
 
+  // Apply theme changes
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
 
@@ -191,6 +197,7 @@ const MapboxMap = memo(({
     }
   }, [theme, isMapInitialized]);
 
+  // Update markers when they change
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
     try {
@@ -200,6 +207,7 @@ const MapboxMap = memo(({
     }
   }, [markers, isMapInitialized, markersInstance]);
 
+  // Update search radius when location changes
   useEffect(() => {
     if (!map.current || !isMapInitialized || !location) return;
     try {

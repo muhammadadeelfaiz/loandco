@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'public, max-age=3600', // Cache for one hour
 };
 
 // Public Mapbox token that can be used as fallback (limited usage)
@@ -54,8 +55,6 @@ serve(async (req) => {
     const referer = req.headers.get('referer') || 'unknown';
     
     console.log(`Map service function called from origin: ${originDomain}`);
-    console.log(`Request URL: ${url.toString()}`);
-    console.log(`Referer: ${referer}`);
     
     let token = null;
     let tokenSource = 'fallback';
@@ -132,7 +131,6 @@ serve(async (req) => {
             source: "validation-error",
             requestInfo: {
               origin: originDomain,
-              referer: referer,
               timestamp: new Date().toISOString()
             }
           }), 
@@ -152,13 +150,8 @@ serve(async (req) => {
         source: tokenSource,
         valid: verificationResult.isValid,
         error: verificationResult.error,
-        requestInfo: {
-          origin: originDomain,
-          referer: referer,
-          url: url.toString(),
-          timestamp: new Date().toISOString(),
-          userAgent: req.headers.get('user-agent') || 'unknown'
-        }
+        timestamp: new Date().toISOString(),
+        expiresIn: 86400, // 24 hours in seconds
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

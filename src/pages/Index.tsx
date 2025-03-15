@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import LocationPrompt from "@/components/LocationPrompt";
 import Navigation from "@/components/Navigation";
@@ -46,38 +46,59 @@ const Index = ({ user }: IndexProps) => {
   const { stores } = useStores(userLocation);
   const { toast } = useToast();
 
-  const handleLocationReceived = (coords: { lat: number; lng: number }) => {
+  const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
     console.log("Location received:", coords);
     
     // Force reload the page to update all location-dependent components
     window.location.reload();
-  };
+  }, []);
 
-  const handleRefreshLocation = () => {
+  const handleRefreshLocation = useCallback(() => {
     // Clear location from localStorage
     localStorage.removeItem('userLocation');
     localStorage.removeItem('locationPrompted');
     
     // Show the location prompt again
     window.location.reload();
-  };
+  }, []);
 
-  const handleCategoryClick = (categoryName: string) => {
+  const handleCategoryClick = useCallback((categoryName: string) => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
-  };
+  }, [navigate]);
 
-  const handleStoreMarkerClick = (storeId: string) => {
+  const handleStoreMarkerClick = useCallback((storeId: string) => {
     navigate(`/store/${storeId}`);
-  };
+  }, [navigate]);
 
-  const storeMarkers = stores.map(store => ({
+  // Memoize the store markers to prevent unnecessary recalculations
+  const storeMarkers = useMemo(() => stores.map(store => ({
     id: store.id,
     lat: store.latitude,
     lng: store.longitude,
     title: store.name,
     description: store.description || undefined
-  }));
+  })), [stores]);
+
+  // Memoize the Map component with its props to prevent re-rendering
+  const mapComponent = useMemo(() => {
+    if (isLoadingLocation) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
+    
+    return (
+      <Map 
+        location={userLocation}
+        markers={storeMarkers}
+        searchRadius={5}
+        readonly={true}
+      />
+    );
+  }, [isLoadingLocation, userLocation, storeMarkers]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">
@@ -118,18 +139,7 @@ const Index = ({ user }: IndexProps) => {
           
           <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
             <div className="h-[400px] w-full">
-              {isLoadingLocation ? (
-                <div className="h-full flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : (
-                <Map 
-                  location={userLocation}
-                  markers={storeMarkers}
-                  searchRadius={5}
-                  readonly={true}
-                />
-              )}
+              {mapComponent}
             </div>
           </Card>
         </section>

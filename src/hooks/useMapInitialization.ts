@@ -14,6 +14,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
   const [tokenAttempts, setTokenAttempts] = useState(0);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [tokenSource, setTokenSource] = useState<string | null>(null);
+  const [isTokenFetching, setIsTokenFetching] = useState(false);
 
   // Get the current domain for debugging
   const getCurrentDomain = useCallback(() => {
@@ -55,9 +56,13 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
   }, []);
 
   useEffect(() => {
+    // Skip if we're already fetching a token or if we already have a valid token
+    if (isTokenFetching || (token && !tokenError)) return;
+
     const fetchToken = async () => {
       try {
         console.log('Fetching Mapbox token... Attempt:', tokenAttempts + 1);
+        setIsTokenFetching(true);
         setIsLoading(true);
         setTokenError(null);
         
@@ -77,6 +82,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
             setToken(cachedToken);
             setTokenSource('localStorage');
             setIsLoading(false);
+            setIsTokenFetching(false);
             return;
           } else {
             console.log(`Cached token is invalid: ${validationResult.error}, clearing cache`);
@@ -96,6 +102,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
             setToken(envToken);
             setTokenSource('environment');
             setIsLoading(false);
+            setIsTokenFetching(false);
             return;
           }
         }
@@ -125,6 +132,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
               setToken(data.token);
               setTokenSource(data.source);
               setIsLoading(false);
+              setIsTokenFetching(false);
               return;
             } else {
               console.warn(`Token from Supabase is invalid: ${validationResult.error}`);
@@ -147,9 +155,13 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
           setToken(TEMP_MAPBOX_TOKEN);
           setTokenSource('fallback');
+          setIsLoading(false);
+          setIsTokenFetching(false);
         } else {
           console.error(`Temporary token is invalid: ${tempValidationResult.error}`);
           setTokenError(tempValidationResult.error || 'Unable to obtain a valid Mapbox token');
+          setIsLoading(false);
+          setIsTokenFetching(false);
           toast({
             variant: "destructive",
             title: "Map Error",
@@ -157,13 +169,12 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
             duration: 5000,
           });
         }
-        
-        setIsLoading(false);
       } catch (error) {
         console.error('Token fetch error:', error);
         setTokenError(error instanceof Error ? error.message : 'Unknown error fetching map token');
         setToken(null);
         setIsLoading(false);
+        setIsTokenFetching(false);
         
         toast({
           variant: "destructive",
@@ -171,9 +182,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           description: error instanceof Error ? error.message : "Failed to fetch map configuration",
           duration: 5000,
         });
-        
-        // Increment attempt counter
-        setTokenAttempts(prev => prev + 1);
       }
     };
 
@@ -181,7 +189,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
     if (!token || tokenError) {
       fetchToken();
     }
-  }, [toast, tokenAttempts, validateToken, getCurrentDomain]);
+  }, [toast, tokenAttempts, validateToken, getCurrentDomain, token, tokenError, isTokenFetching]);
 
   const initializeMap = async (
     location: { lat: number; lng: number },
@@ -215,6 +223,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
         center: [defaultLocation.lng, defaultLocation.lat],
         zoom: 13,
         attributionControl: false,
+        preserveDrawingBuffer: true, // Fix for some Safari rendering issues
       });
       
       // Add attribution in the bottom-right
@@ -266,6 +275,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
     setTokenAttempts(prev => prev + 1);
+    setIsTokenFetching(false); // Reset fetching state to allow a new attempt
   };
 
   return { isLoading, initializeMap, retryFetchToken, tokenError, tokenSource };

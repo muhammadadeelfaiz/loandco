@@ -26,12 +26,7 @@ const Map = memo((props: MapProps) => {
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   
-  console.log('Rendering Map component with props:', {
-    hasLocation: !!props.location,
-    isReadonly: props.readonly,
-    markersCount: props.markers?.length,
-    domain: window.location.hostname
-  });
+  // Removed console.log that was causing frequent re-renders
   
   const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);
