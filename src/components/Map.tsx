@@ -30,7 +30,7 @@ const Map = memo((props: MapProps) => {
   
   // Log markers for debugging
   useEffect(() => {
-    console.log('Map component markers:', props.markers?.length);
+    console.log('Map component markers:', props.markers?.length, props.markers);
   }, [props.markers]);
   
   const handleMapError = useCallback((errorMessage: string) => {

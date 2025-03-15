@@ -62,7 +62,7 @@ const MapboxMap = memo(({
 
   // Log marker data for debugging
   useEffect(() => {
-    console.log('Markers data:', markers);
+    console.log('Markers data in MapboxMap:', markers?.length, markers);
   }, [markers]);
 
   const handleError = useCallback((errorMessage: string, details?: string) => {
@@ -138,7 +138,8 @@ const MapboxMap = memo(({
               searchRadiusInstance.updateSearchRadius(newMap, location, searchRadius);
             }
             
-            if (markers.length > 0) {
+            // Add markers immediately after map load
+            if (markers && markers.length > 0) {
               console.log('Adding markers after map load:', markers.length);
               updateMarkers(newMap, markers);
               markersUpdatedRef.current = true;
@@ -222,7 +223,7 @@ const MapboxMap = memo(({
 
   // Update markers when they change
   useEffect(() => {
-    if (map.current && isMapInitialized && markers.length > 0) {
+    if (map.current && isMapInitialized && markers && markers.length > 0) {
       console.log('Updating markers after marker prop change:', markers.length);
       updateMarkers(map.current, markers);
       markersUpdatedRef.current = true;
@@ -243,6 +244,21 @@ const MapboxMap = memo(({
       console.error('Error setting map style:', err);
     }
   }, [theme, isMapInitialized]);
+
+  // Fly to location when it changes
+  useEffect(() => {
+    if (!map.current || !isMapInitialized || !location) return;
+    
+    try {
+      map.current.flyTo({
+        center: [location.lng, location.lat],
+        zoom: 13,
+        essential: true
+      });
+    } catch (err) {
+      console.error('Error flying to location:', err);
+    }
+  }, [location, isMapInitialized]);
 
   if (error) {
     return (

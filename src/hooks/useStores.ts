@@ -10,13 +10,14 @@ export interface Store {
   description: string | null;
   latitude: number;
   longitude: number;
+  distance?: number;
 }
 
 export const useStores = (userLocation: { lat: number; lng: number } | null, selectedCategory: string | null = null) => {
   const [stores, setStores] = useState<Store[]>([]);
 
   const { data: initialStores, isLoading } = useQuery({
-    queryKey: ['stores', selectedCategory],
+    queryKey: ['stores', selectedCategory, userLocation?.lat, userLocation?.lng],
     queryFn: async () => {
       let query = supabase.from('stores').select('*');
       
@@ -29,9 +30,24 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
         console.error('Error fetching stores:', error);
         throw error;
       }
-      console.log('Fetched stores:', data);
-      return data as Store[];
-    }
+      console.log('Fetched stores from Supabase:', data);
+      
+      // Validate that stores have valid coordinates
+      const validStores = data.filter(store => 
+        typeof store.latitude === 'number' && 
+        typeof store.longitude === 'number' &&
+        !isNaN(store.latitude) && 
+        !isNaN(store.longitude)
+      );
+      
+      if (validStores.length < data.length) {
+        console.warn('Some stores have invalid coordinates:', 
+          data.filter(s => !validStores.includes(s)).map(s => s.id));
+      }
+      
+      return validStores as Store[];
+    },
+    enabled: true
   });
 
   useEffect(() => {
@@ -72,7 +88,12 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
   }, []);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371;
+    if (!lat1 || !lon1 || !lat2 || !lon2 || 
+        isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+      return null;
+    }
+    
+    const R = 6371; // Radius of the earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -83,18 +104,27 @@ export const useStores = (userLocation: { lat: number; lng: number } | null, sel
     return R * c;
   };
 
-  const storesWithDistance = stores.map(store => ({
-    ...store,
-    distance: userLocation 
-      ? calculateDistance(userLocation.lat, userLocation.lng, store.latitude, store.longitude)
-      : null
-  }));
+  const storesWithDistance = stores.map(store => {
+    let distance = null;
+    if (userLocation && store.latitude && store.longitude) {
+      distance = calculateDistance(
+        userLocation.lat, 
+        userLocation.lng, 
+        store.latitude, 
+        store.longitude
+      );
+    }
+    
+    return {
+      ...store,
+      distance
+    };
+  });
 
   return {
     stores: storesWithDistance.sort((a, b) => 
-      (a.distance && b.distance) ? a.distance - b.distance : 0
+      (a.distance !== null && b.distance !== null) ? (a.distance - b.distance) : 0
     ),
     isLoading
   };
 };
-

@@ -43,7 +43,7 @@ const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const { userLocation, isLoading: isLoadingLocation, error: locationError } = useLocation();
-  const { stores } = useStores(userLocation);
+  const { stores, isLoading: isLoadingStores } = useStores(userLocation);
   const { toast } = useToast();
   const [mapKey, setMapKey] = useState<number>(0);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -94,26 +94,34 @@ const Index = ({ user }: IndexProps) => {
 
   // Memoize the store markers to prevent unnecessary recalculations
   const storeMarkers = useMemo(() => {
-    if (!stores || stores.length === 0) return [];
+    if (!stores || stores.length === 0) {
+      console.log('No stores available for markers');
+      return [];
+    }
     
-    return stores.map(store => ({
+    const markers = stores.map(store => ({
       id: store.id,
       lat: store.latitude,
       lng: store.longitude,
       title: store.name,
       description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
     }));
+    
+    console.log('Created store markers:', markers.length);
+    return markers;
   }, [stores]);
 
   // Memoize the Map component with its props to prevent re-rendering
   const mapComponent = useMemo(() => {
-    if (isLoadingLocation) {
+    if (isLoadingLocation || isLoadingStores) {
       return (
         <div className="h-full flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
     }
+    
+    console.log('Rendering map with', storeMarkers.length, 'markers');
     
     return (
       <Map 
@@ -126,7 +134,7 @@ const Index = ({ user }: IndexProps) => {
         onMarkerClick={handleStoreMarkerClick}
       />
     );
-  }, [isLoadingLocation, userLocation, storeMarkers, mapKey, handleMapError, handleStoreMarkerClick]);
+  }, [isLoadingLocation, isLoadingStores, userLocation, storeMarkers, mapKey, handleMapError, handleStoreMarkerClick]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">
@@ -169,6 +177,12 @@ const Index = ({ user }: IndexProps) => {
             <div className="h-[400px] w-full">
               {mapComponent}
             </div>
+            
+            {storeMarkers.length === 0 && !isLoadingLocation && !isLoadingStores && (
+              <div className="mt-4 text-center text-gray-600 dark:text-gray-300">
+                <p>No stores found near your location. Try updating your location or check back later.</p>
+              </div>
+            )}
           </Card>
         </section>
         

@@ -14,6 +14,10 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
 
   const updateMarkers = useCallback((map: mapboxgl.Map, markers: Marker[]) => {
     console.log('updateMarkers called with', markers.length, 'markers');
+    if (!map || !markers || markers.length === 0) {
+      console.log('Map or markers not available');
+      return;
+    }
     
     // Track existing marker IDs to avoid removing and recreating unchanged markers
     const existingMarkerIds = new Set(Object.keys(markersRef.current));
@@ -29,6 +33,8 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
 
     // Add or update markers
     markers.forEach(marker => {
+      console.log('Processing marker:', marker.id, marker.lat, marker.lng, marker.title);
+      
       if (markersRef.current[marker.id]) {
         // Update position if marker already exists
         markersRef.current[marker.id].setLngLat([marker.lng, marker.lat]);
@@ -47,18 +53,19 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
         // Create a new marker element
         const el = document.createElement('div');
         el.className = 'store-marker';
-        el.style.width = '36px';
-        el.style.height = '36px';
+        el.style.width = '40px';
+        el.style.height = '40px';
         el.style.borderRadius = '50%';
         el.style.backgroundColor = '#3B82F6';
         el.style.display = 'flex';
         el.style.alignItems = 'center';
         el.style.justifyContent = 'center';
         el.style.color = 'white';
-        el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
         el.style.cursor = 'pointer';
-        el.style.padding = '2px';
-        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 7.278 12 12"></path><path d="M12 12 3.5 7.278"></path><path d="M20.5 16.722 12 12"></path><path d="M12 12 3.5 16.722"></path><circle cx="12" cy="12" r="9"></circle><path d="m8 9 1 0"></path><path d="m15 9 1 0"></path><path d="m8 15 8 0"></path></svg>`;
+        el.style.border = '2px solid white';
+        el.style.fontSize = '18px';
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>`;
         
         // Create popup
         const popup = new mapboxgl.Popup({
@@ -77,11 +84,14 @@ export const useMapMarkers = (onMarkerClick?: (markerId: string) => void) => {
           .setLngLat([marker.lng, marker.lat])
           .setPopup(popup)
           .addTo(map);
+          
+        console.log('Added marker to map:', marker.id, 'at', marker.lng, marker.lat);
 
         // Add click handler for marker
         if (onMarkerClick) {
           el.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent map click event
+            console.log('Marker clicked:', marker.id);
             onMarkerClick(marker.id);
           });
         }
