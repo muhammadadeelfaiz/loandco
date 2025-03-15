@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw, Globe } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
@@ -44,18 +44,20 @@ const MapboxMap = ({
   const map = useRef<mapboxgl.Map | null>(null);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const { theme } = useTheme();
-  const { isLoading, initializeMap, retryFetchToken, tokenError } = useMapInitialization(mapContainer, theme);
+  const { isLoading, initializeMap, retryFetchToken, tokenError, tokenSource } = useMapInitialization(mapContainer, theme);
   
   const markersInstance = useMapMarkers();
   const searchRadiusInstance = useSearchRadius();
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-  const handleError = (errorMessage: string) => {
-    console.error('Map error:', errorMessage);
+  const handleError = (errorMessage: string, details?: string) => {
+    console.error('Map error:', errorMessage, details ? `Details: ${details}` : '');
     setError(errorMessage);
+    setErrorDetails(details || null);
     if (onError) {
       onError(errorMessage);
     }
@@ -64,6 +66,7 @@ const MapboxMap = ({
   const handleRetry = () => {
     console.log('Retrying map initialization...');
     setError(null);
+    setErrorDetails(null);
     setIsMapInitialized(false);
     setRetryCount(prev => prev + 1);
     
@@ -86,13 +89,21 @@ const MapboxMap = ({
     
     // Clear any existing error when we try to initialize
     if (tokenError) {
-      handleError("Map token could not be retrieved. Please check your connection and try again.");
+      if (tokenError.includes('domain restrictions')) {
+        handleError(
+          "Map access restricted", 
+          "The Mapbox token has domain restrictions. Please ensure your Mapbox token allows access from this domain."
+        );
+      } else {
+        handleError("Map token could not be retrieved", "Please check your connection and try again.");
+      }
       return;
     }
     
     const initialize = async () => {
       try {
         setError(null);
+        setErrorDetails(null);
         const initialCenter = location || defaultCenter;
         console.log('Initializing map with location:', initialCenter);
         
@@ -111,22 +122,46 @@ const MapboxMap = ({
           newMap.on('error', (e: mapboxgl.ErrorEvent) => {
             console.error('Map error event:', e);
             const mapError = e.error as MapboxError;
+            
             if (mapError?.sourceError?.status === 403) {
-              handleError('Map authentication failed. Please check your Mapbox token.');
+              handleError(
+                'Map access restricted', 
+                'The Mapbox token is restricted to specific domains. Please check your Mapbox token configuration.'
+              );
+            } else if (mapError?.sourceError?.status === 401) {
+              handleError(
+                'Map authentication failed', 
+                'Please check your Mapbox token or try refreshing the page.'
+              );
             } else if (mapError?.sourceError?.status === 404) {
-              handleError('Map resources not found. Please check your map style configuration.');
+              handleError(
+                'Map resources not found', 
+                'Please check your map style configuration.'
+              );
             } else if (mapError?.sourceError?.status === 429) {
-              handleError('Map API rate limit exceeded. Please try again later.');
+              handleError(
+                'Map API rate limit exceeded', 
+                'Please try again later.'
+              );
             } else {
-              handleError('There was an error loading the map. Please check your internet connection.');
+              handleError(
+                'There was an error loading the map', 
+                'Please check your internet connection.'
+              );
             }
           });
         } else {
-          handleError('Failed to initialize map. Token might be invalid or network issues.');
+          handleError(
+            'Failed to initialize map', 
+            'Token might be invalid or there are network issues.'
+          );
         }
       } catch (err) {
         console.error('Map initialization error:', err);
-        handleError('Failed to initialize map. Please try refreshing the page.');
+        handleError(
+          'Failed to initialize map', 
+          err instanceof Error ? err.message : 'Unknown error'
+        );
       }
     };
 
@@ -176,11 +211,23 @@ const MapboxMap = ({
   if (error) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
-        <Alert variant="destructive" className="mb-4 flex-shrink-0">
+        <Alert variant="destructive" className="mb-4 flex-shrink-0 max-w-md">
           <AlertTriangle className="h-5 w-5" />
-          <AlertTitle>Map Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertTitle>{error}</AlertTitle>
+          {errorDetails && <AlertDescription>{errorDetails}</AlertDescription>}
         </Alert>
+        
+        {error.includes('restricted') && (
+          <Alert className="mb-4 flex-shrink-0 max-w-md">
+            <Globe className="h-5 w-5" />
+            <AlertTitle>Domain Restriction Issue</AlertTitle>
+            <AlertDescription>
+              Please ensure your Mapbox token allows access from this domain. 
+              Check token restrictions in your Mapbox account settings.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <Button 
           onClick={handleRetry} 
           variant="outline" 
@@ -189,6 +236,12 @@ const MapboxMap = ({
           <RefreshCw className="h-4 w-4" />
           Retry Loading Map
         </Button>
+        
+        {tokenSource && (
+          <p className="text-xs text-gray-500 mt-4">
+            Token source: {tokenSource}
+          </p>
+        )}
       </div>
     );
   }

@@ -11,7 +11,7 @@ const corsHeaders = {
 const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
 // Verify token works by making a test request to Mapbox API
-async function verifyMapboxToken(token: string): Promise<boolean> {
+async function verifyMapboxToken(token: string): Promise<{isValid: boolean; error?: string}> {
   try {
     console.log('Verifying Mapbox token validity...');
     const response = await fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=${token}`, {
@@ -20,14 +20,24 @@ async function verifyMapboxToken(token: string): Promise<boolean> {
     
     if (response.ok) {
       console.log('Mapbox token is valid');
-      return true;
+      return { isValid: true };
     } else {
-      console.error(`Token verification failed with status: ${response.status}`);
-      return false;
+      const status = response.status;
+      let errorMessage = `Token verification failed with status: ${status}`;
+      
+      // Specific error message for the most common error
+      if (status === 401) {
+        errorMessage = "Unauthorized: The token is invalid or has expired";
+      } else if (status === 403) {
+        errorMessage = "Forbidden: The token doesn't have access to this resource, possibly due to domain restrictions";
+      }
+      
+      console.error(errorMessage);
+      return { isValid: false, error: errorMessage };
     }
   } catch (error) {
     console.error('Error verifying Mapbox token:', error);
-    return false;
+    return { isValid: false, error: error instanceof Error ? error.message : 'Unknown error during verification' };
   }
 }
 
@@ -38,11 +48,15 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Map service function called - retrieving Mapbox token');
+    // Get request information
+    const url = new URL(req.url);
+    const originDomain = req.headers.get('origin') || 'unknown';
+    console.log(`Map service function called from origin: ${originDomain}`);
+    console.log(`Request URL: ${url.toString()}`);
     
     let token = null;
     let tokenSource = 'fallback';
-    let isTokenValid = false;
+    let verificationResult = { isValid: false, error: undefined };
     
     // Try to get token from environment variables first
     if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
@@ -50,11 +64,11 @@ serve(async (req) => {
       console.log('Using MAPBOX_PUBLIC_TOKEN from environment variables');
       
       // Verify the environment variable token
-      isTokenValid = await verifyMapboxToken(token);
-      if (isTokenValid) {
+      verificationResult = await verifyMapboxToken(token);
+      if (verificationResult.isValid) {
         tokenSource = 'environment';
       } else {
-        console.error('Environment token is invalid, will try fallback sources');
+        console.error(`Environment token is invalid: ${verificationResult.error}`);
         token = null;
       }
     }
@@ -82,13 +96,13 @@ serve(async (req) => {
             const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
             
             // Verify the Supabase secret token
-            isTokenValid = await verifyMapboxToken(supabaseToken);
-            if (isTokenValid) {
+            verificationResult = await verifyMapboxToken(supabaseToken);
+            if (verificationResult.isValid) {
               token = supabaseToken;
               tokenSource = 'supabase-secrets';
               console.log('Using valid MAPBOX_PUBLIC_TOKEN from Supabase secrets');
             } else {
-              console.error('Supabase secret token is invalid, will use fallback token');
+              console.error(`Supabase secret token is invalid: ${verificationResult.error}`);
             }
           }
         }
@@ -102,13 +116,13 @@ serve(async (req) => {
       console.log('No valid token found in environment or Supabase secrets, using fallback token');
       
       // Verify the fallback token
-      isTokenValid = await verifyMapboxToken(FALLBACK_TOKEN);
-      if (isTokenValid) {
+      verificationResult = await verifyMapboxToken(FALLBACK_TOKEN);
+      if (verificationResult.isValid) {
         token = FALLBACK_TOKEN;
         tokenSource = 'fallback';
         console.log('Using valid fallback Mapbox token');
       } else {
-        console.error('Even fallback token is invalid! Returning it anyway as last resort');
+        console.error(`Even fallback token is invalid: ${verificationResult.error}`);
         token = FALLBACK_TOKEN;
         tokenSource = 'invalid-fallback';
       }
@@ -120,7 +134,13 @@ serve(async (req) => {
       JSON.stringify({ 
         token,
         source: tokenSource,
-        valid: isTokenValid
+        valid: verificationResult.isValid,
+        error: verificationResult.error,
+        requestInfo: {
+          origin: originDomain,
+          url: url.toString(),
+          timestamp: new Date().toISOString()
+        }
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
