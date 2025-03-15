@@ -1,8 +1,10 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, MapPin } from "lucide-react";
+import { ExternalLink, MapPin, Heart } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import type { User } from "@supabase/supabase-js";
 
 interface ProductComparisonProps {
   localProduct?: {
@@ -31,6 +33,8 @@ interface ProductComparisonProps {
   }>;
   isLoading: boolean;
   onGetDirections?: (lat: number, lng: number, storeName: string) => void;
+  onAddToWishlist?: (productId: string) => void;
+  user?: User | null;
 }
 
 export const ProductComparisonTable = ({
@@ -38,8 +42,11 @@ export const ProductComparisonTable = ({
   amazonProducts,
   ebayProducts,
   isLoading,
-  onGetDirections
+  onGetDirections,
+  onAddToWishlist,
+  user
 }: ProductComparisonProps) => {
+  const [wishlistStates, setWishlistStates] = useState<Record<string, boolean>>({});
 
   // Function to convert price to AED if it's not already
   const formatPriceToAED = (price: string | number): string => {
@@ -63,6 +70,16 @@ export const ProductComparisonTable = ({
     
     // For other currencies, just return the price as is
     return typeof price === 'string' ? price : `AED ${price}`;
+  };
+
+  const handleAddToWishlist = (productId: string) => {
+    if (onAddToWishlist) {
+      onAddToWishlist(productId);
+      setWishlistStates(prev => ({
+        ...prev,
+        [productId]: true
+      }));
+    }
   };
 
   if (isLoading) {
@@ -105,20 +122,32 @@ export const ProductComparisonTable = ({
               <p className="font-semibold text-primary">Local Store</p>
             </div>
             
-            {localProduct.latitude && localProduct.longitude && (
+            <div className="flex flex-col gap-2">
+              {localProduct.latitude && localProduct.longitude && (
+                <Button 
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => onGetDirections && onGetDirections(
+                    localProduct.latitude!,
+                    localProduct.longitude!,
+                    localProduct.store_name || "Store"
+                  )}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Get Directions
+                </Button>
+              )}
+              
               <Button 
-                className="w-full mt-2"
+                className="w-full"
                 variant="outline"
-                onClick={() => onGetDirections && onGetDirections(
-                  localProduct.latitude!,
-                  localProduct.longitude!,
-                  localProduct.store_name || "Store"
-                )}
+                onClick={() => handleAddToWishlist(localProduct.id)}
+                disabled={!user || wishlistStates[localProduct.id]}
               >
-                <MapPin className="w-4 h-4 mr-2" />
-                Get Directions
+                <Heart className={`w-4 h-4 mr-2 ${wishlistStates[localProduct.id] ? 'fill-current text-red-500' : ''}`} />
+                {wishlistStates[localProduct.id] ? 'Added to Wishlist' : 'Add to Wishlist'}
               </Button>
-            )}
+            </div>
           </Card>
         )}
         

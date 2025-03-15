@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useComparisonProducts } from "@/hooks/useComparisonProducts";
 import { ProductComparisonTable } from "@/components/products/ProductComparisonTable";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface CompareProductsProps {
   user: User | null;
@@ -24,6 +25,8 @@ interface Product {
   store_name?: string;
   store_latitude?: number;
   store_longitude?: number;
+  store_email?: string;
+  store_phone?: string;
   description?: string;
 }
 
@@ -50,7 +53,9 @@ const CompareProducts = ({ user }: CompareProductsProps) => {
             stores:store_id (
               name,
               latitude,
-              longitude
+              longitude,
+              email,
+              phone
             )
           `)
           .eq('id', id)
@@ -69,6 +74,8 @@ const CompareProducts = ({ user }: CompareProductsProps) => {
             store_name: data.stores?.name,
             store_latitude: data.stores?.latitude,
             store_longitude: data.stores?.longitude,
+            store_email: data.stores?.email,
+            store_phone: data.stores?.phone,
             description: data.description
           });
         }
@@ -102,6 +109,58 @@ const CompareProducts = ({ user }: CompareProductsProps) => {
     toast({
       title: "Directions",
       description: `Getting directions to ${storeName}`
+    });
+  };
+
+  const handleAddToWishlist = async (productId: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to add items to your wishlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('product_wishlists')
+        .insert([
+          { 
+            user_id: user.id,
+            product_id: productId
+          }
+        ]);
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: "Already in wishlist",
+            description: "This product is already in your wishlist",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Added to wishlist",
+          description: "Product has been added to your wishlist",
+        });
+      }
+    } catch (err) {
+      console.error('Error adding to wishlist:', err);
+      toast({
+        title: "Error",
+        description: "Failed to add product to wishlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleContactSeller = (storeName: string) => {
+    toast({
+      title: "Contact Seller",
+      description: `Opening contact form for ${storeName}`,
     });
   };
 
@@ -143,6 +202,56 @@ const CompareProducts = ({ user }: CompareProductsProps) => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {product.description || `Compare prices for ${product.name} across local stores and online retailers.`}
               </p>
+              
+              {(product.store_email || product.store_phone) && (
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h3 className="text-md font-medium mb-2">Seller Contact Information</h3>
+                  {product.store_email && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                      <span className="font-medium">Email:</span> {product.store_email}
+                    </p>
+                  )}
+                  {product.store_phone && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <span className="font-medium">Phone:</span> {product.store_phone}
+                    </p>
+                  )}
+                  
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => handleContactSeller(product.store_name || "Seller")}
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        Contact Seller
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Contact {product.store_name || "Seller"}</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-4">
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          You can contact the seller directly using the information below:
+                        </p>
+                        {product.store_email && (
+                          <p className="mb-2">
+                            <span className="font-medium">Email:</span> {product.store_email}
+                          </p>
+                        )}
+                        {product.store_phone && (
+                          <p className="mb-2">
+                            <span className="font-medium">Phone:</span> {product.store_phone}
+                          </p>
+                        )}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+              )}
             </div>
 
             <ProductComparisonTable
@@ -158,6 +267,8 @@ const CompareProducts = ({ user }: CompareProductsProps) => {
               ebayProducts={ebayProducts}
               isLoading={isLoadingExternal}
               onGetDirections={handleGetDirections}
+              onAddToWishlist={handleAddToWishlist}
+              user={user}
             />
           </div>
         ) : (
