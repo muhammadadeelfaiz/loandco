@@ -92,8 +92,12 @@ const Map = memo((props: MapProps) => {
 
   return (
     <MapboxMap 
-      {...props} 
-      onError={handleMapError} 
+      location={props.location}
+      onLocationChange={props.onLocationChange}
+      readonly={props.readonly}
+      searchRadius={props.searchRadius}
+      markers={props.markers} 
+      onError={handleMapError}
       initComplete={initCompleteRef}
     />
   );

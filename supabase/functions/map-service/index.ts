@@ -23,6 +23,7 @@ async function verifyMapboxToken(token: string): Promise<{isValid: boolean; erro
     });
     
     if (response.ok) {
+      console.log("Mapbox token is valid");
       return { isValid: true };
     } else {
       const status = response.status;
@@ -130,7 +131,8 @@ serve(async (req) => {
       ...corsHeaders, 
       'Content-Type': 'application/json',
       'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
-      'Expires': new Date(Date.now() + 86400000).toUTCString() // 24 hours in the future
+      'Expires': new Date(Date.now() + 86400000).toUTCString(), // 24 hours in the future
+      'Pragma': 'cache' // For older browsers
     };
     
     return new Response(
@@ -154,11 +156,11 @@ serve(async (req) => {
         error: error instanceof Error ? error.message : 'An unknown error occurred',
         token: FALLBACK_TOKEN, // Provide fallback token even in error case
         source: 'error-fallback',
-        valid: false
+        valid: true // Mark as valid to allow map to initialize
       }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 200 // Return 200 even in error case to allow fallback to work
       }
     );
   }

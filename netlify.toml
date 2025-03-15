@@ -14,16 +14,24 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# Caching for Mapbox resources to prevent constant refreshing
+# Extended caching for Mapbox resources
 [[headers]]
   for = "*.mapbox.com/*"
   [headers.values]
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=86400, immutable"
     
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# API endpoint caching
+[[headers]]
+  for = "/api/map-service"
+  [headers.values]
+    Cache-Control = "public, max-age=43200"
+    Surrogate-Control = "max-age=43200"
+    Vary = "Origin"
 
 # Security headers
 [[headers]]
@@ -45,5 +53,3 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     # Permissions Policy
     Permissions-Policy = "accelerometer=(), camera=(), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
-    # Cache control for static assets
-    Cache-Control = "public, max-age=31536000, immutable"

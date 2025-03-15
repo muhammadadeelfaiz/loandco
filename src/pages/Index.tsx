@@ -16,6 +16,7 @@ import { Loader2, MapPin } from "lucide-react";
 import Deals from "@/components/home/Deals";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import StoreList from "@/components/home/StoreList";
 
 interface IndexProps {
   user: User | null;
@@ -46,6 +47,7 @@ const Index = ({ user }: IndexProps) => {
   const { stores } = useStores(userLocation);
   const { toast } = useToast();
   const [mapKey, setMapKey] = useState<number>(0);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
@@ -66,6 +68,17 @@ const Index = ({ user }: IndexProps) => {
   const handleCategoryClick = useCallback((categoryName: string) => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
   }, [navigate]);
+
+  // Handle map errors
+  const handleMapError = useCallback((errorMessage: string) => {
+    setMapError(errorMessage);
+    toast({
+      variant: "destructive",
+      title: "Map Error",
+      description: errorMessage,
+      duration: 3000,
+    });
+  }, [toast]);
 
   // Memoize the store markers to prevent unnecessary recalculations
   const storeMarkers = useMemo(() => stores.map(store => ({
@@ -93,9 +106,10 @@ const Index = ({ user }: IndexProps) => {
         markers={storeMarkers}
         searchRadius={5}
         readonly={true}
+        onError={handleMapError}
       />
     );
-  }, [isLoadingLocation, userLocation, storeMarkers, mapKey]);
+  }, [isLoadingLocation, userLocation, storeMarkers, mapKey, handleMapError]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">
@@ -139,6 +153,10 @@ const Index = ({ user }: IndexProps) => {
               {mapComponent}
             </div>
           </Card>
+          
+          {!mapError && !isLoadingLocation && stores.length > 0 && (
+            <StoreList stores={stores} />
+          )}
         </section>
         
         <Deals />

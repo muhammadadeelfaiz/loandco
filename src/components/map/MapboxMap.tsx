@@ -92,7 +92,7 @@ const MapboxMap = memo(({
 
   // Initialize map once
   useEffect(() => {
-    // Skip initialization if already done
+    // Skip initialization if already done in this render cycle
     if (!mapContainer.current || mapInitializedRef.current) return;
     
     // Skip if we're already showing an error
@@ -119,9 +119,19 @@ const MapboxMap = memo(({
           
           // Add error handling for map load
           newMap.on('load', () => {
+            console.log('Map loaded successfully');
             setIsMapInitialized(true);
             mapInitializedRef.current = true;
             if (initComplete) initComplete.current = true;
+            
+            // After map is loaded, update markers and search radius
+            if (markers.length > 0) {
+              markersInstance.updateMarkers(newMap, markers);
+            }
+            
+            if (location) {
+              searchRadiusInstance.updateSearchRadius(newMap, location, searchRadius);
+            }
           });
 
           // Add specific error handling for authentication errors
@@ -184,7 +194,20 @@ const MapboxMap = memo(({
         map.current = null;
       }
     };
-  }, [location, onLocationChange, readonly, initializeMap, handleError, tokenError, retryCount, defaultCenter]);
+  }, [
+    location, 
+    onLocationChange, 
+    readonly, 
+    initializeMap, 
+    handleError, 
+    tokenError, 
+    retryCount, 
+    defaultCenter, 
+    markers,
+    searchRadius,
+    markersInstance,
+    searchRadiusInstance
+  ]);
 
   // Apply theme changes
   useEffect(() => {
@@ -200,26 +223,6 @@ const MapboxMap = memo(({
       console.error('Error setting map style:', err);
     }
   }, [theme, isMapInitialized]);
-
-  // Update markers when they change
-  useEffect(() => {
-    if (!map.current || !isMapInitialized) return;
-    try {
-      markersInstance.updateMarkers(map.current, markers);
-    } catch (err) {
-      console.error('Error updating markers:', err);
-    }
-  }, [markers, isMapInitialized, markersInstance]);
-
-  // Update search radius when location changes
-  useEffect(() => {
-    if (!map.current || !isMapInitialized || !location) return;
-    try {
-      searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
-    } catch (err) {
-      console.error('Error updating search radius:', err);
-    }
-  }, [location, searchRadius, isMapInitialized, searchRadiusInstance]);
 
   if (error) {
     return (
