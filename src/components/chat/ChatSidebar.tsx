@@ -41,7 +41,22 @@ const ChatSidebar = ({ userId, activeConversationId }: ChatSidebarProps) => {
           .order("last_message_at", { ascending: false });
 
         if (error) throw error;
-        if (data) setConversations(data);
+        
+        // Process the data to match our Conversation type
+        if (data) {
+          const formattedData = data.map(item => ({
+            id: item.id,
+            last_message_at: item.last_message_at,
+            retailer: {
+              // If retailer is null or an empty array, use default values
+              name: item.retailer && Array.isArray(item.retailer) && item.retailer.length > 0
+                ? item.retailer[0].name
+                : "Unknown Retailer"
+            }
+          }));
+          
+          setConversations(formattedData);
+        }
       } catch (error) {
         console.error("Error fetching conversations:", error);
       } finally {
