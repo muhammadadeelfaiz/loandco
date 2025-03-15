@@ -1,5 +1,4 @@
 
-import React from 'react';
 import MapboxMap from './map/MapboxMap';
 
 interface MapProps {
@@ -17,8 +16,7 @@ interface MapProps {
   }>;
 }
 
-// Using React.memo to prevent unnecessary re-renders
-const Map = React.memo((props: MapProps) => {
+const Map = (props: MapProps) => {
   console.log('Rendering Map component with props:', {
     hasLocation: !!props.location,
     isReadonly: props.readonly,
@@ -26,8 +24,6 @@ const Map = React.memo((props: MapProps) => {
   });
   
   return <MapboxMap {...props} />;
-});
-
-Map.displayName = 'Map';
+};
 
 export default Map;

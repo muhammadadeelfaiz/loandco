@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, RefObject, useRef } from 'react';
+import { useState, useEffect, useCallback, RefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -13,8 +13,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
   const [token, setToken] = useState<string | null>(null);
   const [tokenAttempts, setTokenAttempts] = useState(0);
   const [tokenError, setTokenError] = useState<string | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const isInitialMount = useRef(true);
 
   // Function to validate a Mapbox token by making a test request
   const validateToken = useCallback(async (testToken: string): Promise<boolean> => {
@@ -35,10 +33,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
   }, []);
 
   useEffect(() => {
-    if (!isInitialMount.current) {
-      return;
-    }
-    
     const fetchToken = async () => {
       try {
         console.log('Fetching Mapbox token... Attempt:', tokenAttempts + 1);
@@ -57,7 +51,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
             console.log('Using valid cached Mapbox token from localStorage');
             setToken(cachedToken);
             setIsLoading(false);
-            isInitialMount.current = false;
             return;
           } else {
             console.log('Cached token is invalid, clearing cache');
@@ -89,7 +82,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
               
               setToken(data.token);
               setIsLoading(false);
-              isInitialMount.current = false;
               return;
             } else {
               console.warn('Token from Supabase is invalid');
@@ -122,13 +114,11 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
         }
         
         setIsLoading(false);
-        isInitialMount.current = false;
       } catch (error) {
         console.error('Token fetch error:', error);
         setTokenError(error instanceof Error ? error.message : 'Unknown error fetching map token');
         setToken(null);
         setIsLoading(false);
-        isInitialMount.current = false;
         
         toast({
           variant: "destructive",
@@ -136,16 +126,19 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           description: error instanceof Error ? error.message : "Failed to fetch map configuration",
           duration: 5000,
         });
+        
+        // Increment attempt counter
+        setTokenAttempts(prev => prev + 1);
       }
     };
 
-    // Only fetch if we don't have a token
-    if (isInitialMount.current) {
+    // Only fetch if we don't have a token or if there was an error and we're retrying
+    if (!token || tokenError) {
       fetchToken();
     }
   }, [toast, tokenAttempts, validateToken]);
 
-  const initializeMap = useCallback(async (
+  const initializeMap = async (
     location: { lat: number; lng: number },
     onLocationChange?: (location: { lat: number; lng: number }) => void,
     readonly = false
@@ -153,11 +146,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
     if (!mapContainer.current) {
       console.error('Map container not found');
       return null;
-    }
-
-    // If we already have a map instance, return it
-    if (mapRef.current) {
-      return mapRef.current;
     }
 
     if (!token) {
@@ -183,9 +171,6 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
         zoom: 13,
         attributionControl: false,
       });
-      
-      // Save the map instance
-      mapRef.current = map;
       
       // Add attribution in the bottom-right
       map.addControl(new mapboxgl.AttributionControl(), 'bottom-right');
@@ -228,26 +213,15 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
       });
       return null;
     }
-  }, [mapContainer, token, theme, toast]);
+  };
 
   // Function to retry fetching the token
-  const retryFetchToken = useCallback(() => {
+  const retryFetchToken = () => {
     // Clear any cached tokens first
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
-    isInitialMount.current = true;
     setTokenAttempts(prev => prev + 1);
-  }, []);
-
-  // Clean up the map instance on unmount
-  useEffect(() => {
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
+  };
 
   return { isLoading, initializeMap, retryFetchToken, tokenError };
 };

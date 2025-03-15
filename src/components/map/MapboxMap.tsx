@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
@@ -9,7 +9,6 @@ import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import React from 'react';
 
 interface MapboxMapProps {
   location?: { lat: number; lng: number } | null;
@@ -33,7 +32,7 @@ interface MapboxError extends Error {
   };
 }
 
-const MapboxMap = React.memo(({
+const MapboxMap = ({
   location,
   onLocationChange,
   readonly = false,
@@ -51,21 +50,18 @@ const MapboxMap = React.memo(({
   
   const markersInstance = useMapMarkers();
   const searchRadiusInstance = useSearchRadius();
-  const markersRef = useRef(markers);
-  const locationRef = useRef(location);
-  const searchRadiusRef = useRef(searchRadius);
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-  const handleError = useCallback((errorMessage: string) => {
+  const handleError = (errorMessage: string) => {
     console.error('Map error:', errorMessage);
     setError(errorMessage);
     if (onError) {
       onError(errorMessage);
     }
-  }, [onError]);
+  };
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     console.log('Retrying map initialization...');
     setError(null);
     setIsMapInitialized(false);
@@ -83,20 +79,7 @@ const MapboxMap = React.memo(({
     
     // Retry token fetch
     retryFetchToken();
-  }, [retryFetchToken]);
-
-  // Update refs when props change to avoid unnecessary re-renders
-  useEffect(() => {
-    markersRef.current = markers;
-  }, [markers]);
-
-  useEffect(() => {
-    locationRef.current = location;
-  }, [location]);
-
-  useEffect(() => {
-    searchRadiusRef.current = searchRadius;
-  }, [searchRadius]);
+  };
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -107,48 +90,25 @@ const MapboxMap = React.memo(({
       return;
     }
     
-    let isMounted = true;
-    
     const initialize = async () => {
       try {
-        if (!isMounted) return;
-        
         setError(null);
-        const initialCenter = locationRef.current || defaultCenter;
+        const initialCenter = location || defaultCenter;
         console.log('Initializing map with location:', initialCenter);
         
         const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
-        
-        if (!isMounted) {
-          if (newMap) {
-            newMap.remove();
-          }
-          return;
-        }
         
         if (newMap) {
           map.current = newMap;
           
           // Add error handling for map load
           newMap.on('load', () => {
-            if (!isMounted) return;
             console.log('Map initialized successfully');
             setIsMapInitialized(true);
-            
-            // Update search radius after map is loaded
-            if (locationRef.current) {
-              searchRadiusInstance.updateSearchRadius(newMap, locationRef.current, searchRadiusRef.current);
-            }
-            
-            // Update markers after map is loaded
-            if (markersRef.current.length > 0) {
-              markersInstance.updateMarkers(newMap, markersRef.current);
-            }
           });
 
           // Add specific error handling for authentication errors
           newMap.on('error', (e: mapboxgl.ErrorEvent) => {
-            if (!isMounted) return;
             console.error('Map error event:', e);
             const mapError = e.error as MapboxError;
             if (mapError?.sourceError?.status === 403) {
@@ -162,31 +122,25 @@ const MapboxMap = React.memo(({
             }
           });
         } else {
-          if (isMounted) {
-            handleError('Failed to initialize map. Token might be invalid or network issues.');
-          }
+          handleError('Failed to initialize map. Token might be invalid or network issues.');
         }
       } catch (err) {
-        if (isMounted) {
-          console.error('Map initialization error:', err);
-          handleError('Failed to initialize map. Please try refreshing the page.');
-        }
+        console.error('Map initialization error:', err);
+        handleError('Failed to initialize map. Please try refreshing the page.');
       }
     };
 
     initialize();
 
     return () => {
-      isMounted = false;
       if (map.current) {
         map.current.remove();
         map.current = null;
         setIsMapInitialized(false);
       }
     };
-  }, [initializeMap, onLocationChange, readonly, tokenError, handleError, retryCount, searchRadiusInstance, markersInstance]);
+  }, [location, onLocationChange, readonly, initializeMap, onError, tokenError, retryCount]);
 
-  // Handle theme changes
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
 
@@ -201,15 +155,8 @@ const MapboxMap = React.memo(({
     }
   }, [theme, isMapInitialized]);
 
-  // Only update markers when map is initialized and markers change
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
-    
-    // Skip if markers haven't changed
-    if (JSON.stringify(markersRef.current) === JSON.stringify(markers)) {
-      return;
-    }
-    
     try {
       markersInstance.updateMarkers(map.current, markers);
     } catch (err) {
@@ -217,16 +164,8 @@ const MapboxMap = React.memo(({
     }
   }, [markers, isMapInitialized, markersInstance]);
 
-  // Only update search radius when map is initialized and location or radius changes
   useEffect(() => {
     if (!map.current || !isMapInitialized || !location) return;
-    
-    // Skip if location and radius haven't changed
-    if (JSON.stringify(locationRef.current) === JSON.stringify(location) && 
-        searchRadiusRef.current === searchRadius) {
-      return;
-    }
-    
     try {
       searchRadiusInstance.updateSearchRadius(map.current, location, searchRadius);
     } catch (err) {
@@ -270,8 +209,6 @@ const MapboxMap = React.memo(({
       )}
     </div>
   );
-});
-
-MapboxMap.displayName = 'MapboxMap';
+};
 
 export default MapboxMap;
