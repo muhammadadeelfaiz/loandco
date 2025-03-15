@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2, AlertTriangle, RefreshCw, Globe } from 'lucide-react';
@@ -32,7 +32,7 @@ interface MapboxError extends Error {
   };
 }
 
-const MapboxMap = ({
+const MapboxMap = memo(({
   location,
   onLocationChange,
   readonly = false,
@@ -54,16 +54,16 @@ const MapboxMap = ({
 
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
-  const handleError = (errorMessage: string, details?: string) => {
+  const handleError = useCallback((errorMessage: string, details?: string) => {
     console.error('Map error:', errorMessage, details ? `Details: ${details}` : '');
     setError(errorMessage);
     setErrorDetails(details || null);
     if (onError) {
       onError(errorMessage);
     }
-  };
+  }, [onError]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     console.log('Retrying map initialization...');
     setError(null);
     setErrorDetails(null);
@@ -82,21 +82,17 @@ const MapboxMap = ({
     
     // Retry token fetch
     retryFetchToken();
-  };
+  }, [retryFetchToken]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
     
     // Clear any existing error when we try to initialize
     if (tokenError) {
-      if (tokenError.includes('domain restrictions')) {
-        handleError(
-          "Map access restricted", 
-          "The Mapbox token has domain restrictions. Please ensure your Mapbox token allows access from this domain."
-        );
-      } else {
-        handleError("Map token could not be retrieved", "Please check your connection and try again.");
-      }
+      handleError(
+        "Map token could not be retrieved", 
+        "Please check your connection and try again."
+      );
       return;
     }
     
@@ -123,20 +119,25 @@ const MapboxMap = ({
             console.error('Map error event:', e);
             const mapError = e.error as MapboxError;
             
-            if (mapError?.sourceError?.status === 403) {
+            if (e.error.message?.includes('access token')) {
               handleError(
-                'Map access restricted', 
-                'The Mapbox token is restricted to specific domains. Please check your Mapbox token configuration.'
+                'Map access token issue', 
+                'There is a problem with the Mapbox access token. Please try refreshing the page.'
+              );
+            } else if (mapError?.sourceError?.status === 403) {
+              handleError(
+                'Map resource access issue', 
+                'Unable to access required map resources. This may be a temporary issue.'
               );
             } else if (mapError?.sourceError?.status === 401) {
               handleError(
                 'Map authentication failed', 
-                'Please check your Mapbox token or try refreshing the page.'
+                'Please try refreshing the page.'
               );
             } else if (mapError?.sourceError?.status === 404) {
               handleError(
                 'Map resources not found', 
-                'Please check your map style configuration.'
+                'The requested map resources could not be found.'
               );
             } else if (mapError?.sourceError?.status === 429) {
               handleError(
@@ -146,7 +147,7 @@ const MapboxMap = ({
             } else {
               handleError(
                 'There was an error loading the map', 
-                'Please check your internet connection.'
+                e.error.message || 'Unknown error'
               );
             }
           });
@@ -174,7 +175,7 @@ const MapboxMap = ({
         setIsMapInitialized(false);
       }
     };
-  }, [location, onLocationChange, readonly, initializeMap, onError, tokenError, retryCount]);
+  }, [location, onLocationChange, readonly, initializeMap, handleError, tokenError, retryCount, defaultCenter]);
 
   useEffect(() => {
     if (!map.current || !isMapInitialized) return;
@@ -217,17 +218,6 @@ const MapboxMap = ({
           {errorDetails && <AlertDescription>{errorDetails}</AlertDescription>}
         </Alert>
         
-        {error.includes('restricted') && (
-          <Alert className="mb-4 flex-shrink-0 max-w-md">
-            <Globe className="h-5 w-5" />
-            <AlertTitle>Domain Restriction Issue</AlertTitle>
-            <AlertDescription>
-              Please ensure your Mapbox token allows access from this domain. 
-              Check token restrictions in your Mapbox account settings.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         <Button 
           onClick={handleRetry} 
           variant="outline" 
@@ -262,6 +252,8 @@ const MapboxMap = ({
       )}
     </div>
   );
-};
+});
+
+MapboxMap.displayName = 'MapboxMap';
 
 export default MapboxMap;

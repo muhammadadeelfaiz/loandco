@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import MapboxMap from './map/MapboxMap';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,7 +27,7 @@ const Map = memo((props: MapProps) => {
     markersCount: props.markers?.length
   });
   
-  const handleMapError = (errorMessage: string) => {
+  const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);
     
     // Call the onError prop if provided
@@ -42,7 +42,7 @@ const Map = memo((props: MapProps) => {
       description: errorMessage,
       duration: 5000,
     });
-  };
+  }, [props.onError, toast]);
   
   return <MapboxMap {...props} onError={handleMapError} />;
 });

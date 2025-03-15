@@ -25,11 +25,10 @@ async function verifyMapboxToken(token: string): Promise<{isValid: boolean; erro
       const status = response.status;
       let errorMessage = `Token verification failed with status: ${status}`;
       
-      // Specific error message for the most common error
       if (status === 401) {
         errorMessage = "Unauthorized: The token is invalid or has expired";
       } else if (status === 403) {
-        errorMessage = "Forbidden: The token doesn't have access to this resource, possibly due to domain restrictions";
+        errorMessage = "Forbidden: The token doesn't have sufficient permissions";
       }
       
       console.error(errorMessage);

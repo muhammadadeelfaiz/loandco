@@ -42,10 +42,8 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
         
         if (status === 401) {
           errorMsg = "Token unauthorized or invalid";
-        } else if (status === 403) {
-          const domain = getCurrentDomain();
-          errorMsg = `Token has domain restrictions that don't include '${domain}'`;
-        }
+        } 
+        // Don't automatically assume 403 is a domain restriction, could be other permissions
         
         console.log(`Token validation result: invalid - ${errorMsg}`);
         return { isValid: false, error: errorMsg };
@@ -54,7 +52,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
       console.error('Token validation error:', error);
       return { isValid: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
-  }, [getCurrentDomain]);
+  }, []);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -87,6 +85,21 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           }
         }
         
+        // Try to get token directly from environment first
+        const envToken = process.env.MAPBOX_PUBLIC_TOKEN;
+        if (envToken) {
+          const validationResult = await validateToken(envToken);
+          if (validationResult.isValid) {
+            console.log('Using valid Mapbox token from environment');
+            localStorage.setItem('mapbox_token', envToken);
+            localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+            setToken(envToken);
+            setTokenSource('environment');
+            setIsLoading(false);
+            return;
+          }
+        }
+        
         // Try to get token from Supabase Function
         try {
           console.log('Calling Supabase map-service function...');
@@ -100,33 +113,22 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           }
           
           if (data?.token) {
-            if (data.valid) {
-              console.log(`Successfully received valid Mapbox token from Supabase: ${data.source}`);
-              
-              // Cache the token in localStorage with timestamp
+            // Always try to use the token from Supabase regardless of the 'valid' flag
+            // We'll do our own validation
+            console.log(`Received Mapbox token from Supabase: ${data.source}`);
+            
+            const validationResult = await validateToken(data.token);
+            if (validationResult.isValid) {
+              console.log('Supabase token is valid, storing in cache');
               localStorage.setItem('mapbox_token', data.token);
               localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
-              
               setToken(data.token);
               setTokenSource(data.source);
               setIsLoading(false);
               return;
-            } else if (data.error && data.error.includes('domain')) {
-              // Handle domain restriction error specifically
-              console.error(`Token domain restriction error: ${data.error}`);
-              setTokenError(`Token has domain restrictions that don't allow ${currentDomain}`);
-              setToken(null);
-              setIsLoading(false);
-              
-              toast({
-                variant: "destructive",
-                title: "Map Domain Restriction",
-                description: `Your Mapbox token doesn't allow access from ${currentDomain}. Please update token settings.`,
-                duration: 8000,
-              });
-              return;
             } else {
-              console.warn(`Token from Supabase is invalid: ${data.error}`);
+              console.warn(`Token from Supabase is invalid: ${validationResult.error}`);
+              // Continue to fallback token
             }
           } else {
             console.warn('No token in response from map-service function');
@@ -151,7 +153,7 @@ export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, th
           toast({
             variant: "destructive",
             title: "Map Error",
-            description: "Failed to initialize map with valid token. Please check your network settings or Mapbox configuration.",
+            description: "Failed to initialize map with valid token. Please try refreshing the page.",
             duration: 5000,
           });
         }
