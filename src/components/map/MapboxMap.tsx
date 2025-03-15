@@ -11,7 +11,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 interface MapboxMapProps {
-  location?: { lat: number; lng: number };
+  location?: { lat: number; lng: number } | null;
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
   searchRadius?: number;

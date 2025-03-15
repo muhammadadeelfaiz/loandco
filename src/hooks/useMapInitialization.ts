@@ -1,13 +1,13 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, RefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
-// Guaranteed to work fallback token - last resort
-const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+// Temporary token - you should replace this with your own from Mapbox
+const TEMP_MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
-export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElement>, theme: string) => {
+export const useMapInitialization = (mapContainer: RefObject<HTMLDivElement>, theme: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
@@ -93,17 +93,17 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           console.error('Supabase token fetch failed:', supabaseError);
         }
         
-        // Use hardcoded token as last resort
-        console.log('Using hardcoded Mapbox fallback token');
+        // Use temporary token as last resort for development
+        console.log('Using temporary Mapbox token for development');
         
-        // Validate fallback token before using it
-        const isValidFallback = await validateToken(FALLBACK_TOKEN);
-        if (isValidFallback) {
-          localStorage.setItem('mapbox_token', FALLBACK_TOKEN);
+        // Validate temporary token before using it
+        const isValidTemp = await validateToken(TEMP_MAPBOX_TOKEN);
+        if (isValidTemp) {
+          localStorage.setItem('mapbox_token', TEMP_MAPBOX_TOKEN);
           localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
-          setToken(FALLBACK_TOKEN);
+          setToken(TEMP_MAPBOX_TOKEN);
         } else {
-          console.error('Even fallback token is invalid!');
+          console.error('Temporary token is invalid!');
           setTokenError('Unable to obtain a valid Mapbox token. Please try again later.');
           toast({
             variant: "destructive",
@@ -150,9 +150,9 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
 
     if (!token) {
       console.error('No Mapbox token available');
-      // Always use fallback token as last resort if somehow token is still null
-      mapboxgl.accessToken = FALLBACK_TOKEN;
-      console.log('Using emergency fallback token');
+      // Try to use temporary token as last resort
+      mapboxgl.accessToken = TEMP_MAPBOX_TOKEN;
+      console.log('Using temporary token as fallback');
     } else {
       console.log('Using Mapbox token:', token.substring(0, 10) + '...');
       mapboxgl.accessToken = token;
@@ -169,10 +169,7 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           : 'mapbox://styles/mapbox/light-v11',
         center: [defaultLocation.lng, defaultLocation.lat],
         zoom: 13,
-        trackResize: true,
-        maxZoom: 18,
-        minZoom: 1,
-        attributionControl: false, // Disable attribution control to avoid layout issues
+        attributionControl: false,
       });
       
       // Add attribution in the bottom-right
@@ -202,22 +199,6 @@ export const useMapInitialization = (mapContainer: React.RefObject<HTMLDivElemen
           marker.setLngLat([location.lng, location.lat]).addTo(map);
         }
       }
-
-      // Setup event handlers
-      map.on('load', () => {
-        console.log('Map loaded successfully');
-        setIsLoading(false);
-      });
-
-      map.on('error', (e) => {
-        console.error('Mapbox error:', e);
-        toast({
-          variant: "destructive",
-          title: "Map Error",
-          description: "There was an error with the map. Please try reloading the page.",
-          duration: 5000,
-        });
-      });
 
       return map;
 

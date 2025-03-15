@@ -1,5 +1,5 @@
 
-import { MapPin } from 'lucide-react';
+import MapboxMap from './map/MapboxMap';
 
 interface MapProps {
   location?: { lat: number; lng: number } | null;
@@ -16,27 +16,14 @@ interface MapProps {
   }>;
 }
 
-const MapComponent = (props: MapProps) => {
-  return (
-    <div className="h-full w-full bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-      <div className="text-center p-6">
-        <MapPin className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400 text-lg">
-          Map functionality will be implemented later
-        </p>
-        {props.location && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Location: {props.location.lat.toFixed(4)}, {props.location.lng.toFixed(4)}
-          </p>
-        )}
-        {props.markers && props.markers.length > 0 && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {props.markers.length} markers available
-          </p>
-        )}
-      </div>
-    </div>
-  );
+const Map = (props: MapProps) => {
+  console.log('Rendering Map component with props:', {
+    hasLocation: !!props.location,
+    isReadonly: props.readonly,
+    markersCount: props.markers?.length
+  });
+  
+  return <MapboxMap {...props} />;
 };
 
-export default MapComponent;
+export default Map;

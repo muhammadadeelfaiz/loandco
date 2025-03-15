@@ -59,8 +59,8 @@ export const useLocation = () => {
           
           setError(message);
           
-          // Set default location (New York City)
-          const defaultLocation = { lat: 40.7128, lng: -74.0060 };
+          // Set default location (Dubai)
+          const defaultLocation = { lat: 25.2048, lng: 55.2708 };
           setUserLocation(defaultLocation);
           localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
           
@@ -82,7 +82,7 @@ export const useLocation = () => {
       setError("Your browser doesn't support geolocation.");
       
       // Set default location
-      const defaultLocation = { lat: 40.7128, lng: -74.0060 };
+      const defaultLocation = { lat: 25.2048, lng: 55.2708 };
       setUserLocation(defaultLocation);
       localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
       
