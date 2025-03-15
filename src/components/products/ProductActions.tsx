@@ -1,15 +1,23 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Store } from "lucide-react";
+import { Store, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ChatInterface from "@/components/chat/ChatInterface";
 
 interface ProductActionsProps {
   storeWebsite?: string;
   productId: string;
+  retailerId?: string;
+  retailerName?: string;
 }
 
-const ProductActions = ({ storeWebsite, productId }: ProductActionsProps) => {
+const ProductActions = ({ 
+  storeWebsite, 
+  productId, 
+  retailerId, 
+  retailerName 
+}: ProductActionsProps) => {
   const navigate = useNavigate();
 
   return (
@@ -27,6 +35,15 @@ const ProductActions = ({ storeWebsite, productId }: ProductActionsProps) => {
           Store Unavailable
         </Button>
       )}
+      
+      {retailerId && retailerName ? (
+        <ChatInterface 
+          userId={undefined} 
+          retailerId={retailerId} 
+          retailerName={retailerName} 
+        />
+      ) : null}
+      
       <Button 
         variant="outline" 
         className="flex-1"

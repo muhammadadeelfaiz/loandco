@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare } from "lucide-react";
+import { useUser } from "@/hooks/useUser";
 
 interface ChatInterfaceProps {
   userId: string | undefined;
@@ -12,10 +13,14 @@ interface ChatInterfaceProps {
   retailerName: string;
 }
 
-const ChatInterface = ({ userId, retailerId, retailerName }: ChatInterfaceProps) => {
+const ChatInterface = ({ userId: passedUserId, retailerId, retailerName }: ChatInterfaceProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { user } = useUser();
+  
+  // Use passed userId or get it from auth context
+  const userId = passedUserId || user?.id;
 
   const handleStartChat = async () => {
     if (!userId) {

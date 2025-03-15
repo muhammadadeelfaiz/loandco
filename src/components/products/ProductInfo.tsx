@@ -2,6 +2,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin } from "lucide-react";
+import ChatInterface from "@/components/chat/ChatInterface";
 
 interface Store {
   latitude: number;
@@ -15,6 +16,8 @@ interface ProductInfoProps {
   userLocation?: { lat: number; lng: number };
   store?: Store;
   description?: string;
+  retailerId?: string;
+  retailerName?: string;
 }
 
 const ProductInfo = ({ 
@@ -23,7 +26,9 @@ const ProductInfo = ({
   price, 
   userLocation, 
   store, 
-  description 
+  description,
+  retailerId,
+  retailerName
 }: ProductInfoProps) => {
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371;
@@ -55,6 +60,16 @@ const ProductInfo = ({
                 store.longitude
               ).toFixed(1)}km away
             </span>
+          </div>
+        )}
+        
+        {retailerId && retailerName && (
+          <div className="ml-auto">
+            <ChatInterface 
+              userId={undefined} 
+              retailerId={retailerId} 
+              retailerName={retailerName} 
+            />
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import ChatInterface from "@/components/chat/ChatInterface";
 
 interface ProductCardProps {
   product: {
@@ -173,6 +174,16 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
               )}
               
               <div className="flex gap-2 mt-auto">
+                {product.retailer_name && product.retailer_id && (
+                  <div onClick={(e) => e.preventDefault()}>
+                    <ChatInterface 
+                      userId={undefined} 
+                      retailerId={product.retailer_id} 
+                      retailerName={product.retailer_name} 
+                    />
+                  </div>
+                )}
+                
                 {product.retailer_name && (
                   <Button 
                     variant="outline"
