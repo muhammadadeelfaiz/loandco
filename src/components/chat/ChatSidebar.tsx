@@ -33,7 +33,6 @@ const ChatSidebar = ({ userId, activeConversationId }: ChatSidebarProps) => {
             id,
             last_message_at,
             retailer:retailer_id(
-              id,
               name
             )
           `)

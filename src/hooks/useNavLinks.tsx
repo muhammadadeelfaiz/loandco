@@ -1,5 +1,6 @@
 
 import { useUser } from "@/hooks/useUser";
+import { MessageSquare } from "lucide-react";
 
 export const useNavLinks = () => {
   const { user } = useUser();
@@ -12,7 +13,11 @@ export const useNavLinks = () => {
     ];
     
     if (user) {
-      links.push({ label: "Messages", href: "/chat" });
+      links.push({ 
+        label: "Messages", 
+        href: "/chat",
+        icon: <MessageSquare className="h-4 w-4 mr-2" />
+      });
     }
     
     return links;
