@@ -4,12 +4,14 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "date-fns";
 
+interface RetailerData {
+  name: string;
+}
+
 interface Conversation {
   id: string;
   last_message_at: string;
-  retailer: {
-    name: string;
-  };
+  retailer: RetailerData | null;
 }
 
 interface ChatSidebarProps {
@@ -46,25 +48,23 @@ const ChatSidebar = ({ userId, activeConversationId }: ChatSidebarProps) => {
           const formattedData = data.map(item => {
             // Get retailer information, ensuring it matches our expected format
             const retailerData = item.retailer;
-            let retailerName = "Unknown Retailer";
+            let retailerInfo: RetailerData | null = null;
             
             // Handle different possible data structures
             if (retailerData) {
               if (typeof retailerData === 'object' && !Array.isArray(retailerData)) {
                 // Direct object
-                retailerName = retailerData.name || "Unknown Retailer";
+                retailerInfo = { name: retailerData.name || "Unknown Retailer" };
               } else if (Array.isArray(retailerData) && retailerData.length > 0) {
                 // Array of objects (first item)
-                retailerName = retailerData[0].name || "Unknown Retailer";
+                retailerInfo = { name: retailerData[0].name || "Unknown Retailer" };
               }
             }
             
             return {
               id: item.id,
               last_message_at: item.last_message_at,
-              retailer: {
-                name: retailerName
-              }
+              retailer: retailerInfo || { name: "Unknown Retailer" }
             };
           });
           

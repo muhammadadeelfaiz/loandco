@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArchiveIcon, 
@@ -21,6 +21,17 @@ import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
+interface RetailerData {
+  name: string;
+}
+
+interface MessageData {
+  content: string;
+  created_at: string;
+  is_read: boolean;
+  sender_id: string;
+}
+
 interface ConversationData {
   id: string;
   retailer_name: string;
@@ -39,7 +50,7 @@ const ChatHomeSection = () => {
   const [activeTab, setActiveTab] = useState("all");
 
   // Fetch conversations when component mounts
-  useState(() => {
+  useEffect(() => {
     if (!user?.id) return;
     
     const fetchConversations = async () => {
@@ -68,6 +79,14 @@ const ChatHomeSection = () => {
 
         // Process the data to organize it properly
         const processedData = data?.map(item => {
+          // Get retailer information
+          const retailerData = item.retailer;
+          let retailerName = "Unknown Retailer";
+          
+          if (retailerData && typeof retailerData === 'object') {
+            retailerName = retailerData.name || "Unknown Retailer";
+          }
+          
           // Get the last message
           const messages = item.messages || [];
           const lastMessage = messages.sort((a, b) => 
@@ -81,7 +100,7 @@ const ChatHomeSection = () => {
 
           return {
             id: item.id,
-            retailer_name: item.retailer?.name || "Unknown Retailer",
+            retailer_name: retailerName,
             last_message: lastMessage?.content || "No messages yet",
             last_message_at: item.last_message_at,
             unread_count: unreadCount,
