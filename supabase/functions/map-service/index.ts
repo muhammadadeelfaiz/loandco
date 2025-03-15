@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Cache-Control': 'public, max-age=3600', // Cache for one hour
+  'Cache-Control': 'public, max-age=86400', // Cache for one day
 };
 
 // Public Mapbox token that can be used as fallback (limited usage)
@@ -14,14 +14,15 @@ const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnY
 // Verify token works by making a test request to Mapbox API
 async function verifyMapboxToken(token: string): Promise<{isValid: boolean; error?: string}> {
   try {
-    console.log('Verifying Mapbox token validity...');
     // Use a more reliable endpoint for token validation
     const response = await fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v11?access_token=${token}`, {
       method: 'HEAD',
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
     });
     
     if (response.ok) {
-      console.log('Mapbox token is valid');
       return { isValid: true };
     } else {
       const status = response.status;
@@ -33,11 +34,9 @@ async function verifyMapboxToken(token: string): Promise<{isValid: boolean; erro
         errorMessage = "Forbidden: The token doesn't have sufficient permissions";
       }
       
-      console.error(errorMessage);
       return { isValid: false, error: errorMessage };
     }
   } catch (error) {
-    console.error('Error verifying Mapbox token:', error);
     return { isValid: false, error: error instanceof Error ? error.message : 'Unknown error during verification' };
   }
 }
@@ -52,9 +51,6 @@ serve(async (req) => {
     // Get request information
     const url = new URL(req.url);
     const originDomain = req.headers.get('origin') || 'unknown';
-    const referer = req.headers.get('referer') || 'unknown';
-    
-    console.log(`Map service function called from origin: ${originDomain}`);
     
     let token = null;
     let tokenSource = 'fallback';
@@ -63,14 +59,12 @@ serve(async (req) => {
     // Try to get token from environment variables first
     if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
       token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
-      console.log('Using MAPBOX_PUBLIC_TOKEN from environment variables');
       
       // Verify the environment variable token
       verificationResult = await verifyMapboxToken(token);
       if (verificationResult.isValid) {
         tokenSource = 'environment';
       } else {
-        console.error(`Environment token is invalid: ${verificationResult.error}`);
         token = null;
       }
     }
@@ -82,9 +76,7 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
         
-        if (!supabaseUrl || !supabaseKey) {
-          console.log('Missing Supabase credentials, will try fallback token');
-        } else {
+        if (supabaseUrl && supabaseKey) {
           const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
           // Fetch the secret using Supabase's get_secrets RPC function
@@ -92,9 +84,7 @@ serve(async (req) => {
             secret_names: ['MAPBOX_PUBLIC_TOKEN']
           });
 
-          if (secretsError) {
-            console.error('Error fetching secret:', secretsError);
-          } else if (secrets?.MAPBOX_PUBLIC_TOKEN) {
+          if (!secretsError && secrets?.MAPBOX_PUBLIC_TOKEN) {
             const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
             
             // Verify the Supabase secret token
@@ -102,29 +92,22 @@ serve(async (req) => {
             if (verificationResult.isValid) {
               token = supabaseToken;
               tokenSource = 'supabase-secrets';
-              console.log('Using valid MAPBOX_PUBLIC_TOKEN from Supabase secrets');
-            } else {
-              console.error(`Supabase secret token is invalid: ${verificationResult.error}`);
             }
           }
         }
       } catch (error) {
-        console.error('Error with Supabase client:', error);
+        // Continue to fallback token
       }
     }
     
     // Use fallback token if nothing else worked
     if (!token) {
-      console.log('No valid token found in environment or Supabase secrets, using fallback token');
-      
       // Verify the fallback token
       verificationResult = await verifyMapboxToken(FALLBACK_TOKEN);
       if (verificationResult.isValid) {
         token = FALLBACK_TOKEN;
         tokenSource = 'fallback';
-        console.log('Using valid fallback Mapbox token');
       } else {
-        console.error(`Even fallback token is invalid: ${verificationResult.error}`);
         return new Response(
           JSON.stringify({ 
             error: "All available tokens are invalid. Please check Mapbox service status.",
@@ -142,26 +125,29 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Successfully retrieved Mapbox token from ${tokenSource}`);
+    // Add strong caching headers to reduce requests
+    const responseHeaders = {
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Expires': new Date(Date.now() + 86400000).toUTCString() // 24 hours in the future
+    };
     
     return new Response(
       JSON.stringify({ 
         token,
         source: tokenSource,
         valid: verificationResult.isValid,
-        error: verificationResult.error,
         timestamp: new Date().toISOString(),
         expiresIn: 86400, // 24 hours in seconds
       }), 
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: responseHeaders,
         status: 200
       }
     );
 
   } catch (error) {
-    console.error('Error in map service:', error);
-    
     // Always return a fallback token in error cases
     return new Response(
       JSON.stringify({ 

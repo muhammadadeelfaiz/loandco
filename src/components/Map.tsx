@@ -1,5 +1,5 @@
 
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useState, useRef } from 'react';
 import MapboxMap from './map/MapboxMap';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle } from 'lucide-react';
@@ -25,8 +25,7 @@ const Map = memo((props: MapProps) => {
   const { toast } = useToast();
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  
-  // Removed console.log that was causing frequent re-renders
+  const initCompleteRef = useRef(false);
   
   const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);
@@ -52,6 +51,7 @@ const Map = memo((props: MapProps) => {
     localStorage.removeItem('mapbox_token_timestamp');
     setMapError(null);
     setIsLoadingFallback(true);
+    initCompleteRef.current = false;
     
     // Wait a brief moment to ensure state updates
     setTimeout(() => {
@@ -89,8 +89,14 @@ const Map = memo((props: MapProps) => {
       </div>
     );
   }
-  
-  return <MapboxMap {...props} onError={handleMapError} />;
+
+  return (
+    <MapboxMap 
+      {...props} 
+      onError={handleMapError} 
+      initComplete={initCompleteRef}
+    />
+  );
 });
 
 Map.displayName = 'Map';

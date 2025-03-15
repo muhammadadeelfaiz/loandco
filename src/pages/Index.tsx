@@ -45,13 +45,13 @@ const Index = ({ user }: IndexProps) => {
   const { userLocation, isLoading: isLoadingLocation, error: locationError } = useLocation();
   const { stores } = useStores(userLocation);
   const { toast } = useToast();
+  const [mapKey, setMapKey] = useState<number>(0);
 
   const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
-    console.log("Location received:", coords);
     
-    // Force reload the page to update all location-dependent components
-    window.location.reload();
+    // Don't reload the page, just update the state
+    setMapKey(prev => prev + 1);
   }, []);
 
   const handleRefreshLocation = useCallback(() => {
@@ -59,16 +59,12 @@ const Index = ({ user }: IndexProps) => {
     localStorage.removeItem('userLocation');
     localStorage.removeItem('locationPrompted');
     
-    // Show the location prompt again
-    window.location.reload();
+    // Show the location prompt again without full page reload
+    setMapKey(prev => prev + 1);
   }, []);
 
   const handleCategoryClick = useCallback((categoryName: string) => {
     navigate(`/search?category=${encodeURIComponent(categoryName)}`);
-  }, [navigate]);
-
-  const handleStoreMarkerClick = useCallback((storeId: string) => {
-    navigate(`/store/${storeId}`);
   }, [navigate]);
 
   // Memoize the store markers to prevent unnecessary recalculations
@@ -92,13 +88,14 @@ const Index = ({ user }: IndexProps) => {
     
     return (
       <Map 
+        key={`map-${mapKey}`}
         location={userLocation}
         markers={storeMarkers}
         searchRadius={5}
         readonly={true}
       />
     );
-  }, [isLoadingLocation, userLocation, storeMarkers]);
+  }, [isLoadingLocation, userLocation, storeMarkers, mapKey]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">

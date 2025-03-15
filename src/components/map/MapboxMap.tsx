@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useEffect, useRef, useState, useCallback, memo, MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2, AlertTriangle, RefreshCw, Globe } from 'lucide-react';
@@ -16,6 +16,7 @@ interface MapboxMapProps {
   readonly?: boolean;
   searchRadius?: number;
   onError?: (message: string) => void;
+  initComplete?: MutableRefObject<boolean>;
   markers?: Array<{
     id: string;
     lat: number;
@@ -38,7 +39,8 @@ const MapboxMap = memo(({
   readonly = false,
   searchRadius = 5,
   markers = [],
-  onError
+  onError,
+  initComplete
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -56,20 +58,22 @@ const MapboxMap = memo(({
   const defaultCenter = { lat: 25.2048, lng: 55.2708 }; // Dubai as default
 
   const handleError = useCallback((errorMessage: string, details?: string) => {
+    if (error) return; // Prevent duplicate error handling
+    
     console.error('Map error:', errorMessage, details ? `Details: ${details}` : '');
     setError(errorMessage);
     setErrorDetails(details || null);
     if (onError) {
       onError(errorMessage);
     }
-  }, [onError]);
+  }, [onError, error]);
 
   const handleRetry = useCallback(() => {
-    console.log('Retrying map initialization...');
     setError(null);
     setErrorDetails(null);
     setIsMapInitialized(false);
     mapInitializedRef.current = false;
+    if (initComplete) initComplete.current = false;
     setRetryCount(prev => prev + 1);
     
     // Clean up existing map if any
@@ -84,18 +88,21 @@ const MapboxMap = memo(({
     
     // Retry token fetch
     retryFetchToken();
-  }, [retryFetchToken]);
+  }, [retryFetchToken, initComplete]);
 
   // Initialize map once
   useEffect(() => {
+    // Skip initialization if already done
     if (!mapContainer.current || mapInitializedRef.current) return;
     
-    // Clear any existing error when we try to initialize
-    if (tokenError) {
-      handleError(
-        "Map token could not be retrieved", 
-        "Please check your connection and try again."
-      );
+    // Skip if we're already showing an error
+    if (error || tokenError) {
+      if (tokenError) {
+        handleError(
+          "Map token could not be retrieved", 
+          "Please check your connection and try again."
+        );
+      }
       return;
     }
     
@@ -104,7 +111,6 @@ const MapboxMap = memo(({
         setError(null);
         setErrorDetails(null);
         const initialCenter = location || defaultCenter;
-        console.log('Initializing map with location:', initialCenter);
         
         const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
         
@@ -113,14 +119,13 @@ const MapboxMap = memo(({
           
           // Add error handling for map load
           newMap.on('load', () => {
-            console.log('Map initialized successfully');
             setIsMapInitialized(true);
             mapInitializedRef.current = true;
+            if (initComplete) initComplete.current = true;
           });
 
           // Add specific error handling for authentication errors
           newMap.on('error', (e: mapboxgl.ErrorEvent) => {
-            console.error('Map error event:', e);
             const mapError = e.error as MapboxError;
             
             if (e.error.message?.includes('access token')) {
@@ -173,11 +178,10 @@ const MapboxMap = memo(({
     initialize();
 
     return () => {
+      // Only remove the map on unmount, not on every render
       if (map.current) {
         map.current.remove();
         map.current = null;
-        mapInitializedRef.current = false;
-        setIsMapInitialized(false);
       }
     };
   }, [location, onLocationChange, readonly, initializeMap, handleError, tokenError, retryCount, defaultCenter]);
@@ -250,7 +254,7 @@ const MapboxMap = memo(({
         ref={mapContainer} 
         className="w-full h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700" 
       />
-      {isLoading && (
+      {isLoading && !isMapInitialized && (
         <div className="absolute inset-0 bg-gray-100/80 dark:bg-gray-800/80 flex items-center justify-center">
           <div className="flex flex-col items-center">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-2" />
