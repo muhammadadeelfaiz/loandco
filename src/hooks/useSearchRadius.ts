@@ -5,7 +5,7 @@ export const useSearchRadius = () => {
   const updateSearchRadius = (
     map: mapboxgl.Map,
     location?: { lat: number; lng: number },
-    searchRadius: number = 60
+    searchRadius: number = 30
   ) => {
     if (!map || !location) return;
 
@@ -53,8 +53,8 @@ export const useSearchRadius = () => {
           }
         });
 
-        // Adjust the zoom level to show the entire radius
-        const zoomLevel = Math.max(9, 12 - Math.log(searchRadius / 5) / Math.log(2));
+        // Adjust the zoom level based on the search radius
+        const zoomLevel = Math.max(9, 14 - Math.log(searchRadius / 2.5) / Math.log(2));
         
         map.flyTo({
           center: [location.lng, location.lat],

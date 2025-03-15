@@ -16,7 +16,7 @@ export interface Store {
 export const useStores = (
   userLocation: { lat: number; lng: number } | null, 
   selectedCategory: string | null = null,
-  radiusKm: number = 60 // Default radius of 60km
+  radiusKm: number = 30 // Default radius of 30km
 ) => {
   const [stores, setStores] = useState<Store[]>([]);
 
@@ -34,7 +34,7 @@ export const useStores = (
         console.error('Error fetching stores:', error);
         throw error;
       }
-      console.log('Fetched stores from Supabase:', data);
+      console.log(`Fetched stores from Supabase for radius ${radiusKm}km:`, data);
       
       // Validate that stores have valid coordinates
       const validStores = data.filter(store => 
@@ -108,7 +108,7 @@ export const useStores = (
     return R * c;
   };
 
-  // Calculate distance and filter stores within radius
+  // Calculate distance and filter stores within custom radius
   const storesWithDistance = stores.map(store => {
     let distance = null;
     if (userLocation && store.latitude && store.longitude) {

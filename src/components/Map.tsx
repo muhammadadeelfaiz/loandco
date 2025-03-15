@@ -33,6 +33,11 @@ const Map = memo((props: MapProps) => {
     console.log('Map component markers:', props.markers?.length, props.markers);
   }, [props.markers]);
   
+  // Log search radius changes
+  useEffect(() => {
+    console.log('Map search radius updated:', props.searchRadius);
+  }, [props.searchRadius]);
+  
   const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);
     setMapError(errorMessage);
@@ -101,7 +106,7 @@ const Map = memo((props: MapProps) => {
       location={props.location}
       onLocationChange={props.onLocationChange}
       readonly={props.readonly}
-      searchRadius={props.searchRadius || 60} // Default to 60km radius
+      searchRadius={props.searchRadius || 30} // Default to 30km radius
       markers={props.markers} 
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}

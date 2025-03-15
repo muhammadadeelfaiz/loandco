@@ -16,6 +16,7 @@ import { Loader2, MapPin } from "lucide-react";
 import Deals from "@/components/home/Deals";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 
 interface IndexProps {
   user: User | null;
@@ -39,25 +40,28 @@ const RETAILER_IMAGES = {
   "Fashion Hub": "/lovable-uploads/9c7c0a92-8e0a-4da2-ab91-a778342ba322.png",
 };
 
-// Set radius to 60km
-const SEARCH_RADIUS_KM = 60;
+// Default search radius and limits
+const DEFAULT_SEARCH_RADIUS_KM = 30;
+const MIN_SEARCH_RADIUS_KM = 10;
+const MAX_SEARCH_RADIUS_KM = 60;
 
 const Index = ({ user }: IndexProps) => {
   const navigate = useNavigate();
   const userRole = user?.user_metadata?.role || "customer";
   const { userLocation, isLoading: isLoadingLocation, error: locationError } = useLocation();
-  const { stores, isLoading: isLoadingStores } = useStores(userLocation, null, SEARCH_RADIUS_KM);
+  const [searchRadius, setSearchRadius] = useState<number>(DEFAULT_SEARCH_RADIUS_KM);
+  const { stores, isLoading: isLoadingStores } = useStores(userLocation, null, searchRadius);
   const { toast } = useToast();
   const [mapKey, setMapKey] = useState<number>(0);
   const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('User location:', userLocation);
-    console.log('Stores count within 60km radius:', stores.length);
+    console.log(`Stores count within ${searchRadius}km radius:`, stores.length);
     if (stores.length > 0) {
       console.log('First store:', stores[0]);
     }
-  }, [userLocation, stores]);
+  }, [userLocation, stores, searchRadius]);
 
   const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
@@ -73,6 +77,13 @@ const Index = ({ user }: IndexProps) => {
     
     // Show the location prompt again without full page reload
     setMapKey(prev => prev + 1);
+  }, []);
+
+  const handleRadiusChange = useCallback((value: number[]) => {
+    const newRadius = value[0];
+    console.log(`Changing search radius to ${newRadius}km`);
+    setSearchRadius(newRadius);
+    setMapKey(prev => prev + 1); // Refresh map when radius changes
   }, []);
 
   const handleCategoryClick = useCallback((categoryName: string) => {
@@ -98,7 +109,7 @@ const Index = ({ user }: IndexProps) => {
   // Memoize the store markers to prevent unnecessary recalculations
   const storeMarkers = useMemo(() => {
     if (!stores || stores.length === 0) {
-      console.log('No stores available for markers within 60km radius');
+      console.log(`No stores available for markers within ${searchRadius}km radius`);
       return [];
     }
     
@@ -110,9 +121,9 @@ const Index = ({ user }: IndexProps) => {
       description: `${store.category}${store.distance ? ` - ${store.distance.toFixed(1)}km away` : ''}${store.description ? `\n${store.description}` : ''}`
     }));
     
-    console.log('Created store markers within 60km radius:', markers.length);
+    console.log(`Created store markers within ${searchRadius}km radius:`, markers.length);
     return markers;
-  }, [stores]);
+  }, [stores, searchRadius]);
 
   // Memoize the Map component with its props to prevent re-rendering
   const mapComponent = useMemo(() => {
@@ -124,20 +135,20 @@ const Index = ({ user }: IndexProps) => {
       );
     }
     
-    console.log('Rendering map with', storeMarkers.length, 'markers within 60km radius');
+    console.log(`Rendering map with ${storeMarkers.length} markers within ${searchRadius}km radius`);
     
     return (
       <Map 
         key={`map-${mapKey}`}
         location={userLocation}
         markers={storeMarkers}
-        searchRadius={SEARCH_RADIUS_KM}
+        searchRadius={searchRadius}
         readonly={true}
         onError={handleMapError}
         onMarkerClick={handleStoreMarkerClick}
       />
     );
-  }, [isLoadingLocation, isLoadingStores, userLocation, storeMarkers, mapKey, handleMapError, handleStoreMarkerClick]);
+  }, [isLoadingLocation, isLoadingStores, userLocation, storeMarkers, mapKey, handleMapError, handleStoreMarkerClick, searchRadius]);
 
   return (
     <div className="min-h-screen bg-gradient-loco">
@@ -164,7 +175,7 @@ const Index = ({ user }: IndexProps) => {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Stores Near You</h2>
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-600 dark:text-gray-300">
-                Showing stores within {SEARCH_RADIUS_KM}km
+                Showing stores within {searchRadius}km
               </div>
               {userLocation && (
                 <Button 
@@ -181,13 +192,36 @@ const Index = ({ user }: IndexProps) => {
           </div>
           
           <Card className="p-4 bg-white/80 dark:bg-gray-800/80">
+            {userLocation && (
+              <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Search Radius: {searchRadius} km</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    ({MIN_SEARCH_RADIUS_KM}km - {MAX_SEARCH_RADIUS_KM}km)
+                  </span>
+                </div>
+                <Slider 
+                  value={[searchRadius]}
+                  min={MIN_SEARCH_RADIUS_KM}
+                  max={MAX_SEARCH_RADIUS_KM}
+                  step={5}
+                  onValueChange={handleRadiusChange}
+                  className="my-2"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Closer</span>
+                  <span>Further</span>
+                </div>
+              </div>
+            )}
+            
             <div className="h-[400px] w-full">
               {mapComponent}
             </div>
             
             {storeMarkers.length === 0 && !isLoadingLocation && !isLoadingStores && (
               <div className="mt-4 text-center text-gray-600 dark:text-gray-300">
-                <p>No stores found within {SEARCH_RADIUS_KM}km of your location. Try updating your location or check back later.</p>
+                <p>No stores found within {searchRadius}km of your location. Try updating your location or increasing the search radius.</p>
               </div>
             )}
           </Card>
