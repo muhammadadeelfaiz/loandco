@@ -27,8 +27,8 @@ interface MapboxMapProps {
   }>;
 }
 
-// Mapbox public token - this is a public token with limited usage
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
+// Updated Mapbox public token - this is Mapbox's default public demo token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
 const MapboxMap = memo(({
   location,
@@ -94,7 +94,7 @@ const MapboxMap = memo(({
     if (!mapContainer.current || mapInitializedRef.current) return null;
     
     try {
-      // Always use the hardcoded token
+      // Always use the working Mapbox token
       mapboxgl.accessToken = MAPBOX_TOKEN;
       
       console.log('Initializing map with center:', center);

@@ -14,8 +14,8 @@ interface UseMapInitializationResult {
   tokenSource: string | null;
 }
 
-// Direct public token with limited usage
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
+// Updated Mapbox public token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
 export const useMapInitialization = (
   mapContainerRef: MutableRefObject<HTMLDivElement | null>,

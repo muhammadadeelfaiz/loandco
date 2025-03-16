@@ -22,8 +22,8 @@ interface MapProps {
   onMarkerClick?: (markerId: string) => void;
 }
 
-// Public Mapbox token (limited usage)
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
+// Updated Mapbox public token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
 
 const Map = memo((props: MapProps) => {
   const { toast } = useToast();
@@ -32,7 +32,7 @@ const Map = memo((props: MapProps) => {
   const [retryCount, setRetryCount] = useState(0);
   const initCompleteRef = useRef(false);
   
-  // Log markers for debugging
+  // Log marker data for debugging
   useEffect(() => {
     console.log('Map component markers:', props.markers?.length, props.markers);
   }, [props.markers]);
