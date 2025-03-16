@@ -22,6 +22,9 @@ interface MapProps {
   onMarkerClick?: (markerId: string) => void;
 }
 
+// Public Mapbox token that can be used as fallback
+const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+
 const Map = memo((props: MapProps) => {
   const { toast } = useToast();
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
@@ -115,6 +118,7 @@ const Map = memo((props: MapProps) => {
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}
       initComplete={initCompleteRef}
+      fallbackToken={FALLBACK_TOKEN}
     />
   );
 });

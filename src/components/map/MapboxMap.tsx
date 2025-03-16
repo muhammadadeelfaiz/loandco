@@ -4,7 +4,6 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Loader2, AlertTriangle, RefreshCw, Globe } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
-import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -18,6 +17,7 @@ interface MapboxMapProps {
   onError?: (message: string) => void;
   onMarkerClick?: (markerId: string) => void;
   initComplete?: MutableRefObject<boolean>;
+  fallbackToken?: string;
   markers?: Array<{
     id: string;
     lat: number;
@@ -34,6 +34,9 @@ interface MapboxError extends Error {
   };
 }
 
+// Default fallback token if none provided
+const DEFAULT_FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+
 const MapboxMap = memo(({
   location,
   onLocationChange,
@@ -42,18 +45,19 @@ const MapboxMap = memo(({
   markers = [],
   onError,
   onMarkerClick,
-  initComplete
+  initComplete,
+  fallbackToken
 }: MapboxMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersUpdatedRef = useRef<boolean>(false);
   const mapInitializedRef = useRef<boolean>(false);
   const [isMapInitialized, setIsMapInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const { theme } = useTheme();
-  const { isLoading, initializeMap, retryFetchToken, tokenError, tokenSource } = useMapInitialization(mapContainer, theme);
   
   const { updateMarkers } = useMapMarkers(onMarkerClick);
   const searchRadiusInstance = useSearchRadius();
@@ -94,10 +98,81 @@ const MapboxMap = memo(({
     // Clear token cache
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
+  }, [initComplete]);
+
+  // Get or load mapbox token
+  const getMapboxToken = useCallback(async (): Promise<string> => {
+    // Check for a cached token in localStorage
+    const cachedToken = localStorage.getItem('mapbox_token');
+    const cachedTimestamp = localStorage.getItem('mapbox_token_timestamp');
     
-    // Retry token fetch
-    retryFetchToken();
-  }, [retryFetchToken, initComplete]);
+    if (cachedToken && cachedTimestamp) {
+      const timestamp = parseInt(cachedTimestamp, 10);
+      const currentTime = Date.now();
+      
+      // Use cached token if it's less than 24 hours old
+      if (currentTime - timestamp < 24 * 60 * 60 * 1000) {
+        console.log('Using cached Mapbox token');
+        return cachedToken;
+      }
+    }
+    
+    // Use the provided fallback token or the default one
+    const token = fallbackToken || DEFAULT_FALLBACK_TOKEN;
+    
+    // Cache the token
+    localStorage.setItem('mapbox_token', token);
+    localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+    
+    return token;
+  }, [fallbackToken]);
+
+  // Initialize map
+  const initializeMap = useCallback(async (center: { lat: number; lng: number }) => {
+    if (!mapContainer.current || mapInitializedRef.current) return null;
+    
+    try {
+      const token = await getMapboxToken();
+      mapboxgl.accessToken = token;
+      
+      // Create the map
+      const newMap = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
+        center: [center.lng, center.lat],
+        zoom: 12,
+        attributionControl: false,
+        preserveDrawingBuffer: true
+      });
+      
+      // Add navigation controls if not readonly
+      if (!readonly) {
+        newMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      }
+      
+      // Add click handler if location changes are allowed
+      if (!readonly && onLocationChange) {
+        newMap.on('click', (e) => {
+          const { lng, lat } = e.lngLat;
+          onLocationChange({ lat, lng });
+        });
+      }
+      
+      // Add attribution
+      newMap.addControl(new mapboxgl.AttributionControl({
+        compact: true
+      }));
+      
+      return newMap;
+    } catch (err) {
+      console.error('Error initializing map:', err);
+      handleError(
+        'Failed to initialize map', 
+        err instanceof Error ? err.message : 'Unknown error'
+      );
+      return null;
+    }
+  }, [mapContainer, theme, readonly, onLocationChange, getMapboxToken, handleError]);
 
   // Initialize map once
   useEffect(() => {
@@ -105,23 +180,16 @@ const MapboxMap = memo(({
     if (!mapContainer.current || mapInitializedRef.current) return;
     
     // Skip if we're already showing an error
-    if (error || tokenError) {
-      if (tokenError) {
-        handleError(
-          "Map token could not be retrieved", 
-          "Please check your connection and try again."
-        );
-      }
-      return;
-    }
+    if (error) return;
     
     const initialize = async () => {
       try {
+        setIsLoading(true);
         setError(null);
         setErrorDetails(null);
         const initialCenter = location || defaultCenter;
         
-        const newMap = await initializeMap(initialCenter, onLocationChange, readonly);
+        const newMap = await initializeMap(initialCenter);
         
         if (newMap) {
           map.current = newMap;
@@ -130,6 +198,7 @@ const MapboxMap = memo(({
           newMap.on('load', () => {
             console.log('Map loaded successfully');
             setIsMapInitialized(true);
+            setIsLoading(false);
             mapInitializedRef.current = true;
             if (initComplete) initComplete.current = true;
             
@@ -194,6 +263,8 @@ const MapboxMap = memo(({
           'Failed to initialize map', 
           err instanceof Error ? err.message : 'Unknown error'
         );
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -208,17 +279,17 @@ const MapboxMap = memo(({
     };
   }, [
     location, 
-    onLocationChange, 
     readonly, 
     initializeMap, 
     handleError, 
-    tokenError, 
     retryCount, 
     defaultCenter, 
     markers,
     searchRadius,
     updateMarkers,
-    searchRadiusInstance
+    searchRadiusInstance,
+    error,
+    initComplete
   ]);
 
   // Update markers when they change
@@ -277,12 +348,6 @@ const MapboxMap = memo(({
           <RefreshCw className="h-4 w-4" />
           Retry Loading Map
         </Button>
-        
-        {tokenSource && (
-          <p className="text-xs text-gray-500 mt-4">
-            Token source: {tokenSource}
-          </p>
-        )}
       </div>
     );
   }
