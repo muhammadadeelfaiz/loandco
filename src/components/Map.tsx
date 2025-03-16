@@ -69,7 +69,7 @@ const Map = memo((props: MapProps) => {
     // Wait a brief moment to ensure state updates
     setTimeout(() => {
       setIsLoadingFallback(false);
-    }, 500);
+    }, 1000);
   }, []);
   
   if (mapError) {

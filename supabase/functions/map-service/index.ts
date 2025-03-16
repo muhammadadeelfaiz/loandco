@@ -1,12 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Content-Type': 'application/json', // Ensure proper content type
-};
+import { corsHeaders, errorResponse, successResponse } from "../_shared/utils.ts";
 
 // Public Mapbox token that can be used as fallback (limited usage)
 const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
@@ -108,18 +103,15 @@ serve(async (req) => {
         token = FALLBACK_TOKEN;
         tokenSource = 'fallback';
       } else {
-        return new Response(
-          JSON.stringify({ 
-            error: "All available tokens are invalid. Please check Mapbox service status.",
+        return errorResponse(
+          "All available tokens are invalid. Please check Mapbox service status.", 
+          500, 
+          {
             source: "validation-error",
             requestInfo: {
               origin: originDomain,
               timestamp: new Date().toISOString()
             }
-          }), 
-          { 
-            headers: corsHeaders,
-            status: 500
           }
         );
       }
@@ -128,39 +120,23 @@ serve(async (req) => {
     console.log(`Returning Mapbox token from source: ${tokenSource}`);
     
     // Return the token with appropriate cache headers
-    return new Response(
-      JSON.stringify({ 
-        token,
-        source: tokenSource,
-        valid: verificationResult.isValid,
-        timestamp: new Date().toISOString(),
-        expiresIn: 86400, // 24 hours in seconds
-      }), 
-      { 
-        headers: {
-          ...corsHeaders,
-          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-          'Expires': new Date(Date.now() + 3600000).toUTCString(),
-        },
-        status: 200
-      }
-    );
+    return successResponse({
+      token,
+      source: tokenSource,
+      valid: verificationResult.isValid,
+      timestamp: new Date().toISOString(),
+      expiresIn: 86400, // 24 hours in seconds
+    });
 
   } catch (error) {
     console.error("Error in map-service:", error);
     
     // Always return a fallback token in error cases
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'An unknown error occurred',
-        token: FALLBACK_TOKEN, // Provide fallback token even in error case
-        source: 'error-fallback',
-        valid: true // Mark as valid to allow map to initialize
-      }), 
-      { 
-        headers: corsHeaders,
-        status: 200 // Return 200 even in error case to allow fallback to work
-      }
-    );
+    return successResponse({ 
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      token: FALLBACK_TOKEN, // Provide fallback token even in error case
+      source: 'error-fallback',
+      valid: true // Mark as valid to allow map to initialize
+    });
   }
 });
