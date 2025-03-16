@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback, memo, MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Loader2, AlertTriangle, RefreshCw, Globe } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useSearchRadius } from '@/hooks/useSearchRadius';
@@ -27,15 +27,8 @@ interface MapboxMapProps {
   }>;
 }
 
-// Define a type for Mapbox error events
-interface MapboxError extends Error {
-  sourceError?: {
-    status?: number;
-  };
-}
-
-// Default fallback token if none provided
-const DEFAULT_FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+// Hardcoded token - this is a limited public token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
 const MapboxMap = memo(({
   location,
@@ -95,45 +88,20 @@ const MapboxMap = memo(({
       map.current = null;
     }
     
-    // Clear token cache
+    // Clear any cached tokens
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
   }, [initComplete]);
-
-  // Get or load mapbox token
-  const getMapboxToken = useCallback(async (): Promise<string> => {
-    // Check for a cached token in localStorage
-    const cachedToken = localStorage.getItem('mapbox_token');
-    const cachedTimestamp = localStorage.getItem('mapbox_token_timestamp');
-    
-    if (cachedToken && cachedTimestamp) {
-      const timestamp = parseInt(cachedTimestamp, 10);
-      const currentTime = Date.now();
-      
-      // Use cached token if it's less than 24 hours old
-      if (currentTime - timestamp < 24 * 60 * 60 * 1000) {
-        console.log('Using cached Mapbox token');
-        return cachedToken;
-      }
-    }
-    
-    // Use the provided fallback token or the default one
-    const token = fallbackToken || DEFAULT_FALLBACK_TOKEN;
-    
-    // Cache the token
-    localStorage.setItem('mapbox_token', token);
-    localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
-    
-    return token;
-  }, [fallbackToken]);
 
   // Initialize map
   const initializeMap = useCallback(async (center: { lat: number; lng: number }) => {
     if (!mapContainer.current || mapInitializedRef.current) return null;
     
     try {
-      const token = await getMapboxToken();
-      mapboxgl.accessToken = token;
+      // Use direct token approach - no more edge function calls
+      mapboxgl.accessToken = fallbackToken || MAPBOX_TOKEN;
+      
+      console.log('Initializing map with center:', center);
       
       // Create the map
       const newMap = new mapboxgl.Map({
@@ -141,8 +109,7 @@ const MapboxMap = memo(({
         style: theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
         center: [center.lng, center.lat],
         zoom: 12,
-        attributionControl: false,
-        preserveDrawingBuffer: true
+        attributionControl: false
       });
       
       // Add navigation controls if not readonly
@@ -172,7 +139,7 @@ const MapboxMap = memo(({
       );
       return null;
     }
-  }, [mapContainer, theme, readonly, onLocationChange, getMapboxToken, handleError]);
+  }, [mapContainer, theme, readonly, onLocationChange, handleError, fallbackToken]);
 
   // Initialize map once
   useEffect(() => {
@@ -217,45 +184,20 @@ const MapboxMap = memo(({
 
           // Add specific error handling for authentication errors
           newMap.on('error', (e: mapboxgl.ErrorEvent) => {
-            const mapError = e.error as MapboxError;
+            const errorMsg = e.error.message || 'Unknown map error';
+            console.error('Mapbox error:', errorMsg);
             
-            if (e.error.message?.includes('access token')) {
+            if (errorMsg.includes('access token')) {
               handleError(
                 'Map access token issue', 
                 'There is a problem with the Mapbox access token. Please try refreshing the page.'
               );
-            } else if (mapError?.sourceError?.status === 403) {
-              handleError(
-                'Map resource access issue', 
-                'Unable to access required map resources. This may be a temporary issue.'
-              );
-            } else if (mapError?.sourceError?.status === 401) {
-              handleError(
-                'Map authentication failed', 
-                'Please try refreshing the page.'
-              );
-            } else if (mapError?.sourceError?.status === 404) {
-              handleError(
-                'Map resources not found', 
-                'The requested map resources could not be found.'
-              );
-            } else if (mapError?.sourceError?.status === 429) {
-              handleError(
-                'Map API rate limit exceeded', 
-                'Please try again later.'
-              );
             } else {
-              handleError(
-                'There was an error loading the map', 
-                e.error.message || 'Unknown error'
-              );
+              handleError('Map loading error', errorMsg);
             }
           });
         } else {
-          handleError(
-            'Failed to initialize map', 
-            'Token might be invalid or there are network issues.'
-          );
+          handleError('Failed to initialize map', 'Could not create map instance');
         }
       } catch (err) {
         console.error('Map initialization error:', err);

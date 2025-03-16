@@ -43,29 +43,8 @@ export const useMapInitialization = (
   // Function to get the Mapbox token (from localStorage or fallback)
   const getMapboxToken = useCallback(async (): Promise<string> => {
     try {
-      // Check for a cached token in localStorage
-      const cachedToken = localStorage.getItem('mapbox_token');
-      const cachedTimestamp = localStorage.getItem('mapbox_token_timestamp');
-      
-      if (cachedToken && cachedTimestamp) {
-        const timestamp = parseInt(cachedTimestamp, 10);
-        const currentTime = Date.now();
-        
-        // Use cached token if it's less than 24 hours old
-        if (currentTime - timestamp < 24 * 60 * 60 * 1000) {
-          console.log('Using cached Mapbox token');
-          setTokenSource('cache');
-          return cachedToken;
-        }
-      }
-      
-      // Use fallback token if no cached token
       console.log('Using fallback Mapbox token');
       setTokenSource('client-fallback');
-      
-      // Cache the token
-      localStorage.setItem('mapbox_token', DEFAULT_FALLBACK_TOKEN);
-      localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
       
       return DEFAULT_FALLBACK_TOKEN;
     } catch (error) {

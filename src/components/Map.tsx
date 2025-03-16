@@ -22,7 +22,7 @@ interface MapProps {
   onMarkerClick?: (markerId: string) => void;
 }
 
-// Public Mapbox token that can be used as fallback
+// Public Mapbox token (limited usage)
 const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
 
 const Map = memo((props: MapProps) => {
@@ -72,7 +72,7 @@ const Map = memo((props: MapProps) => {
     // Wait a brief moment to ensure state updates
     setTimeout(() => {
       setIsLoadingFallback(false);
-    }, 1500);
+    }, 2000);
   }, []);
   
   if (mapError) {
