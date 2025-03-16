@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Cache-Control': 'public, max-age=86400', // Cache for one day
+  'Content-Type': 'application/json', // Ensure proper content type
 };
 
 // Public Mapbox token that can be used as fallback (limited usage)
@@ -45,7 +45,7 @@ async function verifyMapboxToken(token: string): Promise<{isValid: boolean; erro
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -72,7 +72,6 @@ serve(async (req) => {
     
     // If no valid token yet, try Supabase secrets
     if (!token) {
-      // Initialize Supabase client with Edge Function's environment variables
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -97,7 +96,7 @@ serve(async (req) => {
           }
         }
       } catch (error) {
-        // Continue to fallback token
+        console.error("Error accessing Supabase secrets:", error);
       }
     }
     
@@ -119,22 +118,16 @@ serve(async (req) => {
             }
           }), 
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: corsHeaders,
             status: 500
           }
         );
       }
     }
 
-    // Add strong caching headers to reduce requests
-    const responseHeaders = {
-      ...corsHeaders, 
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
-      'Expires': new Date(Date.now() + 86400000).toUTCString(), // 24 hours in the future
-      'Pragma': 'cache' // For older browsers
-    };
+    console.log(`Returning Mapbox token from source: ${tokenSource}`);
     
+    // Return the token with appropriate cache headers
     return new Response(
       JSON.stringify({ 
         token,
@@ -144,12 +137,18 @@ serve(async (req) => {
         expiresIn: 86400, // 24 hours in seconds
       }), 
       { 
-        headers: responseHeaders,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+          'Expires': new Date(Date.now() + 3600000).toUTCString(),
+        },
         status: 200
       }
     );
 
   } catch (error) {
+    console.error("Error in map-service:", error);
+    
     // Always return a fallback token in error cases
     return new Response(
       JSON.stringify({ 
@@ -159,7 +158,7 @@ serve(async (req) => {
         valid: true // Mark as valid to allow map to initialize
       }), 
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: corsHeaders,
         status: 200 // Return 200 even in error case to allow fallback to work
       }
     );

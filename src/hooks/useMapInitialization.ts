@@ -50,6 +50,45 @@ export const useMapInitialization = (
     setRetryCount(prev => prev + 1);
   }, [clearTokenFetchPromise]);
 
+  // Helper function to fetch directly with retry mechanism
+  const fetchWithRetries = useCallback(async (url: string, options: RequestInit, maxRetries = 3): Promise<Response> => {
+    let lastError;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        console.log(`Fetch attempt ${attempt + 1}/${maxRetries} for ${url}`);
+        const response = await fetch(url, options);
+        
+        // Check if the response is valid JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          return response;
+        }
+        
+        // If not JSON, log and throw error
+        const text = await response.text();
+        console.error(`Invalid response format (not JSON): ${text.substring(0, 100)}...`);
+        throw new Error(`Server returned non-JSON response. Attempt ${attempt + 1}/${maxRetries}`);
+      } catch (error) {
+        lastError = error;
+        
+        // Don't retry if aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw error;
+        }
+        
+        // Wait before retry with exponential backoff
+        if (attempt < maxRetries - 1) {
+          const delay = Math.pow(2, attempt) * 500;
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError || new Error(`Failed after ${maxRetries} attempts`);
+  }, []);
+
   // Function to fetch a Mapbox token
   const fetchMapboxToken = useCallback(async (): Promise<string | null> => {
     // If there's already a fetch in progress, return that promise
@@ -65,8 +104,9 @@ export const useMapInitialization = (
       const timestamp = parseInt(cachedTimestamp, 10);
       const currentTime = Date.now();
       
-      // Use cached token if it's less than 12 hours old
-      if (currentTime - timestamp < 12 * 60 * 60 * 1000) {
+      // Use cached token if it's less than 1 hour old
+      if (currentTime - timestamp < 60 * 60 * 1000) {
+        console.log('Using cached Mapbox token');
         setTokenSource('cache');
         return cachedToken;
       }
@@ -82,21 +122,24 @@ export const useMapInitialization = (
       // Create the fetch promise
       tokenFetchPromiseRef.current = (async () => {
         try {
-          const response = await fetch('/api/map-service', {
+          console.log('Fetching new Mapbox token');
+          
+          // Use the fetchWithRetries helper
+          const response = await fetchWithRetries('/api/map-service', {
             signal: abortControllerRef.current?.signal,
             headers: {
               'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache'
+              'Pragma': 'no-cache',
+              'Accept': 'application/json'
             }
           });
           
-          if (!response.ok) {
-            throw new Error(`Error fetching Mapbox token: ${response.status} ${response.statusText}`);
-          }
-          
+          // Parse response
           const data = await response.json();
           
           if (data.token) {
+            console.log(`Got Mapbox token from ${data.source || 'api'}`);
+            
             // Cache the token
             localStorage.setItem('mapbox_token', data.token);
             localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
@@ -114,8 +157,15 @@ export const useMapInitialization = (
             return null;
           }
           
+          // Fallback to hardcoded token in case of error
+          const fallbackToken = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+          console.warn('Using fallback token due to error:', error);
+          localStorage.setItem('mapbox_token', fallbackToken);
+          localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
+          
+          setTokenSource('client-fallback');
           setTokenError(error instanceof Error ? error.message : 'Unknown error fetching token');
-          return null;
+          return fallbackToken;
         } finally {
           setIsLoading(false);
           // Clear the promise reference to allow future fetches
@@ -130,7 +180,7 @@ export const useMapInitialization = (
       setIsLoading(false);
       return null;
     }
-  }, [retryCount]); // Include retryCount to trigger a new fetch when retried
+  }, [retryCount, fetchWithRetries]); // Include retryCount to trigger a new fetch when retried
 
   // Initialize the map
   const initializeMap = useCallback(async (

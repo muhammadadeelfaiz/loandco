@@ -2,7 +2,7 @@
 import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import MapboxMap from './map/MapboxMap';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +26,7 @@ const Map = memo((props: MapProps) => {
   const { toast } = useToast();
   const [isLoadingFallback, setIsLoadingFallback] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const initCompleteRef = useRef(false);
   
   // Log markers for debugging
@@ -63,6 +64,7 @@ const Map = memo((props: MapProps) => {
     setMapError(null);
     setIsLoadingFallback(true);
     initCompleteRef.current = false;
+    setRetryCount(prev => prev + 1);
     
     // Wait a brief moment to ensure state updates
     setTimeout(() => {
@@ -84,8 +86,9 @@ const Map = memo((props: MapProps) => {
         
         <Button 
           onClick={handleRetry} 
-          className="mt-4"
+          className="mt-4 flex items-center gap-2"
         >
+          <RefreshCw className="h-4 w-4" />
           Retry Loading Map
         </Button>
       </div>
@@ -103,6 +106,7 @@ const Map = memo((props: MapProps) => {
 
   return (
     <MapboxMap 
+      key={`map-${retryCount}`}
       location={props.location}
       onLocationChange={props.onLocationChange}
       readonly={props.readonly}
