@@ -49,49 +49,54 @@ serve(async (req) => {
     const originDomain = req.headers.get('origin') || 'unknown';
     
     let token = null;
-    let tokenSource = 'fallback';
+    let tokenSource = 'from-secrets';
     let verificationResult = { isValid: false, error: undefined };
     
-    // Try to get token from environment variables first
-    if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
-      token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
+    // Try to get token from Supabase secrets first (your newly added token)
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
       
-      // Verify the environment variable token
-      verificationResult = await verifyMapboxToken(token);
-      if (verificationResult.isValid) {
-        tokenSource = 'environment';
-      } else {
-        token = null;
+      if (supabaseUrl && supabaseKey) {
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        // Fetch the secret using Supabase's get_secrets RPC function
+        const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
+          secret_names: ['MAPBOX_PUBLIC_TOKEN']
+        });
+
+        if (!secretsError && secrets?.MAPBOX_PUBLIC_TOKEN) {
+          const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
+          console.log("Found token in Supabase secrets, verifying...");
+          
+          // Verify the Supabase secret token
+          verificationResult = await verifyMapboxToken(supabaseToken);
+          if (verificationResult.isValid) {
+            token = supabaseToken;
+            console.log("Token from secrets is valid!");
+          } else {
+            console.warn("Token from secrets is invalid:", verificationResult.error);
+          }
+        } else {
+          console.log("No token found in secrets or error retrieving:", secretsError);
+        }
       }
+    } catch (error) {
+      console.error("Error accessing Supabase secrets:", error);
     }
     
-    // If no valid token yet, try Supabase secrets
+    // If no valid token from secrets, try environment variables next
     if (!token) {
-      try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
+        token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
         
-        if (supabaseUrl && supabaseKey) {
-          const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-          // Fetch the secret using Supabase's get_secrets RPC function
-          const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
-            secret_names: ['MAPBOX_PUBLIC_TOKEN']
-          });
-
-          if (!secretsError && secrets?.MAPBOX_PUBLIC_TOKEN) {
-            const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
-            
-            // Verify the Supabase secret token
-            verificationResult = await verifyMapboxToken(supabaseToken);
-            if (verificationResult.isValid) {
-              token = supabaseToken;
-              tokenSource = 'supabase-secrets';
-            }
-          }
+        // Verify the environment variable token
+        verificationResult = await verifyMapboxToken(token);
+        if (verificationResult.isValid) {
+          tokenSource = 'environment';
+        } else {
+          token = null;
         }
-      } catch (error) {
-        console.error("Error accessing Supabase secrets:", error);
       }
     }
     
