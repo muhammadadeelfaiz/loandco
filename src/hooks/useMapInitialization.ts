@@ -14,8 +14,8 @@ interface UseMapInitializationResult {
   tokenSource: string | null;
 }
 
-// Default fallback token if all else fails
-const DEFAULT_FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+// Direct public token with limited usage
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
 
 export const useMapInitialization = (
   mapContainerRef: MutableRefObject<HTMLDivElement | null>,
@@ -28,31 +28,13 @@ export const useMapInitialization = (
 
   // Retry fetch token
   const retryFetchToken = useCallback(() => {
-    // Clear localStorage
-    localStorage.removeItem('mapbox_token');
-    localStorage.removeItem('mapbox_token_timestamp');
-    
     // Reset state
     setTokenError(null);
     setTokenSource(null);
     
-    // Increment retry count to trigger a new fetch
+    // Increment retry count to trigger a new initialization
     setRetryCount(prev => prev + 1);
   }, []);
-
-  // Function to get the Mapbox token (from localStorage or fallback)
-  const getMapboxToken = useCallback(async (): Promise<string> => {
-    try {
-      console.log('Using fallback Mapbox token');
-      setTokenSource('client-fallback');
-      
-      return DEFAULT_FALLBACK_TOKEN;
-    } catch (error) {
-      console.error('Error in getMapboxToken:', error);
-      setTokenError(error instanceof Error ? error.message : 'Unknown error getting token');
-      return DEFAULT_FALLBACK_TOKEN;
-    }
-  }, [retryCount]); // Include retryCount to trigger a new fetch when retried
 
   // Initialize the map
   const initializeMap = useCallback(async (
@@ -68,15 +50,9 @@ export const useMapInitialization = (
     setIsLoading(true);
     
     try {
-      const token = await getMapboxToken();
-      
-      if (!token) {
-        setTokenError('Failed to obtain Mapbox token');
-        setIsLoading(false);
-        return null;
-      }
-      
-      mapboxgl.accessToken = token;
+      // Always use the hardcoded token directly
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      setTokenSource('hardcoded');
       
       // Create the map
       const newMap = new mapboxgl.Map({
@@ -115,7 +91,7 @@ export const useMapInitialization = (
       setIsLoading(false);
       return null;
     }
-  }, [mapContainerRef, theme, getMapboxToken]);
+  }, [mapContainerRef, theme, retryCount]);
 
   return {
     isLoading,

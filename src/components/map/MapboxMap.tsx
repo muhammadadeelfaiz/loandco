@@ -27,8 +27,8 @@ interface MapboxMapProps {
   }>;
 }
 
-// Hardcoded token - this is a limited public token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+// Mapbox public token - this is a public token with limited usage
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
 
 const MapboxMap = memo(({
   location,
@@ -87,10 +87,6 @@ const MapboxMap = memo(({
       map.current.remove();
       map.current = null;
     }
-    
-    // Clear any cached tokens
-    localStorage.removeItem('mapbox_token');
-    localStorage.removeItem('mapbox_token_timestamp');
   }, [initComplete]);
 
   // Initialize map
@@ -98,8 +94,8 @@ const MapboxMap = memo(({
     if (!mapContainer.current || mapInitializedRef.current) return null;
     
     try {
-      // Use direct token approach - no more edge function calls
-      mapboxgl.accessToken = fallbackToken || MAPBOX_TOKEN;
+      // Always use the hardcoded token
+      mapboxgl.accessToken = MAPBOX_TOKEN;
       
       console.log('Initializing map with center:', center);
       
@@ -139,7 +135,7 @@ const MapboxMap = memo(({
       );
       return null;
     }
-  }, [mapContainer, theme, readonly, onLocationChange, handleError, fallbackToken]);
+  }, [mapContainer, theme, readonly, onLocationChange, handleError]);
 
   // Initialize map once
   useEffect(() => {

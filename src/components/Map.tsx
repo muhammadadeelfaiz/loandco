@@ -23,7 +23,7 @@ interface MapProps {
 }
 
 // Public Mapbox token (limited usage)
-const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJqY29hcjFnMmcycXA4Z3M1c2ZvZzgifQ.hkPbgywbH-mLy2CMbxf5kw';
 
 const Map = memo((props: MapProps) => {
   const { toast } = useToast();
@@ -61,7 +61,7 @@ const Map = memo((props: MapProps) => {
   }, [props.onError, toast]);
   
   const handleRetry = useCallback(() => {
-    // Clear localStorage cache
+    // Clear any cached data
     localStorage.removeItem('mapbox_token');
     localStorage.removeItem('mapbox_token_timestamp');
     setMapError(null);
@@ -69,7 +69,7 @@ const Map = memo((props: MapProps) => {
     initCompleteRef.current = false;
     setRetryCount(prev => prev + 1);
     
-    // Wait a brief moment to ensure state updates
+    // Wait a moment to ensure state updates
     setTimeout(() => {
       setIsLoadingFallback(false);
     }, 2000);
@@ -118,7 +118,7 @@ const Map = memo((props: MapProps) => {
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}
       initComplete={initCompleteRef}
-      fallbackToken={FALLBACK_TOKEN}
+      fallbackToken={MAPBOX_TOKEN}
     />
   );
 });
