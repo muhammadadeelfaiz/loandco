@@ -36,8 +36,6 @@ enable_confirmations = false
 verify_jwt = false
 [functions.map-service]
 verify_jwt = false
-[functions.get-google-maps-key]
-verify_jwt = false
 [functions.get-rapidapi-key]
 verify_jwt = false
 [functions.map-token]

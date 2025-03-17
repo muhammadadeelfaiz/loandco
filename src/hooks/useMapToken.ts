@@ -38,9 +38,9 @@ export const useMapToken = (): UseMapTokenResult => {
         }
       }
       
-      // Fetch fresh token from Edge Function
-      console.log('Fetching fresh Mapbox token');
-      const { data, error } = await supabase.functions.invoke('map-token');
+      // Fetch fresh token from Edge Function (using map-service instead of map-token)
+      console.log('Fetching fresh Mapbox token from map-service');
+      const { data, error } = await supabase.functions.invoke('map-service');
       
       if (error) {
         throw new Error(`Edge function error: ${error.message}`);
