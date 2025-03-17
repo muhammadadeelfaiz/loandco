@@ -115,6 +115,13 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
             My Location
           </Button>
         </div>
+        
+        {location && (
+          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-medium flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 text-green-600" />
+            <span>Location Selected</span>
+          </div>
+        )}
       </div>
       
       <CardContent className="p-4">
