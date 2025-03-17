@@ -14,16 +14,19 @@ interface MapProps {
     title: string;
     description?: string;
   }>;
+  onMarkerClick?: (markerId: string) => void;
 }
 
 const Map = (props: MapProps) => {
+  const initComplete = { current: false };
+  
   console.log('Rendering Map component with props:', {
     hasLocation: !!props.location,
     isReadonly: props.readonly,
     markersCount: props.markers?.length
   });
   
-  return <MapboxMap {...props} />;
+  return <MapboxMap {...props} initComplete={initComplete} />;
 };
 
 export default Map;

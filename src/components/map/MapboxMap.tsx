@@ -32,6 +32,16 @@ interface MapboxMapProps {
   initComplete: MutableRefObject<boolean>;
 }
 
+// Using more specific GeoJSON types
+interface FeatureGeoJSON {
+  type: 'Feature';
+  geometry: {
+    type: 'Polygon';
+    coordinates: number[][][];
+  };
+  properties: Record<string, any>;
+}
+
 const MapboxMap: React.FC<MapboxMapProps> = ({
   location,
   onLocationChange,
@@ -283,8 +293,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     });
   };
   
-  // Create GeoJSON circle
-  const createGeoJSONCircle = (center: [number, number], radiusInKm: number) => {
+  // Create GeoJSON circle with proper typing
+  const createGeoJSONCircle = (center: [number, number], radiusInKm: number): FeatureGeoJSON => {
     const points = 64;
     const coords = {
       latitude: center[1],
