@@ -46,7 +46,7 @@ export const useMapToken = (): UseMapTokenResult => {
         throw new Error(`Edge function error: ${error.message}`);
       }
       
-      if (!data.token) {
+      if (!data || !data.token) {
         throw new Error('No token received from server');
       }
       
@@ -54,14 +54,23 @@ export const useMapToken = (): UseMapTokenResult => {
       localStorage.setItem('mapbox_token', data.token);
       localStorage.setItem('mapbox_token_timestamp', Date.now().toString());
       
-      console.log('Successfully fetched Mapbox token');
+      console.log(`Successfully fetched Mapbox token (source: ${data.source || 'unknown'})`);
       setToken(data.token);
       return data.token;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch Mapbox token';
       console.error('Error fetching Mapbox token:', errorMessage);
+      
+      // If all else fails, use the Mapbox default public token as last resort
+      const fallbackToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+      console.log('Using fallback Mapbox token as last resort');
+      
+      // Still report the error for debugging
       setError(errorMessage);
-      return null;
+      
+      // But set the fallback token so the map still works
+      setToken(fallbackToken);
+      return fallbackToken;
     } finally {
       setIsLoading(false);
     }
