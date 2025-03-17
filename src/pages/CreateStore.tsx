@@ -144,16 +144,16 @@ const CreateStore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 dark:text-white">
       <Navigation user={{ user_metadata: { role: 'retailer' } }} />
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold mb-6">Create Your Store</h1>
+        <div className="max-w-3xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-md p-6">
+          <h1 className="text-2xl font-bold mb-6 dark:text-white">Create Your Store</h1>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Building className="w-5 h-5 text-gray-500" />
+                <Building className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 <Label htmlFor="name">Store Name *</Label>
               </div>
               <Input
@@ -162,13 +162,13 @@ const CreateStore = () => {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Enter your store name"
-                className="border-2 border-blue-500"
+                className="border-2 border-blue-100 focus:border-blue-500 dark:border-slate-700"
               />
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Image className="w-5 h-5 text-gray-500" />
+                <Image className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 <Label htmlFor="logo">Store Logo *</Label>
               </div>
               <Input
@@ -177,7 +177,7 @@ const CreateStore = () => {
                 accept="image/*"
                 onChange={handleLogoChange}
                 required
-                className="border-2 border-blue-500"
+                className="border-2 border-blue-100 focus:border-blue-500 dark:border-slate-700"
               />
               {logoPreview && (
                 <div className="mt-2">
@@ -198,6 +198,7 @@ const CreateStore = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 required
                 placeholder="Describe your store"
+                className="dark:border-slate-700"
               />
             </div>
 
@@ -209,13 +210,14 @@ const CreateStore = () => {
                 onChange={(e) => setCategory(e.target.value)}
                 required
                 placeholder="e.g., Electronics, Clothing, Food"
+                className="dark:border-slate-700"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Phone className="w-5 h-5 text-gray-500" />
+                  <Phone className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   <Label htmlFor="phone">Phone Number *</Label>
                 </div>
                 <Input
@@ -225,13 +227,13 @@ const CreateStore = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   required
                   placeholder="Enter phone number"
-                  className="border-2 border-blue-500"
+                  className="border-2 border-blue-100 focus:border-blue-500 dark:border-slate-700"
                 />
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Mail className="w-5 h-5 text-gray-500" />
+                  <Mail className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   <Label htmlFor="email">Email</Label>
                 </div>
                 <Input
@@ -240,13 +242,14 @@ const CreateStore = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter store email"
+                  className="dark:border-slate-700"
                 />
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Globe className="w-5 h-5 text-gray-500" />
+                <Globe className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 <Label htmlFor="website">Website (Optional)</Label>
               </div>
               <Input
@@ -255,28 +258,27 @@ const CreateStore = () => {
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://your-store-website.com"
+                className="dark:border-slate-700"
               />
             </div>
 
             <div className="space-y-4">
-              <Label className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-gray-500" />
-                <span>Store Location *</span>
-              </Label>
-              <div className="h-[300px] rounded-lg overflow-hidden border-2 border-blue-500">
-                <StoreLocationPicker
-                  onLocationSelect={setLocation}
-                  initialLocation={location}
-                />
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <Label>Store Location *</Label>
               </div>
+              <StoreLocationPicker
+                onLocationSelect={setLocation}
+                initialLocation={location}
+              />
               {!location && (
-                <p className="text-sm text-red-500">Please select a location on the map</p>
+                <p className="text-sm text-red-500">Please select a location for your store</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
               disabled={loading}
             >
               {loading ? "Creating Store..." : "Create Store"}

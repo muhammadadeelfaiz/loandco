@@ -1,8 +1,9 @@
 
 import MapboxMap from './MapboxMap';
+import { useRef } from 'react';
 
 interface MapProps {
-  location?: { lat: number; lng: number };
+  location?: { lat: number; lng: number } | null;
   onLocationChange?: (location: { lat: number; lng: number }) => void;
   readonly?: boolean;
   searchRadius?: number;
@@ -18,7 +19,7 @@ interface MapProps {
 }
 
 const Map = (props: MapProps) => {
-  const initComplete = { current: false };
+  const initComplete = useRef(false);
   
   console.log('Rendering Map component with props:', {
     hasLocation: !!props.location,
