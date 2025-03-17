@@ -1,7 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
-import { corsHeaders, errorResponse, successResponse } from "../_shared/utils.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Cache-Control': 'public, max-age=86400', // Cache for one day
+};
 
 // Public Mapbox token that can be used as fallback (limited usage)
 const FALLBACK_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNscDJsb2N0dDFmcHcya3BnYnZpNm9mbnEifQ.tHhXbyzm-GhoiZpFOSxG8A';
@@ -40,7 +45,7 @@ async function verifyMapboxToken(token: string): Promise<{isValid: boolean; erro
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -49,54 +54,50 @@ serve(async (req) => {
     const originDomain = req.headers.get('origin') || 'unknown';
     
     let token = null;
-    let tokenSource = 'from-secrets';
+    let tokenSource = 'fallback';
     let verificationResult = { isValid: false, error: undefined };
     
-    // Try to get token from Supabase secrets first (your newly added token)
-    try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Try to get token from environment variables first
+    if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
+      token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
       
-      if (supabaseUrl && supabaseKey) {
-        const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-        // Fetch the secret using Supabase's get_secrets RPC function
-        const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
-          secret_names: ['MAPBOX_PUBLIC_TOKEN']
-        });
-
-        if (!secretsError && secrets?.MAPBOX_PUBLIC_TOKEN) {
-          const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
-          console.log("Found token in Supabase secrets, verifying...");
-          
-          // Verify the Supabase secret token
-          verificationResult = await verifyMapboxToken(supabaseToken);
-          if (verificationResult.isValid) {
-            token = supabaseToken;
-            console.log("Token from secrets is valid!");
-          } else {
-            console.warn("Token from secrets is invalid:", verificationResult.error);
-          }
-        } else {
-          console.log("No token found in secrets or error retrieving:", secretsError);
-        }
+      // Verify the environment variable token
+      verificationResult = await verifyMapboxToken(token);
+      if (verificationResult.isValid) {
+        tokenSource = 'environment';
+      } else {
+        token = null;
       }
-    } catch (error) {
-      console.error("Error accessing Supabase secrets:", error);
     }
     
-    // If no valid token from secrets, try environment variables next
+    // If no valid token yet, try Supabase secrets
     if (!token) {
-      if (Deno.env.get('MAPBOX_PUBLIC_TOKEN')) {
-        token = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
+      // Initialize Supabase client with Edge Function's environment variables
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
         
-        // Verify the environment variable token
-        verificationResult = await verifyMapboxToken(token);
-        if (verificationResult.isValid) {
-          tokenSource = 'environment';
-        } else {
-          token = null;
+        if (supabaseUrl && supabaseKey) {
+          const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+          // Fetch the secret using Supabase's get_secrets RPC function
+          const { data: secrets, error: secretsError } = await supabaseClient.rpc('get_secrets', {
+            secret_names: ['MAPBOX_PUBLIC_TOKEN']
+          });
+
+          if (!secretsError && secrets?.MAPBOX_PUBLIC_TOKEN) {
+            const supabaseToken = secrets.MAPBOX_PUBLIC_TOKEN;
+            
+            // Verify the Supabase secret token
+            verificationResult = await verifyMapboxToken(supabaseToken);
+            if (verificationResult.isValid) {
+              token = supabaseToken;
+              tokenSource = 'supabase-secrets';
+            }
+          }
         }
+      } catch (error) {
+        // Continue to fallback token
       }
     }
     
@@ -108,40 +109,59 @@ serve(async (req) => {
         token = FALLBACK_TOKEN;
         tokenSource = 'fallback';
       } else {
-        return errorResponse(
-          "All available tokens are invalid. Please check Mapbox service status.", 
-          500, 
-          {
+        return new Response(
+          JSON.stringify({ 
+            error: "All available tokens are invalid. Please check Mapbox service status.",
             source: "validation-error",
             requestInfo: {
               origin: originDomain,
               timestamp: new Date().toISOString()
             }
+          }), 
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500
           }
         );
       }
     }
 
-    console.log(`Returning Mapbox token from source: ${tokenSource}`);
+    // Add strong caching headers to reduce requests
+    const responseHeaders = {
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
+      'Expires': new Date(Date.now() + 86400000).toUTCString(), // 24 hours in the future
+      'Pragma': 'cache' // For older browsers
+    };
     
-    // Return the token with appropriate cache headers
-    return successResponse({
-      token,
-      source: tokenSource,
-      valid: verificationResult.isValid,
-      timestamp: new Date().toISOString(),
-      expiresIn: 86400, // 24 hours in seconds
-    });
+    return new Response(
+      JSON.stringify({ 
+        token,
+        source: tokenSource,
+        valid: verificationResult.isValid,
+        timestamp: new Date().toISOString(),
+        expiresIn: 86400, // 24 hours in seconds
+      }), 
+      { 
+        headers: responseHeaders,
+        status: 200
+      }
+    );
 
   } catch (error) {
-    console.error("Error in map-service:", error);
-    
     // Always return a fallback token in error cases
-    return successResponse({ 
-      error: error instanceof Error ? error.message : 'An unknown error occurred',
-      token: FALLBACK_TOKEN, // Provide fallback token even in error case
-      source: 'error-fallback',
-      valid: true // Mark as valid to allow map to initialize
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        token: FALLBACK_TOKEN, // Provide fallback token even in error case
+        source: 'error-fallback',
+        valid: true // Mark as valid to allow map to initialize
+      }), 
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 // Return 200 even in error case to allow fallback to work
+      }
+    );
   }
 });
