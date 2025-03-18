@@ -56,8 +56,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
     
     const newLocation = { lat, lng };
     setSelectedLocation(newLocation);
-    setLocation(newLocation);
-    onLocationSelect(newLocation);
+    setLocation(null); // Clear confirmed location to trigger the "Confirm Location" button
     
     toast({
       title: "Location Set",
@@ -67,7 +66,9 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   };
 
   const handleMapLocationChange = (newLocation: { lat: number; lng: number }) => {
+    console.log("Map location changed:", newLocation);
     setSelectedLocation(newLocation);
+    setLocation(null); // Clear confirmed location
     
     toast({
       title: "Location Selected",
@@ -92,8 +93,8 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const useCurrentLocation = () => {
     if (userLocation) {
       setSelectedLocation(userLocation);
-      setLocation(userLocation);
-      onLocationSelect(userLocation);
+      setLocation(null); // Clear confirmed location to trigger the "Confirm Location" button
+      
       toast({
         title: "Current Location Used",
         description: "Your current location has been set",

@@ -152,6 +152,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         
         setIsMapReady(true);
         initComplete.current = true;
+
+        // If we have a selectedLocation already, update the marker
+        if (selectedLocation) {
+          addOrUpdateTempMarker(selectedLocation);
+        }
       });
       
       // Add click handler for setting location
@@ -162,13 +167,20 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
             lat: e.lngLat.lat
           };
           
-          // Show a temporary marker at the clicked location
+          // First remove any existing temporary marker
+          if (tempMarker.current) {
+            tempMarker.current.remove();
+            tempMarker.current = null;
+          }
+          
+          // Add a new marker at the clicked location
           addOrUpdateTempMarker(newLocation);
           
           // Center the map on the clicked location
           map.current?.flyTo({
             center: [newLocation.lng, newLocation.lat],
-            duration: 500 // faster animation for better UX
+            zoom: 13, // Zoom in a bit more for better precision
+            duration: 500
           });
           
           // Only update radius circle if showRadius is true
@@ -203,7 +215,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         map.current = null;
       }
     };
-  }, [token, location, theme, readonly, searchRadius, onLocationChange, onError, showRadius]);
+  }, [token, location, theme, readonly, searchRadius, onLocationChange, onError, showRadius, selectedLocation]);
   
   // Update markers when the markers prop changes
   useEffect(() => {
@@ -229,11 +241,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   // Update temporary marker when selectedLocation changes and center the map
   useEffect(() => {
     if (isMapReady && map.current && selectedLocation) {
+      // Remove existing temp marker if any
+      if (tempMarker.current) {
+        tempMarker.current.remove();
+        tempMarker.current = null;
+      }
+      
+      // Add a new marker
       addOrUpdateTempMarker(selectedLocation);
       
       // Center the map on the selected location
       map.current.flyTo({
         center: [selectedLocation.lng, selectedLocation.lat],
+        zoom: 13, // Zoom in for better precision
         duration: 700
       });
     }
@@ -245,22 +265,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     
     const el = document.createElement('div');
     el.className = 'flex items-center justify-center';
-    el.style.width = '30px';
-    el.style.height = '30px';
+    el.style.width = '32px';
+    el.style.height = '32px';
     el.style.borderRadius = '50%';
     el.style.backgroundColor = '#ef4444'; // Red color for temporary selection
     el.style.border = '3px solid white';
     el.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
     
-    if (tempMarker.current) {
-      tempMarker.current.setLngLat([location.lng, location.lat]);
-    } else {
-      tempMarker.current = new mapboxgl.Marker({
-        element: el,
-      })
-      .setLngLat([location.lng, location.lat])
-      .addTo(map.current);
-    }
+    // Create a new marker
+    tempMarker.current = new mapboxgl.Marker({
+      element: el,
+    })
+    .setLngLat([location.lng, location.lat])
+    .addTo(map.current);
   };
   
   // Helper function to add or update user marker
@@ -296,6 +313,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
             // Center map on new position after drag
             map.current?.flyTo({
               center: [newLocation.lng, newLocation.lat],
+              zoom: 13,
               duration: 500
             });
             
