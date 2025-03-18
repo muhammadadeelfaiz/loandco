@@ -16,6 +16,7 @@ interface StoreLocationPickerProps {
 
 const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocationPickerProps) => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
   const [latitude, setLatitude] = useState(initialLocation?.lat.toString() || '');
   const [longitude, setLongitude] = useState(initialLocation?.lng.toString() || '');
   const { toast } = useToast();
@@ -23,11 +24,11 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
 
   // Update the input fields when location changes from map click
   useEffect(() => {
-    if (location) {
-      setLatitude(location.lat.toFixed(6));
-      setLongitude(location.lng.toFixed(6));
+    if (selectedLocation) {
+      setLatitude(selectedLocation.lat.toFixed(6));
+      setLongitude(selectedLocation.lng.toFixed(6));
     }
-  }, [location]);
+  }, [selectedLocation]);
 
   const handleManualLocationSet = () => {
     const lat = parseFloat(latitude);
@@ -54,6 +55,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
     }
     
     const newLocation = { lat, lng };
+    setSelectedLocation(newLocation);
     setLocation(newLocation);
     onLocationSelect(newLocation);
     
@@ -65,18 +67,31 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   };
 
   const handleMapLocationChange = (newLocation: { lat: number; lng: number }) => {
-    setLocation(newLocation);
-    onLocationSelect(newLocation);
+    setSelectedLocation(newLocation);
     
     toast({
       title: "Location Selected",
-      description: "Location has been set from the map",
+      description: "Click 'Confirm Location' to set this location",
       duration: 2000,
     });
+  };
+  
+  const confirmLocation = () => {
+    if (selectedLocation) {
+      setLocation(selectedLocation);
+      onLocationSelect(selectedLocation);
+      
+      toast({
+        title: "Location Confirmed",
+        description: "Store location has been confirmed",
+        duration: 2000,
+      });
+    }
   };
 
   const useCurrentLocation = () => {
     if (userLocation) {
+      setSelectedLocation(userLocation);
       setLocation(userLocation);
       onLocationSelect(userLocation);
       toast({
@@ -116,6 +131,23 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
           </Button>
         </div>
         
+        {/* Show the temporary pin at the selected location */}
+        {selectedLocation && !location && (
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+            <div 
+              className="absolute transform -translate-x-1/2 -translate-y-full z-20"
+              style={{ 
+                left: '50%',
+                top: '50%',
+                transition: 'all 0.2s ease-out'
+              }}
+            >
+              <MapPin className="h-8 w-8 text-red-500 drop-shadow-lg" strokeWidth={2} />
+            </div>
+          </div>
+        )}
+        
+        {/* Show confirmation when location is fully selected */}
         {location && (
           <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-medium flex items-center gap-1.5">
             <MapPin className="h-4 w-4 text-green-600" />
@@ -166,6 +198,17 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
               Set Manually
             </Button>
             
+            {selectedLocation && !location && (
+              <Button 
+                variant="default"
+                className="flex items-center justify-center gap-2 flex-1 bg-green-600 hover:bg-green-700"
+                onClick={confirmLocation}
+              >
+                <MapPin className="h-4 w-4" />
+                Confirm Location
+              </Button>
+            )}
+            
             {location && (
               <Button 
                 variant="default"
@@ -173,14 +216,14 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
                 onClick={() => onLocationSelect(location)}
               >
                 <MapPin className="h-4 w-4" />
-                Confirm Location
+                Use This Location
               </Button>
             )}
           </div>
           
-          {location && (
+          {selectedLocation && (
             <div className="px-3 py-2 bg-muted rounded-md text-sm">
-              Selected location: <span className="font-medium">{location.lat.toFixed(6)}, {location.lng.toFixed(6)}</span>
+              Selected location: <span className="font-medium">{selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}</span>
             </div>
           )}
         </div>

@@ -20,6 +20,7 @@ interface MapProps {
     description?: string;
   }>;
   onMarkerClick?: (markerId: string) => void;
+  selectedLocation?: { lat: number; lng: number } | null;
 }
 
 const Map = memo((props: MapProps) => {
@@ -111,6 +112,7 @@ const Map = memo((props: MapProps) => {
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}
       initComplete={initCompleteRef}
+      selectedLocation={props.selectedLocation}
     />
   );
 });
