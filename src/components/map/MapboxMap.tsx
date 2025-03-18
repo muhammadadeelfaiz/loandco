@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -81,7 +80,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       console.log('Initializing Mapbox with token');
       mapboxgl.accessToken = token;
 
-      const initialLocation = location || { lat: 25.276987, lng: 55.296249 }; // Dubai as default
+      const initialLocation = location || selectedLocation || { lat: 25.276987, lng: 55.296249 }; // Dubai as default
       
       const mapOptions: mapboxgl.MapboxOptions = {
         container: mapContainer.current,
@@ -142,8 +141,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           });
         }
         
-        // Add user marker if location is provided
-        if (location) {
+        // Add selected location marker if it exists
+        if (selectedLocation) {
+          addOrUpdateTempMarker(selectedLocation);
+        } 
+        // Add confirmed location marker if it exists
+        else if (location) {
           addOrUpdateUserMarker(location);
         }
         
@@ -152,11 +155,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         
         setIsMapReady(true);
         initComplete.current = true;
-
-        // If we have a selectedLocation already, update the marker
-        if (selectedLocation) {
-          addOrUpdateTempMarker(selectedLocation);
-        }
       });
       
       // Add click handler for setting location
@@ -215,7 +213,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         map.current = null;
       }
     };
-  }, [token, location, theme, readonly, searchRadius, onLocationChange, onError, showRadius, selectedLocation]);
+  }, [token, theme, readonly, searchRadius, onError, showRadius]);
   
   // Update markers when the markers prop changes
   useEffect(() => {
@@ -238,7 +236,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [theme, isMapReady]);
   
-  // Update temporary marker when selectedLocation changes and center the map
+  // Update marker when selectedLocation changes
   useEffect(() => {
     if (isMapReady && map.current && selectedLocation) {
       // Remove existing temp marker if any
@@ -259,6 +257,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [selectedLocation, isMapReady]);
   
+  // Update marker when confirmed location changes
+  useEffect(() => {
+    if (isMapReady && map.current && location) {
+      // Update user marker for confirmed location
+      addOrUpdateUserMarker(location);
+    }
+  }, [location, isMapReady]);
+  
   // Helper function to add or update temporary marker for selection
   const addOrUpdateTempMarker = (location: { lat: number; lng: number }) => {
     if (!map.current) return;
@@ -275,9 +281,28 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     // Create a new marker
     tempMarker.current = new mapboxgl.Marker({
       element: el,
+      draggable: !readonly
     })
     .setLngLat([location.lng, location.lat])
     .addTo(map.current);
+    
+    // Add drag end handler for temp marker
+    if (!readonly && onLocationChange) {
+      tempMarker.current.on('dragend', () => {
+        const lngLat = tempMarker.current?.getLngLat();
+        if (lngLat) {
+          const newLocation = { lng: lngLat.lng, lat: lngLat.lat };
+          
+          // Update radius circle if needed
+          if (showRadius && radiusCircle.current) {
+            updateRadiusCircle(newLocation);
+          }
+          
+          // Call the callback
+          onLocationChange(newLocation);
+        }
+      });
+    }
   };
   
   // Helper function to add or update user marker
@@ -289,7 +314,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     el.style.width = '24px';
     el.style.height = '24px';
     el.style.borderRadius = '50%';
-    el.style.backgroundColor = '#3b82f6';
+    el.style.backgroundColor = '#22c55e'; // Green for confirmed location
     el.style.border = '3px solid white';
     el.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
     

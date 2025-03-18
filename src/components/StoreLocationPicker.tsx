@@ -22,7 +22,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const { toast } = useToast();
   const { userLocation, isLoading: isLoadingUserLocation } = useLocation();
 
-  // Update the input fields when location changes from map click
+  // Update the input fields when selected location changes from map click
   useEffect(() => {
     if (selectedLocation) {
       setLatitude(selectedLocation.lat.toFixed(6));
@@ -56,7 +56,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
     
     const newLocation = { lat, lng };
     setSelectedLocation(newLocation);
-    setLocation(null); // Clear confirmed location to trigger the "Confirm Location" button
     
     toast({
       title: "Location Set",
@@ -68,7 +67,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const handleMapLocationChange = (newLocation: { lat: number; lng: number }) => {
     console.log("Map location changed:", newLocation);
     setSelectedLocation(newLocation);
-    setLocation(null); // Clear confirmed location
     
     toast({
       title: "Location Selected",
@@ -93,7 +91,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
   const useCurrentLocation = () => {
     if (userLocation) {
       setSelectedLocation(userLocation);
-      setLocation(null); // Clear confirmed location to trigger the "Confirm Location" button
       
       toast({
         title: "Current Location Used",
@@ -134,21 +131,15 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
           </Button>
         </div>
         
-        {/* Show selected location pin indicator */}
-        {selectedLocation && !location && (
-          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-medium flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-red-600" />
-            <span>Location Selected</span>
-          </div>
-        )}
-        
-        {/* Show confirmation when location is fully selected */}
-        {location && (
-          <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-medium flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-green-600" />
-            <span>Location Confirmed</span>
-          </div>
-        )}
+        {/* Show location status indicator */}
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-medium flex items-center gap-1.5">
+          <MapPin className={`h-4 w-4 ${location ? 'text-green-600' : selectedLocation ? 'text-red-600' : 'text-gray-400'}`} />
+          <span>
+            {location ? 'Location Confirmed' : 
+             selectedLocation ? 'Location Selected' : 
+             'Click on Map to Select Location'}
+          </span>
+        </div>
       </div>
       
       <CardContent className="p-4">
@@ -193,7 +184,7 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
               Set Manually
             </Button>
             
-            {selectedLocation && !location && (
+            {selectedLocation && (
               <Button 
                 variant="default"
                 className="flex items-center justify-center gap-2 flex-1 bg-green-600 hover:bg-green-700"
@@ -201,17 +192,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
               >
                 <MapPin className="h-4 w-4" />
                 Confirm Location
-              </Button>
-            )}
-            
-            {location && (
-              <Button 
-                variant="default"
-                className="flex items-center justify-center gap-2 flex-1 bg-green-600 hover:bg-green-700"
-                onClick={() => onLocationSelect(location)}
-              >
-                <MapPin className="h-4 w-4" />
-                Use This Location
               </Button>
             )}
           </div>
