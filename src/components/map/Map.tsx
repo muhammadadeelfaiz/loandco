@@ -18,6 +18,7 @@ interface MapProps {
   }>;
   onMarkerClick?: (markerId: string) => void;
   selectedLocation?: { lat: number; lng: number } | null;
+  showRadius?: boolean;
 }
 
 const Map = (props: MapProps) => {
@@ -27,7 +28,8 @@ const Map = (props: MapProps) => {
     hasLocation: !!props.location,
     isReadonly: props.readonly,
     markersCount: props.markers?.length,
-    selectedLocation: props.selectedLocation
+    selectedLocation: props.selectedLocation,
+    showRadius: props.showRadius
   });
   
   return (

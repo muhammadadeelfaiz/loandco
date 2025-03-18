@@ -21,6 +21,7 @@ interface MapProps {
   }>;
   onMarkerClick?: (markerId: string) => void;
   selectedLocation?: { lat: number; lng: number } | null;
+  showRadius?: boolean;
 }
 
 const Map = memo((props: MapProps) => {
@@ -112,12 +113,13 @@ const Map = memo((props: MapProps) => {
       location={props.location}
       onLocationChange={props.onLocationChange}
       readonly={props.readonly}
-      searchRadius={props.searchRadius || 30} // Default to 30km radius
+      searchRadius={props.searchRadius || 30}
       markers={props.markers} 
       onError={handleMapError}
       onMarkerClick={props.onMarkerClick}
       initComplete={initCompleteRef}
       selectedLocation={props.selectedLocation}
+      showRadius={props.showRadius}
     />
   );
 });

@@ -116,6 +116,8 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
           location={location} 
           onLocationChange={handleMapLocationChange} 
           readonly={false}
+          selectedLocation={selectedLocation}
+          showRadius={false}
         />
         
         <div className="absolute top-3 right-3 flex gap-2">
@@ -130,22 +132,6 @@ const StoreLocationPicker = ({ onLocationSelect, initialLocation }: StoreLocatio
             My Location
           </Button>
         </div>
-        
-        {/* Show the temporary pin at the selected location */}
-        {selectedLocation && !location && (
-          <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-            <div 
-              className="absolute transform -translate-x-1/2 -translate-y-full z-20"
-              style={{ 
-                left: '50%',
-                top: '50%',
-                transition: 'all 0.2s ease-out'
-              }}
-            >
-              <MapPin className="h-8 w-8 text-red-500 drop-shadow-lg" strokeWidth={2} />
-            </div>
-          </div>
-        )}
         
         {/* Show confirmation when location is fully selected */}
         {location && (

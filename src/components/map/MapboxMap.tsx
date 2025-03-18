@@ -30,6 +30,7 @@ interface MapboxMapProps {
   onMarkerClick?: (markerId: string) => void;
   initComplete: MutableRefObject<boolean>;
   selectedLocation?: { lat: number; lng: number } | null;
+  showRadius?: boolean;
 }
 
 // Using more specific GeoJSON types
@@ -52,11 +53,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   onMarkerClick,
   initComplete,
   selectedLocation,
+  showRadius = false,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const radiusCircle = useRef<mapboxgl.GeoJSONSource | null>(null);
+  const tempMarker = useRef<mapboxgl.Marker | null>(null);
   const markerRefs = useRef<{ [id: string]: mapboxgl.Marker }>({});
   const [isMapReady, setIsMapReady] = useState(false);
   const { theme } = useTheme();
@@ -104,36 +107,39 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       map.current.on('load', () => {
         if (!map.current) return;
         
-        // Add radius circle source
-        map.current.addSource('radius-circle', {
-          type: 'geojson',
-          data: createGeoJSONCircle([initialLocation.lng, initialLocation.lat], searchRadius)
-        });
-        
-        // Store reference to the source
-        radiusCircle.current = map.current.getSource('radius-circle') as mapboxgl.GeoJSONSource;
-        
-        // Add radius circle layer
-        map.current.addLayer({
-          id: 'radius-circle-fill',
-          type: 'fill',
-          source: 'radius-circle',
-          paint: {
-            'fill-color': theme === 'dark' ? '#3b82f6' : '#60a5fa',
-            'fill-opacity': 0.1,
-          }
-        });
-        
-        map.current.addLayer({
-          id: 'radius-circle-border',
-          type: 'line',
-          source: 'radius-circle',
-          paint: {
-            'line-color': theme === 'dark' ? '#3b82f6' : '#3b82f6',
-            'line-width': 2,
-            'line-opacity': 0.6,
-          }
-        });
+        // Only add radius circle if showRadius is true
+        if (showRadius) {
+          // Add radius circle source
+          map.current.addSource('radius-circle', {
+            type: 'geojson',
+            data: createGeoJSONCircle([initialLocation.lng, initialLocation.lat], searchRadius)
+          });
+          
+          // Store reference to the source
+          radiusCircle.current = map.current.getSource('radius-circle') as mapboxgl.GeoJSONSource;
+          
+          // Add radius circle layer
+          map.current.addLayer({
+            id: 'radius-circle-fill',
+            type: 'fill',
+            source: 'radius-circle',
+            paint: {
+              'fill-color': theme === 'dark' ? '#3b82f6' : '#60a5fa',
+              'fill-opacity': 0.1,
+            }
+          });
+          
+          map.current.addLayer({
+            id: 'radius-circle-border',
+            type: 'line',
+            source: 'radius-circle',
+            paint: {
+              'line-color': theme === 'dark' ? '#3b82f6' : '#3b82f6',
+              'line-width': 2,
+              'line-opacity': 0.6,
+            }
+          });
+        }
         
         // Add user marker if location is provided
         if (location) {
@@ -155,9 +161,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
             lat: e.lngLat.lat
           };
           
-          // Update marker and circle
-          addOrUpdateUserMarker(newLocation);
-          updateRadiusCircle(newLocation);
+          // Show a temporary marker at the clicked location
+          addOrUpdateTempMarker(newLocation);
+          
+          // Only update radius circle if showRadius is true
+          if (showRadius && radiusCircle.current) {
+            updateRadiusCircle(newLocation);
+          }
           
           // Call the callback
           onLocationChange(newLocation);
@@ -186,7 +196,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         map.current = null;
       }
     };
-  }, [token, location, theme, readonly, searchRadius, onLocationChange, onError]);
+  }, [token, location, theme, readonly, searchRadius, onLocationChange, onError, showRadius]);
   
   // Update markers when the markers prop changes
   useEffect(() => {
@@ -197,10 +207,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   
   // Update circle when searchRadius changes
   useEffect(() => {
-    if (isMapReady && map.current && location) {
+    if (isMapReady && map.current && location && showRadius && radiusCircle.current) {
       updateRadiusCircle(location);
     }
-  }, [searchRadius, location, isMapReady]);
+  }, [searchRadius, location, isMapReady, showRadius]);
   
   // Update map style when theme changes
   useEffect(() => {
@@ -208,6 +218,37 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       map.current.setStyle(theme === 'dark' ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v12');
     }
   }, [theme, isMapReady]);
+  
+  // Update temporary marker when selectedLocation changes
+  useEffect(() => {
+    if (isMapReady && map.current && selectedLocation) {
+      addOrUpdateTempMarker(selectedLocation);
+    }
+  }, [selectedLocation, isMapReady]);
+  
+  // Helper function to add or update temporary marker for selection
+  const addOrUpdateTempMarker = (location: { lat: number; lng: number }) => {
+    if (!map.current) return;
+    
+    const el = document.createElement('div');
+    el.className = 'flex items-center justify-center';
+    el.style.width = '24px';
+    el.style.height = '24px';
+    el.style.borderRadius = '50%';
+    el.style.backgroundColor = '#ef4444'; // Red color for temporary selection
+    el.style.border = '3px solid white';
+    el.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.1)';
+    
+    if (tempMarker.current) {
+      tempMarker.current.setLngLat([location.lng, location.lat]);
+    } else {
+      tempMarker.current = new mapboxgl.Marker({
+        element: el,
+      })
+      .setLngLat([location.lng, location.lat])
+      .addTo(map.current);
+    }
+  };
   
   // Helper function to add or update user marker
   const addOrUpdateUserMarker = (location: { lat: number; lng: number }) => {
@@ -238,7 +279,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           const lngLat = userMarker.current?.getLngLat();
           if (lngLat) {
             const newLocation = { lng: lngLat.lng, lat: lngLat.lat };
-            updateRadiusCircle(newLocation);
+            
+            if (showRadius && radiusCircle.current) {
+              updateRadiusCircle(newLocation);
+            }
+            
             onLocationChange(newLocation);
           }
         });
