@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -164,6 +165,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           // Show a temporary marker at the clicked location
           addOrUpdateTempMarker(newLocation);
           
+          // Center the map on the clicked location
+          map.current?.flyTo({
+            center: [newLocation.lng, newLocation.lat],
+            duration: 500 // faster animation for better UX
+          });
+          
           // Only update radius circle if showRadius is true
           if (showRadius && radiusCircle.current) {
             updateRadiusCircle(newLocation);
@@ -219,10 +226,16 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [theme, isMapReady]);
   
-  // Update temporary marker when selectedLocation changes
+  // Update temporary marker when selectedLocation changes and center the map
   useEffect(() => {
     if (isMapReady && map.current && selectedLocation) {
       addOrUpdateTempMarker(selectedLocation);
+      
+      // Center the map on the selected location
+      map.current.flyTo({
+        center: [selectedLocation.lng, selectedLocation.lat],
+        duration: 700
+      });
     }
   }, [selectedLocation, isMapReady]);
   
@@ -232,8 +245,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     
     const el = document.createElement('div');
     el.className = 'flex items-center justify-center';
-    el.style.width = '24px';
-    el.style.height = '24px';
+    el.style.width = '30px';
+    el.style.height = '30px';
     el.style.borderRadius = '50%';
     el.style.backgroundColor = '#ef4444'; // Red color for temporary selection
     el.style.border = '3px solid white';
@@ -279,6 +292,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           const lngLat = userMarker.current?.getLngLat();
           if (lngLat) {
             const newLocation = { lng: lngLat.lng, lat: lngLat.lat };
+            
+            // Center map on new position after drag
+            map.current?.flyTo({
+              center: [newLocation.lng, newLocation.lat],
+              duration: 500
+            });
             
             if (showRadius && radiusCircle.current) {
               updateRadiusCircle(newLocation);

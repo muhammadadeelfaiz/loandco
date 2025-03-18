@@ -37,7 +37,7 @@ const Map = (props: MapProps) => {
       <MapboxMap {...props} initComplete={initComplete} />
       
       {/* Visual indicator for map center when selecting a location */}
-      {!props.readonly && !props.location && (
+      {!props.readonly && !props.location && !props.selectedLocation && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 flex flex-col items-center">
           <MapPin className="h-8 w-8 text-primary animate-bounce" strokeWidth={2} />
           <div className="bg-white dark:bg-gray-800 text-sm mt-1 px-2 py-1 rounded-md shadow-md">
