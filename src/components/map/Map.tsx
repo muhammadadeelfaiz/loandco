@@ -17,6 +17,7 @@ interface MapProps {
     description?: string;
   }>;
   onMarkerClick?: (markerId: string) => void;
+  selectedLocation?: { lat: number; lng: number } | null;
 }
 
 const Map = (props: MapProps) => {
@@ -25,7 +26,8 @@ const Map = (props: MapProps) => {
   console.log('Rendering Map component with props:', {
     hasLocation: !!props.location,
     isReadonly: props.readonly,
-    markersCount: props.markers?.length
+    markersCount: props.markers?.length,
+    selectedLocation: props.selectedLocation
   });
   
   return (

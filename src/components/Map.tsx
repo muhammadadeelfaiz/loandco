@@ -39,6 +39,11 @@ const Map = memo((props: MapProps) => {
     console.log('Map search radius updated:', props.searchRadius);
   }, [props.searchRadius]);
   
+  // Log selected location changes
+  useEffect(() => {
+    console.log('Map selected location updated:', props.selectedLocation);
+  }, [props.selectedLocation]);
+  
   const handleMapError = useCallback((errorMessage: string) => {
     console.error('Map error:', errorMessage);
     setMapError(errorMessage);

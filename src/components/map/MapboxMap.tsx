@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, MutableRefObject } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -30,6 +29,7 @@ interface MapboxMapProps {
   }>;
   onMarkerClick?: (markerId: string) => void;
   initComplete: MutableRefObject<boolean>;
+  selectedLocation?: { lat: number; lng: number } | null;
 }
 
 // Using more specific GeoJSON types
@@ -51,6 +51,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   markers = [],
   onMarkerClick,
   initComplete,
+  selectedLocation,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
