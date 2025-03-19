@@ -18,6 +18,7 @@ interface Product {
   category: string;
   availability: boolean;
   store_id: string;
+  image_url?: string;
 }
 
 interface Store {
@@ -283,8 +284,22 @@ const StoreProfile = ({ user }: StoreProfileProps) => {
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 {products.map((product) => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="aspect-square bg-gray-100"></div>
+                  <Card key={product.id} className="overflow-hidden cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
+                    <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.name} 
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            console.log("Image failed to load:", product.image_url);
+                            (e.target as HTMLImageElement).src = '/placeholder.svg'
+                          }}
+                        />
+                      ) : (
+                        <div className="text-gray-400">No image</div>
+                      )}
+                    </div>
                     <CardContent className="p-4">
                       <h3 className="font-semibold">{product.name}</h3>
                       <p className="text-sm text-gray-600">{product.category}</p>

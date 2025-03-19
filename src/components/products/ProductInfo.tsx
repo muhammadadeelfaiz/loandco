@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star } from "lucide-react";
@@ -58,7 +57,6 @@ const ProductInfo = ({
         if (!error && data) {
           setReviews(data);
           
-          // Calculate average rating
           if (data.length > 0) {
             const sum = data.reduce((acc, review) => acc + review.rating, 0);
             setAverageRating(parseFloat((sum / data.length).toFixed(1)));

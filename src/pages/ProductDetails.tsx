@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -170,7 +169,6 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
 
   const handleGetDirections = () => {
     if (store?.latitude && store?.longitude) {
-      // Open directions in Mapbox
       const mapboxUrl = `https://www.mapbox.com/directions?route=d-${store.latitude},${store.longitude}`;
       window.open(mapboxUrl, '_blank');
       
@@ -235,6 +233,10 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
                   src={product.image_url} 
                   alt={product.name} 
                   className="w-full h-full object-contain"
+                  onError={(e) => {
+                    console.log("Product image load error:", product.image_url);
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
               ) : (
                 <div className="text-gray-400 text-lg">No image available</div>
@@ -257,11 +259,17 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
                   <p className="font-medium">Retailer: {retailer.name}</p>
                   <p className="text-sm text-gray-600">Have questions about this product?</p>
                 </div>
-                <ChatInterface 
-                  userId={user?.id} 
-                  retailerId={retailer.id} 
-                  retailerName={retailer.name} 
-                />
+                <Button 
+                  onClick={() => {
+                    const chatInterface = document.getElementById('chat-interface');
+                    if (chatInterface) {
+                      chatInterface.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  size="sm"
+                >
+                  Chat Now
+                </Button>
               </div>
             )}
 
@@ -361,11 +369,20 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reviews">
+          <TabsContent value="reviews" id="chat-interface">
             <Card>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {/* Reviews will be displayed from the ProductInfo component */}
+                  {retailer && (
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="text-lg font-semibold mb-4">Chat with {retailer.name}</h3>
+                      <ChatInterface
+                        userId={user?.id}
+                        retailerId={retailer.id}
+                        retailerName={retailer.name}
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
