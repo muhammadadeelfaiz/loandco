@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -5,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   MessageSquare,
@@ -41,64 +43,89 @@ const RetailerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
-  const [store, setStore] = useState<Store | null>(null);
-  const [recentProducts, setRecentProducts] = useState<any[]>([]);
-  const [totalProducts, setTotalProducts] = useState(0);
   const [customerInquiries, setCustomerInquiries] = useState(0);
 
-  useEffect(() => {
-    const getUser = async () => {
+  const { data: store } = useQuery({
+    queryKey: ['store'],
+    queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         navigate('/signin');
-        return;
+        return null;
       }
+      
       setUser(session.user);
 
-      // Fetch store data
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('*')
         .eq('owner_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (storeError) {
+      if (storeError && !storeError.message.includes('multiple')) {
         console.error('Error fetching store:', storeError);
-        return;
+        return null;
       }
 
-      setStore(storeData);
+      return storeData as Store | null;
+    }
+  });
 
-      // Fetch product count for this retailer
-      const { count: productCount, error: countError } = await supabase
+  // Product count - using useQuery for auto-refresh
+  const { data: totalProducts = 0 } = useQuery({
+    queryKey: ['product-count'],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      
+      const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('retailer_id', session.user.id);
+        .eq('retailer_id', user.id);
 
-      if (!countError && productCount !== null) {
-        setTotalProducts(productCount);
+      if (countError) {
+        console.error('Error fetching product count:', countError);
+        return 0;
       }
+      
+      return count || 0;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 10000 // Refresh every 10 seconds
+  });
 
-      // Fetch recent products
-      const { data: productsData, error: productsError } = await supabase
+  // Recent products
+  const { data: recentProducts = [] } = useQuery({
+    queryKey: ['recent-products'],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('retailer_id', session.user.id)
+        .eq('retailer_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
-      if (productsError) {
-        console.error('Error fetching products:', productsError);
-        return;
+      if (error) {
+        console.error('Error fetching products:', error);
+        return [];
       }
 
-      setRecentProducts(productsData || []);
+      return data || [];
+    },
+    enabled: !!user?.id,
+    refetchInterval: 10000 // Refresh every 10 seconds
+  });
 
-      // Count customer inquiries (messages/conversations)
+  useEffect(() => {
+    // Count customer inquiries (messages/conversations)
+    const getInquiries = async () => {
+      if (!user?.id) return;
+      
       const { count: messageCount, error: messageError } = await supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
-        .eq('retailer_id', session.user.id);
+        .eq('retailer_id', user.id);
 
       if (!messageError && messageCount !== null) {
         setCustomerInquiries(messageCount);
@@ -108,8 +135,8 @@ const RetailerDashboard = () => {
       }
     };
 
-    getUser();
-  }, [navigate]);
+    getInquiries();
+  }, [user?.id]);
 
   const menuItems = [
     { icon: BarChart3, label: "Dashboard Overview", path: "/dashboard" },
@@ -261,7 +288,7 @@ const RetailerDashboard = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/product/${product.id}`)}
+                                onClick={() => navigate(`/products`)}
                               >
                                 Edit
                               </Button>

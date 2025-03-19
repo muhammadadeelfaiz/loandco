@@ -34,6 +34,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const retailerName = product.retailer_name || product.store_name || "Unknown Retailer";
   const hasLocation = product.store_latitude && product.store_longitude;
 
+  // Test image loading and provide fallback
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.log("Image failed to load:", product.image_url);
+    (e.target as HTMLImageElement).src = '/placeholder.svg';
+  };
+
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <div className="flex flex-col md:flex-row">
@@ -43,9 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               src={product.image_url}
               alt={product.name}
               className="w-full h-full object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
+              onError={handleImageError}
             />
           ) : (
             <div className="text-gray-400 text-lg">No Image</div>
@@ -82,6 +86,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <div className="flex flex-wrap gap-2 mt-auto">
               <Button
                 variant="default"
+                size="sm"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                View Details
+              </Button>
+
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => navigate(`/compare/${product.id}`)}
               >

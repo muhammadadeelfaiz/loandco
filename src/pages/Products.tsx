@@ -8,7 +8,17 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import Navigation from "@/components/Navigation";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Products = () => {
   const [name, setName] = useState("");
@@ -18,6 +28,9 @@ const Products = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -71,6 +84,61 @@ const Products = () => {
     }
   };
 
+  const resetForm = () => {
+    setName("");
+    setPrice("");
+    setCategory("");
+    setDescription("");
+    setImageFile(null);
+    setImagePreview(null);
+    setEditingProductId(null);
+  };
+
+  const handleEditProduct = (product: any) => {
+    setEditingProductId(product.id);
+    setName(product.name);
+    setPrice(product.price.toString());
+    setCategory(product.category);
+    setDescription(product.description || "");
+    
+    if (product.image_url) {
+      setImagePreview(product.image_url);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    setProductToDelete(productId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productToDelete);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Product deleted successfully",
+      });
+      
+      refetch();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete product",
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setProductToDelete(null);
+    }
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -94,32 +162,61 @@ const Products = () => {
         imageUrl = await uploadImage(imageFile);
       }
       
-      const { error } = await supabase
-        .from('products')
-        .insert([
-          { 
-            name, 
-            price: parseFloat(price), 
-            category,
-            description,
-            retailer_id: user.id,
-            image_url: imageUrl
-          }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Product added successfully",
-      });
-
-      setName("");
-      setPrice("");
-      setCategory("");
-      setDescription("");
-      setImageFile(null);
-      setImagePreview(null);
+      let result;
       
+      if (editingProductId) {
+        // Update existing product
+        const updateData: any = { 
+          name, 
+          price: parseFloat(price), 
+          category,
+          description 
+        };
+        
+        // Only include image_url if a new image was uploaded
+        if (imageUrl) {
+          updateData.image_url = imageUrl;
+        }
+        
+        result = await supabase
+          .from('products')
+          .update(updateData)
+          .eq('id', editingProductId);
+          
+        if (result.error) throw result.error;
+        
+        toast({
+          title: "Product updated successfully",
+        });
+      } else {
+        // Create new product
+        result = await supabase
+          .from('products')
+          .insert([
+            { 
+              name, 
+              price: parseFloat(price), 
+              category,
+              description,
+              retailer_id: user.id,
+              image_url: imageUrl
+            }
+          ]);
+          
+        if (result.error) throw result.error;
+        
+        toast({
+          title: "Product added successfully",
+        });
+        
+        // Navigate to product page after creation
+        if (result.data && result.data[0]?.id) {
+          // You can uncomment this to navigate to the product detail page
+          // navigate(`/product/${result.data[0].id}`);
+        }
+      }
+      
+      resetForm();
       refetch();
     } catch (error) {
       toast({
@@ -140,7 +237,7 @@ const Products = () => {
           <h1 className="text-3xl font-bold text-primary mb-8">Manage Products</h1>
 
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Add New Product</h2>
+            <h2 className="text-xl font-semibold mb-4">{editingProductId ? 'Edit Product' : 'Add New Product'}</h2>
             <form onSubmit={handleAddProduct} className="space-y-4">
               <div>
                 <Label htmlFor="name">Product Name</Label>
@@ -206,9 +303,17 @@ const Products = () => {
                 </div>
               </div>
 
-              <Button type="submit" disabled={loading}>
-                {loading ? "Adding..." : "Add Product"}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Processing..." : editingProductId ? "Update Product" : "Add Product"}
+                </Button>
+                
+                {editingProductId && (
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </form>
           </div>
 
@@ -232,6 +337,9 @@ const Products = () => {
                           src={product.image_url} 
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder.svg';
+                          }}
                         />
                       ) : (
                         <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
@@ -250,7 +358,21 @@ const Products = () => {
                         )}
                       </div>
                     </div>
-                    <Button variant="outline" onClick={() => {}}>Edit</Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="icon"
+                        onClick={() => handleDeleteProduct(product.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -258,6 +380,21 @@ const Products = () => {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteProduct}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -55,6 +55,7 @@ export const useProductSearch = (query: string, category: string) => {
       console.log('Fetched products:', data);
       return data;
     },
+    enabled: !!query,
   });
 
   useEffect(() => {
@@ -86,6 +87,8 @@ export const useProductSearch = (query: string, category: string) => {
 
   useEffect(() => {
     const fetchEbayProducts = async () => {
+      if (!query) return;
+      
       setIsLoadingEbay(true);
       try {
         const searchQuery = category === 'all' ? query : `${query} ${category}`.trim();

@@ -41,6 +41,7 @@ export const LocalProducts = ({
   return (
     <div className="space-y-4">
       {products.map((product) => {
+        // Safely parse JSON strings if they come as strings
         const stores = typeof product.stores === 'string' 
           ? JSON.parse(product.stores)
           : product.stores;
@@ -49,6 +50,9 @@ export const LocalProducts = ({
           ? JSON.parse(product.retailers)
           : product.retailers;
 
+        // Console log for debugging purposes
+        console.log("Product image URL:", product.image_url);
+        
         return (
           <ProductCard
             key={product.id}
@@ -66,4 +70,3 @@ export const LocalProducts = ({
     </div>
   );
 };
-
