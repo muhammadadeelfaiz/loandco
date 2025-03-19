@@ -86,7 +86,7 @@ export const ProductComparisonTable = ({
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-semibold mb-4">Comparing Prices</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="p-4">
               <Skeleton className="h-48 w-full mb-4" />
@@ -104,131 +104,168 @@ export const ProductComparisonTable = ({
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Compare Prices</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Local product card */}
-        {localProduct && (
-          <Card className="p-4 border border-primary">
-            <div className="h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 rounded">
-              <span className="text-gray-500">Product Image</span>
+      {/* Local Products Section */}
+      {localProduct && (
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-4 bg-primary/10 p-2 rounded">Local Stores</h3>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 gap-4">
+                <Card className="p-4 border border-primary">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="h-36 w-36 bg-gray-100 dark:bg-gray-800 flex items-center justify-center rounded">
+                      <span className="text-gray-500">Product Image</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">{localProduct.name}</h3>
+                      <p className="text-xl font-bold text-primary mb-2">
+                        AED {localProduct.price.toFixed(2)}
+                      </p>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        {localProduct.store_name && (
+                          <p>Retailer: {localProduct.store_name}</p>
+                        )}
+                        <p className="font-semibold text-primary">Local Store</p>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {localProduct.latitude && localProduct.longitude && (
+                          <Button 
+                            variant="outline"
+                            onClick={() => onGetDirections && onGetDirections(
+                              localProduct.latitude!,
+                              localProduct.longitude!,
+                              localProduct.store_name || "Store"
+                            )}
+                          >
+                            <MapPin className="w-4 h-4 mr-2" />
+                            View on Map
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={() => handleAddToWishlist(localProduct.id)}
+                          disabled={!user || wishlistStates[localProduct.id]}
+                        >
+                          <Heart className={`w-4 h-4 mr-2 ${wishlistStates[localProduct.id] ? 'fill-current text-red-500' : ''}`} />
+                          {wishlistStates[localProduct.id] ? 'Added to Wishlist' : 'Add to Wishlist'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2">{localProduct.name}</h3>
-            <p className="text-xl font-bold text-primary mb-2">
-              AED {localProduct.price.toFixed(2)}
-            </p>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              {localProduct.store_name && (
-                <p>Retailer: {localProduct.store_name}</p>
-              )}
-              <p className="font-semibold text-primary">Local Store</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Amazon Products Section */}
+      {amazonProducts.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-4 bg-amber-600/10 p-2 rounded">Amazon Products</h3>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 gap-4">
+                {amazonProducts.slice(0, 3).map((product) => (
+                  <Card key={product.id} className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="h-36 w-36 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded overflow-hidden">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name} 
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-gray-500">No Image</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+                        <p className="text-xl font-bold text-primary mb-2">
+                          {formatPriceToAED(product.price)}
+                        </p>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <p>Retailer: {product.retailer || 'Amazon.ae'}</p>
+                          <p className="font-semibold text-amber-600">Online Store</p>
+                        </div>
+                        
+                        {product.url && (
+                          <Button 
+                            variant="outline"
+                            onClick={() => window.open(product.url, '_blank')}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View on Amazon
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
-            
-            <div className="flex flex-col gap-2">
-              {localProduct.latitude && localProduct.longitude && (
-                <Button 
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => onGetDirections && onGetDirections(
-                    localProduct.latitude!,
-                    localProduct.longitude!,
-                    localProduct.store_name || "Store"
-                  )}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Get Directions
-                </Button>
-              )}
-              
-              <Button 
-                className="w-full"
-                variant="outline"
-                onClick={() => handleAddToWishlist(localProduct.id)}
-                disabled={!user || wishlistStates[localProduct.id]}
-              >
-                <Heart className={`w-4 h-4 mr-2 ${wishlistStates[localProduct.id] ? 'fill-current text-red-500' : ''}`} />
-                {wishlistStates[localProduct.id] ? 'Added to Wishlist' : 'Add to Wishlist'}
-              </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* eBay Products Section */}
+      {ebayProducts.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-4 bg-red-600/10 p-2 rounded">eBay Products</h3>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 gap-4">
+                {ebayProducts.slice(0, 3).map((product) => (
+                  <Card key={product.id} className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="h-36 w-36 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded overflow-hidden">
+                        {product.imageUrl ? (
+                          <img 
+                            src={product.imageUrl} 
+                            alt={product.name} 
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-gray-500">No Image</span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+                        <p className="text-xl font-bold text-primary mb-2">
+                          {formatPriceToAED(product.price)}
+                        </p>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <p>Retailer: {product.retailer || 'eBay'}</p>
+                          <p className="font-semibold text-red-600">Online Store</p>
+                        </div>
+                        
+                        {product.url && (
+                          <Button 
+                            variant="outline"
+                            onClick={() => window.open(product.url, '_blank')}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View on eBay
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </Card>
-        )}
-        
-        {/* Amazon products */}
-        {amazonProducts.slice(0, 3).map((product) => (
-          <Card key={product.id} className="p-4">
-            <div className="h-48 flex items-center justify-center mb-4 bg-gray-50 dark:bg-gray-800 rounded overflow-hidden">
-              {product.imageUrl ? (
-                <img 
-                  src={product.imageUrl} 
-                  alt={product.name} 
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              ) : (
-                <span className="text-gray-500">No Image</span>
-              )}
-            </div>
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-            <p className="text-xl font-bold text-primary mb-2">
-              {formatPriceToAED(product.price)}
-            </p>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              <p>Retailer: {product.retailer || 'Amazon.ae'}</p>
-              <p className="font-semibold text-amber-600">Online Store</p>
-            </div>
-            
-            {product.url && (
-              <Button 
-                className="w-full mt-2"
-                variant="outline"
-                onClick={() => window.open(product.url, '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View on Amazon
-              </Button>
-            )}
-          </Card>
-        ))}
-        
-        {/* eBay products */}
-        {ebayProducts.slice(0, 3).map((product) => (
-          <Card key={product.id} className="p-4">
-            <div className="h-48 flex items-center justify-center mb-4 bg-gray-50 dark:bg-gray-800 rounded overflow-hidden">
-              {product.imageUrl ? (
-                <img 
-                  src={product.imageUrl} 
-                  alt={product.name} 
-                  className="max-h-full max-w-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              ) : (
-                <span className="text-gray-500">No Image</span>
-              )}
-            </div>
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-            <p className="text-xl font-bold text-primary mb-2">
-              {formatPriceToAED(product.price)}
-            </p>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              <p>Retailer: {product.retailer || 'eBay'}</p>
-              <p className="font-semibold text-red-600">Online Store</p>
-            </div>
-            
-            {product.url && (
-              <Button 
-                className="w-full mt-2"
-                variant="outline"
-                onClick={() => window.open(product.url, '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                View on eBay
-              </Button>
-            )}
-          </Card>
-        ))}
-      </div>
+          </div>
+        </div>
+      )}
       
       {amazonProducts.length === 0 && ebayProducts.length === 0 && (
         <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded text-center">

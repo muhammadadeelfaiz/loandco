@@ -1,12 +1,9 @@
 
-import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Star, Heart, GitCompare } from 'lucide-react';
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
-import ChatInterface from "@/components/chat/ChatInterface";
+import { Button } from "@/components/ui/button";
+import { MapPin, MessageSquare, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
   product: {
@@ -14,235 +11,110 @@ interface ProductCardProps {
     name: string;
     price: number;
     category: string;
-    description?: string;
-    retailer_id?: string;
-    retailer_name?: string;
-    distance?: number;
-    store_latitude?: number;
-    store_longitude?: number;
-    stores?: {
-      latitude: number;
-      longitude: number;
-      name: string;
-    };
     retailers?: {
       name: string;
     };
+    store_name?: string;
+    retailer_name?: string;
+    image_url?: string;
+    store_longitude?: number;
+    store_latitude?: number;
+    distance?: number;
   };
   onContactRetailer: (retailerName: string) => void;
   onGetDirections: (lat: number, lng: number, storeName: string) => void;
 }
 
-const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCardProps) => {
-  const [isInWishlist, setIsInWishlist] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onContactRetailer,
+  onGetDirections,
+}) => {
   const navigate = useNavigate();
-
-  const handleAddToWishlist = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to add items to your wishlist",
-          variant: "destructive",
-        });
-        
-        // Store the product ID to add to wishlist after login
-        localStorage.setItem('pendingWishlistItem', product.id);
-        
-        // Navigate to the sign in page
-        navigate('/signin');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('product_wishlists')
-        .insert([
-          { 
-            user_id: session.user.id,
-            product_id: product.id
-          }
-        ]);
-
-      if (error) {
-        if (error.code === '23505') {
-          toast({
-            title: "Already in wishlist",
-            description: "This product is already in your wishlist",
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        setIsInWishlist(true);
-        toast({
-          title: "Added to wishlist",
-          description: "Product has been added to your wishlist",
-        });
-      }
-    } catch (error) {
-      console.error('Error adding to wishlist:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add product to wishlist",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGetDirections = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (product.store_latitude && product.store_longitude) {
-      // Open directions in Mapbox
-      const mapboxUrl = `https://www.mapbox.com/directions?route=d-${product.store_latitude},${product.store_longitude}`;
-      window.open(mapboxUrl, '_blank');
-      
-      // Also trigger the callback for any additional handling
-      onGetDirections(
-        product.store_latitude,
-        product.store_longitude,
-        product.retailer_name || "Store"
-      );
-    } else {
-      toast({
-        title: "Location Unavailable",
-        description: "Store location information is not available.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCompare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // Navigate to the compare page with this product ID
-    navigate(`/compare/${product.id}`);
-  };
-
-  // Get retailer name from different sources
-  const retailerName = product.retailer_name || 
-                       (product.retailers ? product.retailers.name : null);
+  const retailerName = product.retailer_name || product.store_name || "Unknown Retailer";
+  const hasLocation = product.store_latitude && product.store_longitude;
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <Link to={`/product/${product.id}`}>
-        <CardContent className="p-0">
-          <div className="flex gap-4">
-            <div className="w-48 h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-              <div className="text-gray-400 dark:text-gray-500">Product Image</div>
-            </div>
-            
-            <div className="flex-1 p-4">
-              <div className="flex justify-between items-start">
+    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+      <div className="flex flex-col md:flex-row">
+        <div className="w-full md:w-48 h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
+            />
+          ) : (
+            <div className="text-gray-400 text-lg">No Image</div>
+          )}
+        </div>
+
+        <CardContent className="flex-1 p-4 md:p-6">
+          <div className="flex flex-col h-full justify-between">
+            <div>
+              <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                  <h3 className="text-xl font-semibold mb-1 line-clamp-2">{product.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-1">
                     {product.category}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">4.5</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-2"
-                    onClick={handleAddToWishlist}
-                    disabled={isLoading}
-                  >
-                    <Heart 
-                      className={`w-4 h-4 ${isInWishlist ? 'fill-current text-red-500' : ''}`} 
-                    />
-                  </Button>
+                <div className="text-xl font-bold text-primary">
+                  AED {product.price}
                 </div>
               </div>
-              
-              <p className="text-2xl font-bold text-primary mb-2">
-                AED {product.price.toFixed(2)}
+
+              <p className="text-sm text-muted-foreground mb-3">
+                Sold by: {retailerName}
               </p>
 
-              {product.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
-                  {product.description}
-                </p>
-              )}
-              
-              {retailerName && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  <span>Sold by {retailerName}</span>
+              {hasLocation && product.distance !== undefined && (
+                <div className="flex items-center gap-1 text-sm text-gray-500 mt-2 mb-4">
+                  <MapPin className="h-4 w-4" />
+                  <span>{product.distance.toFixed(1)} km away</span>
                 </div>
               )}
-              
-              {product.distance && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
-                  <MapPin className="w-4 h-4" />
-                  <span>{product.distance.toFixed(1)}km away</span>
-                </div>
-              )}
-              
-              <div className="flex gap-2 mt-auto">
-                {product.retailer_id && retailerName && (
-                  <div onClick={(e) => e.preventDefault()}>
-                    <ChatInterface 
-                      userId={undefined} 
-                      retailerId={product.retailer_id} 
-                      retailerName={retailerName} 
-                    />
-                  </div>
-                )}
-                
-                {retailerName && (
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onContactRetailer(retailerName);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Contact Seller
-                  </Button>
-                )}
-                
-                {product.store_latitude && product.store_longitude && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGetDirections}
-                    className="flex items-center gap-2"
-                  >
-                    <MapPin className="w-4 h-4" />
-                    Get Directions
-                  </Button>
-                )}
-                
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-auto">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => navigate(`/compare/${product.id}`)}
+              >
+                Compare Prices
+              </Button>
+
+              {hasLocation && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleCompare}
-                  className="flex items-center gap-2"
+                  onClick={() =>
+                    onGetDirections(
+                      product.store_latitude!,
+                      product.store_longitude!,
+                      retailerName
+                    )
+                  }
                 >
-                  <GitCompare className="w-4 h-4" />
-                  Compare
+                  <MapPin className="mr-1 h-4 w-4" /> Directions
                 </Button>
-              </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onContactRetailer(retailerName)}
+              >
+                <MessageSquare className="mr-1 h-4 w-4" /> Contact
+              </Button>
             </div>
           </div>
         </CardContent>
-      </Link>
+      </div>
     </Card>
   );
 };

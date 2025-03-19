@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -70,11 +69,21 @@ const RetailerDashboard = () => {
 
       setStore(storeData);
 
+      // Fetch product count for this retailer
+      const { count: productCount, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('retailer_id', session.user.id);
+
+      if (!countError && productCount !== null) {
+        setTotalProducts(productCount);
+      }
+
       // Fetch recent products
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
-        .eq('store_id', storeData.id)
+        .eq('retailer_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -84,10 +93,19 @@ const RetailerDashboard = () => {
       }
 
       setRecentProducts(productsData || []);
-      setTotalProducts(productsData?.length || 0);
 
-      // For demo purposes, set a random number of inquiries
-      setCustomerInquiries(Math.floor(Math.random() * 10));
+      // Count customer inquiries (messages/conversations)
+      const { count: messageCount, error: messageError } = await supabase
+        .from('conversations')
+        .select('*', { count: 'exact', head: true })
+        .eq('retailer_id', session.user.id);
+
+      if (!messageError && messageCount !== null) {
+        setCustomerInquiries(messageCount);
+      } else {
+        // For demo purposes, set a random number of inquiries
+        setCustomerInquiries(Math.floor(Math.random() * 10));
+      }
     };
 
     getUser();
@@ -106,7 +124,7 @@ const RetailerDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation user={user} />
-      <div className="pt-[73px]"> {/* Added padding-top to account for the fixed Navigation height */}
+      <div className="pt-[73px]">
         <SidebarProvider defaultOpen>
           <div className="flex min-h-[calc(100vh-73px)]">
             <Sidebar className="border-r border-border">
@@ -211,28 +229,58 @@ const RetailerDashboard = () => {
                   <CardContent className="p-6">
                     <h3 className="font-semibold mb-4">Recent Products</h3>
                     <div className="space-y-4">
-                      {recentProducts.map((product) => (
-                        <div
-                          key={product.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
-                        >
-                          <div>
-                            <h4 className="font-medium">{product.name}</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                              AED {product.price}
-                            </p>
+                      {recentProducts.length > 0 ? (
+                        recentProducts.map((product) => (
+                          <div
+                            key={product.id}
+                            className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              {product.image_url ? (
+                                <img 
+                                  src={product.image_url} 
+                                  alt={product.name} 
+                                  className="w-12 h-12 object-cover rounded"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                                  <Package className="w-6 h-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-medium">{product.name}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                  AED {product.price}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/product/${product.id}`)}
+                              >
+                                Edit
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/product/${product.id}`)}
-                            >
-                              Edit
-                            </Button>
-                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                          <p>No products listed yet</p>
+                          <Button 
+                            className="mt-4" 
+                            variant="outline"
+                            onClick={() => navigate('/products')}
+                          >
+                            Add your first product
+                          </Button>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
                 </Card>

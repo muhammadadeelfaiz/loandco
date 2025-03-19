@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Star } from "lucide-react";
 import ChatInterface from "@/components/chat/ChatInterface";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
 
 interface Store {
   latitude: number;
@@ -43,6 +44,7 @@ const ProductInfo = ({
 }: ProductInfoProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState<number>(0);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -137,6 +139,33 @@ const ProductInfo = ({
           {description || `Experience the latest ${name} with its stunning display, powerful processor, and advanced features. Available now at our store.`}
         </p>
       </div>
+
+      {retailerId && (
+        <div className="mt-4 mb-6">
+          <Button 
+            className="w-full md:w-auto" 
+            onClick={() => setIsChatOpen(true)}
+          >
+            Chat with Retailer
+          </Button>
+          
+          {isChatOpen && retailerId && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="font-semibold">Chat with {retailerName || "Retailer"}</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)}>
+                    Close
+                  </Button>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <ChatInterface retailerId={retailerId} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {reviews.length > 0 && (
         <div className="mt-8">
