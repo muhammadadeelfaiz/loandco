@@ -140,7 +140,7 @@ const ProductInfo = ({
         </p>
       </div>
 
-      {retailerId && (
+      {retailerId && retailerName && (
         <div className="mt-4 mb-6">
           <Button 
             className="w-full md:w-auto" 
@@ -149,17 +149,21 @@ const ProductInfo = ({
             Chat with Retailer
           </Button>
           
-          {isChatOpen && retailerId && (
+          {isChatOpen && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-xl max-h-[80vh] overflow-hidden flex flex-col">
                 <div className="p-4 border-b flex justify-between items-center">
-                  <h3 className="font-semibold">Chat with {retailerName || "Retailer"}</h3>
+                  <h3 className="font-semibold">Chat with {retailerName}</h3>
                   <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)}>
                     Close
                   </Button>
                 </div>
                 <div className="flex-1 overflow-auto">
-                  <ChatInterface retailerId={retailerId} />
+                  <ChatInterface 
+                    userId={undefined} 
+                    retailerId={retailerId} 
+                    retailerName={retailerName} 
+                  />
                 </div>
               </div>
             </div>
