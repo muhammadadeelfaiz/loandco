@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Share2, Star, Store, Truck, MapPin, GitCompare } from "lucide-react";
+import { Heart, Share2, Star, Store, Truck, MapPin, GitCompare, MessageSquare } from "lucide-react";
+import ProductInfo from "@/components/products/ProductInfo";
+import ChatInterface from "@/components/chat/ChatInterface";
 
 interface ProductDetailsProps {
   user: User | null;
@@ -23,6 +25,7 @@ interface Product {
   category: string;
   availability: boolean;
   store_id: string;
+  retailer_id: string;
   created_at: string;
   updated_at: string;
   image_url?: string;
@@ -39,10 +42,17 @@ interface Store {
   longitude?: number;
 }
 
+interface Retailer {
+  id: string;
+  name: string;
+  email: string;
+}
+
 const ProductDetails = ({ user }: ProductDetailsProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [retailer, setRetailer] = useState<Retailer | null>(null);
 
   const { data: product, isLoading: isProductLoading } = useQuery({
     queryKey: ['product', id],
@@ -63,6 +73,26 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
     enabled: !!id,
     retry: 1
   });
+
+  useEffect(() => {
+    const fetchRetailer = async () => {
+      if (product?.retailer_id) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .eq('id', product.retailer_id)
+          .single();
+        
+        if (!error && data) {
+          setRetailer(data as Retailer);
+        }
+      }
+    };
+    
+    if (product) {
+      fetchRetailer();
+    }
+  }, [product]);
 
   const { data: store, isLoading: isStoreLoading } = useQuery({
     queryKey: ['store', product?.store_id],
@@ -221,30 +251,29 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
               )}
             </div>
 
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-5 h-5 ${
-                    i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"
-                  }`}
+            {retailer && (
+              <div className="bg-blue-50 p-4 rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Retailer: {retailer.name}</p>
+                  <p className="text-sm text-gray-600">Have questions about this product?</p>
+                </div>
+                <ChatInterface 
+                  userId={user?.id} 
+                  retailerId={retailer.id} 
+                  retailerName={retailer.name} 
                 />
-              ))}
-              <span className="ml-2 text-gray-600">4.0 (12 reviews)</span>
-            </div>
+              </div>
+            )}
 
-            <div>
-              <p className="text-3xl font-bold text-primary">
-                AED {product.price.toFixed(2)}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                {product.availability ? (
-                  <span className="text-green-600">In Stock</span>
-                ) : (
-                  <span className="text-red-600">Out of Stock</span>
-                )}
-              </p>
-            </div>
+            <ProductInfo 
+              name={product.name}
+              category={product.category}
+              price={product.price}
+              description={product.description}
+              retailerId={retailer?.id}
+              retailerName={retailer?.name}
+              productId={product.id}
+            />
 
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleAddToWishlist}>
@@ -336,25 +365,7 @@ const ProductDetails = ({ user }: ProductDetailsProps) => {
             <Card>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                    <div>
-                      <p className="font-medium">John Doe</p>
-                      <div className="flex items-center gap-1 my-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < 4 ? "text-yellow-400 fill-current" : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        "Great product, exactly as described!"
-                      </p>
-                    </div>
-                  </div>
+                  {/* Reviews will be displayed from the ProductInfo component */}
                 </div>
               </CardContent>
             </Card>

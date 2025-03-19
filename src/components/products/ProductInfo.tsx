@@ -80,6 +80,15 @@ const ProductInfo = ({
     return R * c;
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
@@ -120,16 +129,6 @@ const ProductInfo = ({
             </span>
           </div>
         )}
-        
-        {retailerId && retailerName && (
-          <div className="ml-auto">
-            <ChatInterface 
-              userId={undefined} 
-              retailerId={retailerId} 
-              retailerName={retailerName} 
-            />
-          </div>
-        )}
       </div>
 
       <div className="prose dark:prose-invert max-w-none">
@@ -160,7 +159,7 @@ const ProductInfo = ({
                   </div>
                   <span className="ml-2 font-medium">{review.reviewer_name}</span>
                   <span className="ml-auto text-sm text-gray-500">
-                    {new Date(review.created_at).toLocaleDateString()}
+                    {formatDate(review.created_at)}
                   </span>
                 </div>
                 <p className="text-gray-700 dark:text-gray-300">{review.review_text}</p>
