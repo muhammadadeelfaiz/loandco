@@ -132,12 +132,12 @@ const Deals = () => {
   if (isLoading) {
     return (
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">Special Deals</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Special Deals</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((item) => (
             <Card 
               key={item} 
-              className="aspect-[3/4] flex items-center justify-center"
+              className="aspect-[3/4] flex items-center justify-center bg-gray-50 dark:bg-gray-800"
             >
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </Card>
@@ -155,26 +155,26 @@ const Deals = () => {
 
   return (
     <section className="mb-12">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Special Deals</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Special Deals</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {products.map((product) => (
           <Card 
             key={product.id}
-            className="aspect-[3/4] overflow-hidden bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group"
+            className="aspect-[3/4] overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-slate-900 backdrop-blur-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-purple-100 dark:border-purple-900"
             onClick={() => window.open(product.url, '_blank')}
           >
             <div className="relative h-full p-4 flex flex-col">
-              <div className="flex-1 bg-gray-50 rounded-lg overflow-hidden mb-4 relative">
+              <div className="flex-1 bg-white dark:bg-gray-900 rounded-lg overflow-hidden mb-4 relative shadow-sm">
                 <img 
                   src={product.image}
                   alt={product.title}
                   className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute top-2 right-2 bg-black/50 text-white text-xs py-1 px-2 rounded-full">
+                <div className="absolute top-2 right-2 bg-primary/80 text-white text-xs py-1 px-2 rounded-full">
                   {product.source}
                 </div>
               </div>
-              <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 text-white">
+              <div className="bg-gradient-to-r from-primary/90 to-secondary/90 backdrop-blur-sm rounded-lg p-3 text-white shadow-md">
                 <p className="text-sm font-medium line-clamp-2 mb-2">{product.title}</p>
                 <p className="text-lg font-bold">{product.price}</p>
               </div>

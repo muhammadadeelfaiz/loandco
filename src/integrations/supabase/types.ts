@@ -92,6 +92,44 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          rating: number
+          review_text: string | null
+          reviewer_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          rating: number
+          review_text?: string | null
+          reviewer_name?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          rating?: number
+          review_text?: string | null
+          reviewer_name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_wishlists: {
         Row: {
           created_at: string | null
@@ -126,6 +164,7 @@ export type Database = {
           availability: boolean | null
           category: string
           created_at: string | null
+          description: string | null
           id: string
           name: string
           price: number
@@ -136,6 +175,7 @@ export type Database = {
           availability?: boolean | null
           category: string
           created_at?: string | null
+          description?: string | null
           id?: string
           name: string
           price: number
@@ -146,6 +186,7 @@ export type Database = {
           availability?: boolean | null
           category?: string
           created_at?: string | null
+          description?: string | null
           id?: string
           name?: string
           price?: number

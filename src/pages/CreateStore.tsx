@@ -111,6 +111,7 @@ const CreateStore = () => {
           website,
           owner_id: userData.user.id,
           logo_url: logoUrl,
+          is_verified: true,
         },
       ]);
 
@@ -128,7 +129,7 @@ const CreateStore = () => {
 
       toast({
         title: "Store Created Successfully",
-        description: "Your store is pending verification. You'll be notified once it's approved."
+        description: "Your store has been created. You can now start listing products."
       });
       
       navigate("/products");

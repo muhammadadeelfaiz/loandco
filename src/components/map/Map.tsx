@@ -1,6 +1,6 @@
 
 import MapboxMap from './MapboxMap';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 
 interface MapProps {
@@ -31,6 +31,22 @@ const Map = (props: MapProps) => {
     selectedLocation: props.selectedLocation,
     showRadius: props.showRadius
   });
+  
+  // Ensure markers are valid - this helps with non-authenticated states
+  useEffect(() => {
+    if (props.markers) {
+      const invalidMarkers = props.markers.filter(
+        marker => isNaN(marker.lat) || isNaN(marker.lng) || 
+                  marker.lat < -90 || marker.lat > 90 || 
+                  marker.lng < -180 || marker.lng > 180
+      );
+      
+      if (invalidMarkers.length > 0) {
+        console.warn('Invalid markers detected:', invalidMarkers);
+        props.onError?.('Some map markers have invalid coordinates');
+      }
+    }
+  }, [props.markers]);
   
   return (
     <div className="relative w-full h-full">

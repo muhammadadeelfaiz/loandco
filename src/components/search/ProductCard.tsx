@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Mail, MapPin, Star, Heart, GitCompare } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ interface ProductCardProps {
     name: string;
     price: number;
     category: string;
+    description?: string;
     retailer_id?: string;
     retailer_name?: string;
     distance?: number;
@@ -36,6 +37,7 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleAddToWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,6 +52,12 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
           description: "Please sign in to add items to your wishlist",
           variant: "destructive",
         });
+        
+        // Store the product ID to add to wishlist after login
+        localStorage.setItem('pendingWishlistItem', product.id);
+        
+        // Navigate to the sign in page
+        navigate('/signin');
         return;
       }
 
@@ -115,8 +123,12 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
   const handleCompare = (e: React.MouseEvent) => {
     e.preventDefault();
     // Navigate to the compare page with this product ID
-    window.location.href = `/compare/${product.id}`;
+    navigate(`/compare/${product.id}`);
   };
+
+  // Get retailer name from different sources
+  const retailerName = product.retailer_name || 
+                       (product.retailers ? product.retailers.name : null);
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -156,13 +168,19 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
                 </div>
               </div>
               
-              <p className="text-2xl font-bold text-primary mb-4">
+              <p className="text-2xl font-bold text-primary mb-2">
                 AED {product.price.toFixed(2)}
               </p>
+
+              {product.description && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
               
-              {product.retailer_name && (
+              {retailerName && (
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  <span>Sold by {product.retailer_name}</span>
+                  <span>Sold by {retailerName}</span>
                 </div>
               )}
               
@@ -174,23 +192,23 @@ const ProductCard = ({ product, onContactRetailer, onGetDirections }: ProductCar
               )}
               
               <div className="flex gap-2 mt-auto">
-                {product.retailer_name && product.retailer_id && (
+                {product.retailer_id && retailerName && (
                   <div onClick={(e) => e.preventDefault()}>
                     <ChatInterface 
                       userId={undefined} 
                       retailerId={product.retailer_id} 
-                      retailerName={product.retailer_name} 
+                      retailerName={retailerName} 
                     />
                   </div>
                 )}
                 
-                {product.retailer_name && (
+                {retailerName && (
                   <Button 
                     variant="outline"
                     size="sm"
                     onClick={(e) => {
                       e.preventDefault();
-                      onContactRetailer(product.retailer_name!);
+                      onContactRetailer(retailerName);
                     }}
                     className="flex items-center gap-2"
                   >

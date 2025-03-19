@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
@@ -9,14 +8,16 @@ import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import BestSellers from "@/components/home/BestSellers";
 import RetailerGrid from "@/components/home/RetailerGrid";
-import Map from "@/components/Map";
+import Map from "@/components/map/Map";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "@/hooks/useLocation";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Tag } from "lucide-react";
 import Deals from "@/components/home/Deals";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 interface IndexProps {
   user: User | null;
@@ -54,6 +55,31 @@ const Index = ({ user }: IndexProps) => {
   const { toast } = useToast();
   const [mapKey, setMapKey] = useState<number>(0);
   const [mapError, setMapError] = useState<string | null>(null);
+  
+  const { data: localProducts, isLoading: isLoadingLocalProducts } = useQuery({
+    queryKey: ['local-products', userLocation],
+    queryFn: async () => {
+      if (!userLocation) return [];
+      
+      const storeIds = stores.map(store => store.id);
+      
+      if (storeIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, retailers:retailer_id(name)')
+        .in('store_id', storeIds)
+        .limit(6);
+      
+      if (error) {
+        console.error('Error fetching local products:', error);
+        return [];
+      }
+      
+      return data;
+    },
+    enabled: !!userLocation && stores.length > 0,
+  });
 
   useEffect(() => {
     console.log('User location:', userLocation);
@@ -66,16 +92,13 @@ const Index = ({ user }: IndexProps) => {
   const handleLocationReceived = useCallback((coords: { lat: number; lng: number }) => {
     localStorage.setItem('userLocation', JSON.stringify(coords));
     
-    // Don't reload the page, just update the state
     setMapKey(prev => prev + 1);
   }, []);
 
   const handleRefreshLocation = useCallback(() => {
-    // Clear location from localStorage
     localStorage.removeItem('userLocation');
     localStorage.removeItem('locationPrompted');
     
-    // Show the location prompt again without full page reload
     setMapKey(prev => prev + 1);
   }, []);
 
@@ -83,7 +106,7 @@ const Index = ({ user }: IndexProps) => {
     const newRadius = value[0];
     console.log(`Changing search radius to ${newRadius}km`);
     setSearchRadius(newRadius);
-    setMapKey(prev => prev + 1); // Refresh map when radius changes
+    setMapKey(prev => prev + 1);
   }, []);
 
   const handleCategoryClick = useCallback((categoryName: string) => {
@@ -95,7 +118,6 @@ const Index = ({ user }: IndexProps) => {
     navigate(`/store/${storeId}`);
   }, [navigate]);
 
-  // Handle map errors
   const handleMapError = useCallback((errorMessage: string) => {
     setMapError(errorMessage);
     toast({
@@ -106,7 +128,6 @@ const Index = ({ user }: IndexProps) => {
     });
   }, [toast]);
 
-  // Memoize the store markers to prevent unnecessary recalculations
   const storeMarkers = useMemo(() => {
     if (!stores || stores.length === 0) {
       console.log(`No stores available for markers within ${searchRadius}km radius`);
@@ -125,7 +146,6 @@ const Index = ({ user }: IndexProps) => {
     return markers;
   }, [stores, searchRadius]);
 
-  // Memoize the Map component with its props to prevent re-rendering
   const mapComponent = useMemo(() => {
     if (isLoadingLocation || isLoadingStores) {
       return (
@@ -169,6 +189,63 @@ const Index = ({ user }: IndexProps) => {
         </div>
         
         <BestSellers />
+
+        {localProducts && localProducts.length > 0 && (
+          <section className="my-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+                Products Near You
+              </h2>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/search')}
+                className="text-sm"
+              >
+                View All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+              {localProducts.map((product) => (
+                <Card 
+                  key={product.id}
+                  className="overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <div className="p-4">
+                    <div className="mb-3 h-40 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                      <div className="text-gray-400">Product Image</div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg line-clamp-1">{product.name}</h3>
+                        <span className="text-primary font-bold">AED {product.price}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 mb-2">
+                        <Tag className="w-3 h-3 mr-1" />
+                        {product.category}
+                      </div>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {product.description || `Quality ${product.name} available at a great price.`}
+                      </p>
+                      {product.retailers && (
+                        <div className="mt-2 text-xs text-gray-500">
+                          Sold by {product.retailers.name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              
+              {isLoadingLocalProducts && (
+                <div className="col-span-full flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="my-12">
           <div className="flex justify-between items-center mb-6">
