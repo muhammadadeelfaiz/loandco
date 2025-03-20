@@ -383,8 +383,6 @@ export type Database = {
               store_id: string
               stores: Json
               retailers: Json
-              image_url: string
-              description: string
             }[]
           }
     }

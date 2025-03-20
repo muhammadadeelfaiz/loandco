@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star } from "lucide-react";
@@ -158,13 +157,11 @@ const ProductInfo = ({
                   </Button>
                 </div>
                 <div className="flex-1 overflow-auto">
-                  {retailerId && retailerName && (
-                    <ChatInterface 
-                      userId={undefined} 
-                      retailerId={retailerId} 
-                      retailerName={retailerName} 
-                    />
-                  )}
+                  <ChatInterface 
+                    userId={undefined} 
+                    retailerId={retailerId} 
+                    retailerName={retailerName} 
+                  />
                 </div>
               </div>
             </div>

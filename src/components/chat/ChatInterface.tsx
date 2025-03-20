@@ -24,19 +24,12 @@ const ChatInterface = ({ userId: passedUserId, retailerId, retailerName }: ChatI
 
   const handleStartChat = async () => {
     if (!userId) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to chat with retailers",
-        variant: "destructive",
-      });
       navigate("/signin");
       return;
     }
 
     setLoading(true);
     try {
-      console.log("Starting chat with retailer:", retailerId, "User ID:", userId);
-      
       // Check if conversation already exists
       const { data: existingConversation, error: checkError } = await supabase
         .from("conversations")
@@ -46,19 +39,16 @@ const ChatInterface = ({ userId: passedUserId, retailerId, retailerName }: ChatI
         .single();
 
       if (checkError && checkError.code !== "PGRST116") {
-        console.error("Error checking existing conversation:", checkError);
         throw checkError;
       }
 
       if (existingConversation) {
         // Conversation exists, navigate to it
-        console.log("Existing conversation found:", existingConversation.id);
         navigate(`/chat/${existingConversation.id}`);
         return;
       }
 
       // Create new conversation
-      console.log("Creating new conversation between user", userId, "and retailer", retailerId);
       const { data: newConversation, error: createError } = await supabase
         .from("conversations")
         .insert({
@@ -68,19 +58,15 @@ const ChatInterface = ({ userId: passedUserId, retailerId, retailerName }: ChatI
         .select()
         .single();
 
-      if (createError) {
-        console.error("Error creating conversation:", createError);
-        throw createError;
-      }
+      if (createError) throw createError;
 
-      console.log("New conversation created:", newConversation);
       // Navigate to the new conversation
       navigate(`/chat/${newConversation.id}`);
     } catch (error) {
-      console.error("Error starting chat:", error);
+      console.error("Error creating chat:", error);
       toast({
         title: "Error",
-        description: "Failed to start chat with retailer. Please try again.",
+        description: "Failed to start chat with retailer",
         variant: "destructive",
       });
     } finally {
@@ -93,7 +79,7 @@ const ChatInterface = ({ userId: passedUserId, retailerId, retailerName }: ChatI
       onClick={handleStartChat}
       disabled={loading}
       variant="secondary"
-      className="flex items-center gap-2 w-full"
+      className="flex items-center gap-2"
     >
       <MessageSquare className="h-4 w-4" />
       {loading ? "Loading..." : `Chat with ${retailerName}`}

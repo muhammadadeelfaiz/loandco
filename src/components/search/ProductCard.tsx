@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, MessageSquare } from "lucide-react";
+import { MapPin, MessageSquare, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
@@ -34,12 +34,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const retailerName = product.retailer_name || product.store_name || "Unknown Retailer";
   const hasLocation = product.store_latitude && product.store_longitude;
 
-  // Log image URL for debugging
-  console.log(`ProductCard - Product ${product.id} - Image URL:`, product.image_url);
-
   // Test image loading and provide fallback
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error("Image failed to load:", product.image_url);
+    console.log("Image failed to load:", product.image_url);
     (e.target as HTMLImageElement).src = '/placeholder.svg';
   };
 
