@@ -51,6 +51,7 @@ export const LocalProducts = ({
           : product.retailers;
 
         // Console log for debugging purposes
+        console.log("Product in LocalProducts:", product);
         console.log("Product image URL:", product.image_url);
         
         return (

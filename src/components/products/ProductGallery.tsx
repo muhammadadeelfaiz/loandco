@@ -16,6 +16,11 @@ const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryPro
     "photo-1556656793-08538906a9f8"
   ];
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.log("Gallery image failed to load:", (e.target as HTMLImageElement).src);
+    (e.target as HTMLImageElement).src = '/placeholder.svg';
+  };
+
   return (
     <div className="grid grid-cols-2 gap-4 mb-6">
       <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
@@ -23,15 +28,17 @@ const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryPro
           src={mainImage || defaultMainImage}
           alt={name}
           className="w-full h-full object-cover"
+          onError={handleImageError}
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
         {(additionalImages || defaultAdditionalImages).map((photoId, index) => (
           <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
             <img 
-              src={`https://images.unsplash.com/${photoId}`}
+              src={photoId.includes('http') ? photoId : `https://images.unsplash.com/${photoId}`}
               alt={`${name} view ${index + 1}`}
               className="w-full h-full object-cover"
+              onError={handleImageError}
             />
           </div>
         ))}

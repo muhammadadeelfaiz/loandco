@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import LocalRetailerProducts from "@/components/home/LocalRetailerProducts";
 
 interface IndexProps {
   user: User | null;
@@ -189,6 +190,8 @@ const Index = ({ user }: IndexProps) => {
         </div>
         
         <BestSellers />
+
+        <LocalRetailerProducts />
 
         {localProducts && localProducts.length > 0 && (
           <section className="my-12">
