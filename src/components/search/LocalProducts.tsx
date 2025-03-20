@@ -49,9 +49,6 @@ export const LocalProducts = ({
         const retailers = typeof product.retailers === 'string'
           ? JSON.parse(product.retailers)
           : product.retailers;
-
-        // Console log for debugging purposes
-        console.log("Product image URL:", product.image_url);
         
         return (
           <ProductCard
@@ -60,7 +57,9 @@ export const LocalProducts = ({
               ...product,
               store_latitude: stores?.latitude,
               store_longitude: stores?.longitude,
-              retailer_name: retailers?.name || stores?.name
+              retailer_name: retailers?.name || stores?.name,
+              // Ensure image_url is properly passed to the ProductCard
+              image_url: product.image_url || null
             }}
             onContactRetailer={onContactRetailer}
             onGetDirections={onGetDirections}

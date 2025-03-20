@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -71,12 +70,16 @@ const Products = () => {
         .from('product-images')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: urlData } = supabase.storage
         .from('product-images')
         .getPublicUrl(fileName);
 
+      console.log('Image uploaded successfully, URL:', urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -156,16 +159,17 @@ const Products = () => {
         return;
       }
       
-      // Upload image if provided
       let imageUrl = null;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
+        console.log('Uploaded image URL:', imageUrl);
+      } else if (imagePreview && !imageFile && editingProductId) {
+        imageUrl = imagePreview;
       }
       
       let result;
       
       if (editingProductId) {
-        // Update existing product
         const updateData: any = { 
           name, 
           price: parseFloat(price), 
@@ -173,9 +177,9 @@ const Products = () => {
           description 
         };
         
-        // Only include image_url if a new image was uploaded
         if (imageUrl) {
           updateData.image_url = imageUrl;
+          console.log('Updating product with image:', imageUrl);
         }
         
         result = await supabase
@@ -189,7 +193,6 @@ const Products = () => {
           title: "Product updated successfully",
         });
       } else {
-        // Create new product
         result = await supabase
           .from('products')
           .insert([
@@ -209,16 +212,15 @@ const Products = () => {
           title: "Product added successfully",
         });
         
-        // Navigate to product page after creation
         if (result.data && result.data[0]?.id) {
-          // You can uncomment this to navigate to the product detail page
-          // navigate(`/product/${result.data[0].id}`);
+          navigate(`/product/${result.data[0].id}`);
         }
       }
       
       resetForm();
       refetch();
     } catch (error) {
+      console.error('Error in product operation:', error);
       toast({
         variant: "destructive",
         title: "Error",

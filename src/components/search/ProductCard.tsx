@@ -37,7 +37,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   // Test image loading and provide fallback
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.log("Image failed to load:", product.image_url);
-    (e.target as HTMLImageElement).src = '/placeholder.svg';
+    e.currentTarget.src = '/placeholder.svg';
   };
 
   return (
@@ -50,6 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               alt={product.name}
               className="w-full h-full object-contain"
               onError={handleImageError}
+              loading="lazy"
             />
           ) : (
             <div className="text-gray-400 text-lg">No Image</div>
