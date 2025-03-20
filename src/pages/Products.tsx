@@ -56,6 +56,7 @@ const Products = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log("Selected image file:", file.name, file.type, file.size);
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -63,12 +64,14 @@ const Products = () => {
 
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
+      console.log("Uploading image:", file.name, file.type, file.size);
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
+      console.log("Storage upload path:", `product-images/${fileName}`);
+      const { error: uploadError, data } = await supabase.storage
         .from('product-images')
-        .upload(fileName, file);
+        .upload(`${fileName}`, file);
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -77,7 +80,7 @@ const Products = () => {
 
       const { data: urlData } = supabase.storage
         .from('product-images')
-        .getPublicUrl(fileName);
+        .getPublicUrl(`${fileName}`);
 
       console.log('Image uploaded successfully, URL:', urlData.publicUrl);
       return urlData.publicUrl;
@@ -340,6 +343,7 @@ const Products = () => {
                           alt={product.name}
                           className="w-16 h-16 object-cover rounded"
                           onError={(e) => {
+                            console.log("Product list image load error:", product.image_url);
                             (e.target as HTMLImageElement).src = '/placeholder.svg';
                           }}
                         />

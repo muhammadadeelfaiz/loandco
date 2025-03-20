@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import Chat from "./pages/Chat";
 import { useUser } from "@/hooks/useUser";
 import { Footer } from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
+import { useProductImageStorage } from '@/hooks/useProductImageStorage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +58,9 @@ const AuthRedirectHandler = () => {
 const App = () => {
   const { user, loading } = useUser();
   const [theme, setTheme] = useState<string | null>(null);
+  
+  // Add this line to ensure product image storage is set up
+  useProductImageStorage();
 
   useEffect(() => {
     // Initialize theme from localStorage or system preference

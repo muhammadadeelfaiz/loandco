@@ -10,10 +10,10 @@ interface ProductGalleryProps {
 const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryProps) => {
   const defaultMainImage = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9";
   const defaultAdditionalImages = [
-    "photo-1592899677977-9c10ca588bbd",
-    "photo-1607936854279-55e8a4c64888",
-    "photo-1591337676887-a217a6970a8a",
-    "photo-1556656793-08538906a9f8"
+    "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd",
+    "https://images.unsplash.com/photo-1607936854279-55e8a4c64888",
+    "https://images.unsplash.com/photo-1591337676887-a217a6970a8a",
+    "https://images.unsplash.com/photo-1556656793-08538906a9f8"
   ];
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -22,14 +22,23 @@ const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryPro
   };
 
   const formatImageUrl = (url: string) => {
+    if (!url) return defaultMainImage;
+    
     // If it's already a complete URL, return it
     if (url.startsWith('http') || url.startsWith('data:')) {
       return url;
     }
+    
     // If it's an Unsplash ID without the domain, add it
     if (url.startsWith('photo-')) {
       return `https://images.unsplash.com/${url}`;
     }
+    
+    // Handle Supabase storage URLs that might be relative
+    if (url.includes('storage/v1/object/public')) {
+      return url;
+    }
+    
     // Fallback to just returning the URL
     return url;
   };

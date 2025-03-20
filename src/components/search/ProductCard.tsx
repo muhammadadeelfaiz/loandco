@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, MessageSquare, ExternalLink } from "lucide-react";
+import { MapPin, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
@@ -34,6 +34,29 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const retailerName = product.retailer_name || product.store_name || "Unknown Retailer";
   const hasLocation = product.store_latitude && product.store_longitude;
 
+  // Format the image URL properly
+  const formatImageUrl = (url?: string) => {
+    if (!url) return '/placeholder.svg';
+    
+    // If it's already a complete URL, return it
+    if (url.startsWith('http') || url.startsWith('data:')) {
+      return url;
+    }
+    
+    // If it's an Unsplash ID without the domain, add it
+    if (url.startsWith('photo-')) {
+      return `https://images.unsplash.com/${url}`;
+    }
+    
+    // Handle Supabase storage URLs that might be relative
+    if (url.includes('storage/v1/object/public')) {
+      return url;
+    }
+    
+    // Fallback to just returning the URL
+    return url;
+  };
+
   // Test image loading and provide fallback
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.log("Image failed to load:", product.image_url);
@@ -46,7 +69,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <div className="w-full md:w-48 h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
           {product.image_url ? (
             <img
-              src={product.image_url}
+              src={formatImageUrl(product.image_url)}
               alt={product.name}
               className="w-full h-full object-contain"
               onError={handleImageError}
