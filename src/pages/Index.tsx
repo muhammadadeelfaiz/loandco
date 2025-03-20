@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import { Footer } from "@/components/ui/Footer"; // Corrected import path
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -18,6 +19,16 @@ interface HomeProps {
   user: User | null;
 }
 
+// Sample categories data for CategoryGrid
+const categories = [
+  { name: "Electronics", image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+  { name: "Clothing", image: "https://images.unsplash.com/photo-1551232864-3f0890e580d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+  { name: "Home & Garden", image: "https://images.unsplash.com/photo-1501127122-f385ca6ddd9d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+  { name: "Sports", image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+  { name: "Beauty", image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" },
+  { name: "Food", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" }
+];
+
 const Index = ({ user }: HomeProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
@@ -27,6 +38,11 @@ const Index = ({ user }: HomeProps) => {
     if (searchTerm.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
     }
+  };
+
+  // Handler for category click
+  const handleCategoryClick = (category: string) => {
+    navigate(`/search?q=${encodeURIComponent(category)}`);
   };
 
   return (
@@ -68,13 +84,16 @@ const Index = ({ user }: HomeProps) => {
         </section>
 
         {/* Categories Section */}
-        <CategoryGrid />
+        <CategoryGrid 
+          categories={categories} 
+          onCategoryClick={handleCategoryClick}
+        />
 
         {/* Local Retailer Products */}
         <LocalRetailerProducts />
 
         {/* Features */}
-        <FeatureCards />
+        <FeatureCards userRole={user?.user_metadata?.role || 'customer'} />
 
         {/* Featured Products */}
         <FeaturedProducts />
@@ -84,7 +103,7 @@ const Index = ({ user }: HomeProps) => {
         
         {/* Featured Retailers */}
         <section className="mb-16">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-800">Featured Local Retailers</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-200">Featured Local Retailers</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
