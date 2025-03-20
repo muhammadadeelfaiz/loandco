@@ -34,9 +34,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const retailerName = product.retailer_name || product.store_name || "Unknown Retailer";
   const hasLocation = product.store_latitude && product.store_longitude;
 
-  // Format the image URL properly
+  // Format the image URL properly with improved debugging
   const formatImageUrl = (url?: string) => {
-    if (!url) return '/placeholder.svg';
+    if (!url) {
+      console.log("No image URL provided for product:", product.id);
+      return '/placeholder.svg';
+    }
+    
+    console.log("Processing product image URL:", url);
     
     // If it's already a complete URL, return it
     if (url.startsWith('http') || url.startsWith('data:')) {

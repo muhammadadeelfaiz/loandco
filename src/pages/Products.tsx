@@ -30,6 +30,7 @@ const Products = () => {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -54,9 +55,21 @@ const Products = () => {
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       console.log("Selected image file:", file.name, file.type, file.size);
+      
+      if (!file.type.match(/image\/(jpeg|jpg|png|gif|webp)/i)) {
+        setImageError("Please select a valid image file (JPEG, PNG, GIF, WebP)");
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError("Image file is too large (max 5MB)");
+        return;
+      }
+      
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -98,6 +111,7 @@ const Products = () => {
     setImageFile(null);
     setImagePreview(null);
     setEditingProductId(null);
+    setImageError(null);
   };
 
   const handleEditProduct = (product: any) => {
@@ -147,6 +161,17 @@ const Products = () => {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!editingProductId && !imageFile) {
+      setImageError("Please upload a product image");
+      toast({
+        variant: "destructive",
+        title: "Image Required",
+        description: "Please upload a product image",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -166,6 +191,15 @@ const Products = () => {
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
         console.log('Uploaded image URL:', imageUrl);
+        
+        if (!imageUrl) {
+          toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Failed to upload product image. Please try again.",
+          });
+          return;
+        }
       } else if (imagePreview && !imageFile && editingProductId) {
         imageUrl = imagePreview;
       }
@@ -287,7 +321,10 @@ const Products = () => {
               </div>
 
               <div>
-                <Label htmlFor="image">Product Image</Label>
+                <Label htmlFor="image" className="flex items-center">
+                  Product Image 
+                  {!editingProductId && <span className="text-red-500 ml-1">*</span>}
+                </Label>
                 <div className="mt-1 flex items-center gap-5">
                   <Input
                     id="image"
@@ -295,6 +332,7 @@ const Products = () => {
                     accept="image/*"
                     onChange={handleImageChange}
                     className="w-full"
+                    required={!editingProductId && !imagePreview}
                   />
                   {imagePreview && (
                     <div className="w-24 h-24 relative border rounded overflow-hidden">
@@ -302,10 +340,15 @@ const Products = () => {
                         src={imagePreview}
                         alt="Preview"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error("Failed to load image preview", imagePreview);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
                       />
                     </div>
                   )}
                 </div>
+                {imageError && <p className="text-red-500 text-sm mt-1">{imageError}</p>}
               </div>
 
               <div className="flex gap-2">

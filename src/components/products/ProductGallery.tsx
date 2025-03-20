@@ -34,7 +34,7 @@ const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryPro
       return `https://images.unsplash.com/${url}`;
     }
     
-    // Handle Supabase storage URLs that might be relative
+    // Handle Supabase storage URLs
     if (url.includes('storage/v1/object/public')) {
       return url;
     }
@@ -54,7 +54,7 @@ const ProductGallery = ({ name, mainImage, additionalImages }: ProductGalleryPro
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {(additionalImages || defaultAdditionalImages).map((imageUrl, index) => (
+        {(additionalImages?.length ? additionalImages : defaultAdditionalImages).map((imageUrl, index) => (
           <div key={index} className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
             <img 
               src={formatImageUrl(imageUrl)}
