@@ -38,6 +38,9 @@ export const LocalProducts = ({
     );
   }
 
+  // Console log for debugging purposes
+  console.log("LocalProducts - All products:", products);
+  
   return (
     <div className="space-y-4">
       {products.map((product) => {
@@ -50,9 +53,12 @@ export const LocalProducts = ({
           ? JSON.parse(product.retailers)
           : product.retailers;
 
-        // Console log for debugging purposes
-        console.log("Product in LocalProducts:", product);
-        console.log("Product image URL:", product.image_url);
+        // Log for debugging
+        console.log("Product details:", {
+          id: product.id,
+          name: product.name,
+          image_url: product.image_url
+        });
         
         return (
           <ProductCard
@@ -61,7 +67,9 @@ export const LocalProducts = ({
               ...product,
               store_latitude: stores?.latitude,
               store_longitude: stores?.longitude,
-              retailer_name: retailers?.name || stores?.name
+              retailer_name: retailers?.name || stores?.name,
+              // Ensure image_url is properly passed
+              image_url: product.image_url
             }}
             onContactRetailer={onContactRetailer}
             onGetDirections={onGetDirections}

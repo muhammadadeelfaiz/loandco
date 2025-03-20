@@ -45,6 +45,8 @@ const LocalRetailerProducts = () => {
           return;
         }
 
+        console.log('Retrieved local products:', data);
+
         // Process the products to calculate distance and sort by proximity
         const productsWithDistance = data
           .filter((product: any) => product.stores?.latitude && product.stores?.longitude)
